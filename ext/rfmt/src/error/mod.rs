@@ -16,6 +16,10 @@ pub enum RfmtError {
         feature: String,
         explanation: String,
     },
+
+    #[error("Configuration error: {message}")]
+    #[cfg(test)]
+    ConfigError { message: String },
 }
 
 // Implement From for std::fmt::Error
@@ -32,6 +36,8 @@ impl RfmtError {
             RfmtError::PrismError(_) => "PrismError",
             RfmtError::FormatError(_) => "FormatError",
             RfmtError::UnsupportedFeature { .. } => "UnsupportedFeature",
+            #[cfg(test)]
+            RfmtError::ConfigError { .. } => "ConfigError",
         };
 
         MagnusError::new(

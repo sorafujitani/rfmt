@@ -106,6 +106,14 @@ impl NodeType {
         }
     }
 
+    /// Check if this node type is a definition (class, module, or method)
+    #[cfg(test)]
+    pub fn is_definition(&self) -> bool {
+        matches!(
+            self,
+            NodeType::ClassNode | NodeType::ModuleNode | NodeType::DefNode
+        )
+    }
 }
 
 /// Comment attached to a node
@@ -142,6 +150,66 @@ pub struct FormattingInfo {
 }
 
 impl Node {
+    /// Create a new node with the given type and location
+    #[cfg(test)]
+    pub fn new(node_type: NodeType, location: Location) -> Self {
+        Self {
+            node_type,
+            location,
+            children: Vec::new(),
+            metadata: HashMap::new(),
+            comments: Vec::new(),
+            formatting: FormattingInfo::default(),
+        }
+    }
+
+    /// Add children to the node
+    #[cfg(test)]
+    pub fn with_children(mut self, children: Vec<Node>) -> Self {
+        self.children = children;
+        self
+    }
+
+    /// Add metadata to the node
+    #[cfg(test)]
+    pub fn with_metadata(mut self, metadata: HashMap<String, String>) -> Self {
+        self.metadata = metadata;
+        self
+    }
+
+    /// Add comments to the node
+    #[cfg(test)]
+    pub fn with_comments(mut self, comments: Vec<Comment>) -> Self {
+        self.comments = comments;
+        self
+    }
+
+    /// Check if the node spans multiple lines
+    #[cfg(test)]
+    pub fn is_multiline(&self) -> bool {
+        self.location.start_line != self.location.end_line
+    }
+
+    /// Get the number of lines this node spans
+    #[cfg(test)]
+    pub fn line_count(&self) -> usize {
+        self.location.end_line - self.location.start_line + 1
+    }
+
+    /// Check if this is an unknown node type
+    #[cfg(test)]
+    pub fn is_unknown(&self) -> bool {
+        matches!(self.node_type, NodeType::Unknown(_))
+    }
+
+    /// Get the unknown node type name if this is an unknown node
+    #[cfg(test)]
+    pub fn unknown_type(&self) -> Option<&str> {
+        match &self.node_type {
+            NodeType::Unknown(name) => Some(name.as_str()),
+            _ => None,
+        }
+    }
 }
 
 impl Location {
@@ -161,6 +229,19 @@ impl Location {
             end_column,
             start_offset,
             end_offset,
+        }
+    }
+
+    /// Create a zero location (for testing)
+    #[cfg(test)]
+    pub fn zero() -> Self {
+        Self {
+            start_line: 0,
+            start_column: 0,
+            end_line: 0,
+            end_column: 0,
+            start_offset: 0,
+            end_offset: 0,
         }
     }
 }

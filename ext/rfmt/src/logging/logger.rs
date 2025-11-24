@@ -15,6 +15,12 @@ impl RfmtLogger {
         }
     }
 
+    #[cfg(test)]
+    pub fn with_output(mut self, output: Box<dyn Write + Send>) -> Self {
+        self.output = Mutex::new(output);
+        self
+    }
+
     pub fn init() {
         let logger = Self::new(LevelFilter::Info);
         log::set_boxed_logger(Box::new(logger)).expect("Failed to initialize logger");

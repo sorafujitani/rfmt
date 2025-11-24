@@ -52,17 +52,12 @@ fn default_indent_width() -> usize {
     2
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum IndentStyle {
+    #[default]
     Spaces,
     Tabs,
-}
-
-impl Default for IndentStyle {
-    fn default() -> Self {
-        Self::Spaces
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -77,48 +72,122 @@ pub struct StyleConfig {
     pub trailing_comma: TrailingComma,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum QuoteStyle {
+    #[default]
     Double,
     Single,
     Consistent,
 }
 
-impl Default for QuoteStyle {
-    fn default() -> Self {
-        Self::Double
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub enum HashSyntax {
+    #[default]
     Ruby19,
     HashRockets,
     Consistent,
 }
 
-impl Default for HashSyntax {
-    fn default() -> Self {
-        Self::Ruby19
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TrailingComma {
     Always,
     Never,
+    #[default]
     Multiline,
 }
 
-impl Default for TrailingComma {
-    fn default() -> Self {
-        Self::Multiline
-    }
-}
-
 impl Config {
+    /// Load configuration from a YAML file
+    #[cfg(test)]
+    pub fn load_file(path: &std::path::Path) -> crate::error::Result<Self> {
+        use crate::error::RfmtError;
+
+        let contents = std::fs::read_to_string(path).map_err(|e| RfmtError::ConfigError {
+            message: format!("Failed to read config file: {}", e),
+        })?;
+
+        let config: Config =
+            serde_yaml::from_str(&contents).map_err(|e| RfmtError::ConfigError {
+                message: format!("Failed to parse config file: {}", e),
+            })?;
+
+        config.validate()?;
+
+        Ok(config)
+    }
+
+    /// Validate configuration values
+    #[cfg(test)]
+    fn validate(&self) -> crate::error::Result<()> {
+        use crate::error::RfmtError;
+
+        if self.formatting.line_length < 40 || self.formatting.line_length > 500 {
+            return Err(RfmtError::ConfigError {
+                message: format!(
+                    "line_length must be between 40 and 500, got {}",
+                    self.formatting.line_length
+                ),
+            });
+        }
+
+        if self.formatting.indent_width < 1 || self.formatting.indent_width > 8 {
+            return Err(RfmtError::ConfigError {
+                message: format!(
+                    "indent_width must be between 1 and 8, got {}",
+                    self.formatting.indent_width
+                ),
+            });
+        }
+
+        Ok(())
+    }
+
+    /// Get the indent string based on configuration
+    #[cfg(test)]
+    pub fn indent_string(&self) -> String {
+        match self.formatting.indent_style {
+            IndentStyle::Spaces => " ".repeat(self.formatting.indent_width),
+            IndentStyle::Tabs => "\t".to_string(),
+        }
+    }
+
+    /// Check if a file path should be included based on include/exclude patterns
+    #[cfg(test)]
+    pub fn should_include(&self, path: &std::path::Path) -> bool {
+        use globset::{Glob, GlobSetBuilder};
+
+        let path_str = path.to_string_lossy();
+
+        // Check exclude patterns first
+        let mut exclude_builder = GlobSetBuilder::new();
+        for pattern in &self.exclude {
+            if let Ok(glob) = Glob::new(pattern) {
+                exclude_builder.add(glob);
+            }
+        }
+
+        if let Ok(exclude_set) = exclude_builder.build() {
+            if exclude_set.is_match(&*path_str) {
+                return false;
+            }
+        }
+
+        // Check include patterns
+        let mut include_builder = GlobSetBuilder::new();
+        for pattern in &self.include {
+            if let Ok(glob) = Glob::new(pattern) {
+                include_builder.add(glob);
+            }
+        }
+
+        if let Ok(include_set) = include_builder.build() {
+            return include_set.is_match(&*path_str);
+        }
+
+        false
+    }
 }
 
 impl Default for Config {
@@ -172,7 +241,9 @@ impl Default for StyleConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::RfmtError;
     use std::io::Write;
+    use std::path::Path;
     use tempfile::NamedTempFile;
 
     #[test]
