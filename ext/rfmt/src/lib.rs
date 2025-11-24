@@ -10,6 +10,14 @@ mod error;
 mod cache;
 mod plugin;
 
+// Phase 4: Logging and debugging modules
+mod logging;
+mod debug;
+
+// Export debug macros
+#[allow(unused_imports)]
+use debug::*;
+
 use magnus::{define_module, function, prelude::*, Error, Ruby};
 use parser::{PrismAdapter, RubyParser};
 use formatter::Formatter;
@@ -53,6 +61,10 @@ fn rust_version() -> String {
 
 #[magnus::init]
 fn init(ruby: &Ruby) -> Result<(), Error> {
+    // Initialize logging system
+    logging::RfmtLogger::init();
+    log::info!("Initializing rfmt Rust extension");
+
     let module = define_module("Rfmt")?;
 
     // Main formatting function
@@ -71,6 +83,9 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
     ruby.define_error("PrismError", rfmt_error)?;
     ruby.define_error("RuleError", rfmt_error)?;
     ruby.define_error("InternalError", rfmt_error)?;
+    ruby.define_error("FormattingError", rfmt_error)?;
+    ruby.define_error("UnsupportedFeature", rfmt_error)?;
 
+    log::info!("rfmt Rust extension initialized successfully");
     Ok(())
 }
