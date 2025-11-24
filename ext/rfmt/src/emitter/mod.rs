@@ -1,4 +1,4 @@
-use crate::ast::{Node, NodeType};
+use crate::ast::{Comment, Node, NodeType};
 use crate::config::{Config, IndentStyle};
 use crate::error::Result;
 use std::fmt::Write;
@@ -8,6 +8,8 @@ pub struct Emitter {
     config: Config,
     source: String,
     buffer: String,
+    all_comments: Vec<Comment>,
+    emitted_comment_indices: Vec<usize>,
 }
 
 impl Emitter {
@@ -16,6 +18,8 @@ impl Emitter {
             config,
             source: String::new(),
             buffer: String::new(),
+            all_comments: Vec::new(),
+            emitted_comment_indices: Vec::new(),
         }
     }
 
@@ -25,14 +29,82 @@ impl Emitter {
             config,
             source,
             buffer: String::new(),
+            all_comments: Vec::new(),
+            emitted_comment_indices: Vec::new(),
         }
     }
 
     /// Emit Ruby source code from an AST
     pub fn emit(&mut self, ast: &Node) -> Result<String> {
         self.buffer.clear();
+        self.emitted_comment_indices.clear();
+
+        // Collect all comments from the AST
+        self.collect_comments(ast);
+
         self.emit_node(ast, 0)?;
         Ok(self.buffer.clone())
+    }
+
+    /// Recursively collect all comments from the AST
+    fn collect_comments(&mut self, node: &Node) {
+        self.all_comments.extend(node.comments.clone());
+        for child in &node.children {
+            self.collect_comments(child);
+        }
+    }
+
+    /// Emit comments that appear before a given line
+    fn emit_comments_before(&mut self, line: usize, indent_level: usize) -> Result<()> {
+        let indent_str = match self.config.formatting.indent_style {
+            IndentStyle::Spaces => {
+                " ".repeat(self.config.formatting.indent_width * indent_level)
+            }
+            IndentStyle::Tabs => "\t".repeat(indent_level),
+        };
+
+        let mut indices_to_emit = Vec::new();
+        for (idx, comment) in self.all_comments.iter().enumerate() {
+            if self.emitted_comment_indices.contains(&idx) {
+                continue;
+            }
+
+            // Collect comments that end before this line
+            if comment.location.end_line < line {
+                indices_to_emit.push((idx, comment.text.clone()));
+            }
+        }
+
+        // Now emit the collected comments
+        for (idx, text) in indices_to_emit {
+            write!(self.buffer, "{}{}\n", indent_str, text)?;
+            self.emitted_comment_indices.push(idx);
+        }
+
+        Ok(())
+    }
+
+    /// Emit comments that appear on the same line (trailing comments)
+    fn emit_trailing_comments(&mut self, line: usize) -> Result<()> {
+        let mut indices_to_emit = Vec::new();
+        for (idx, comment) in self.all_comments.iter().enumerate() {
+            if self.emitted_comment_indices.contains(&idx) {
+                continue;
+            }
+
+            // Collect comments on the same line (trailing)
+            if comment.location.start_line == line {
+                indices_to_emit.push((idx, comment.text.clone()));
+            }
+        }
+
+        // Now emit the collected comments
+        for (idx, text) in indices_to_emit {
+            write!(self.buffer, " {}", text)?;
+            self.emitted_comment_indices.push(idx);
+        }
+
+        Ok(())
     }
 
     /// Emit a node with given indentation level
@@ -76,6 +148,9 @@ impl Emitter {
 
     /// Emit class definition
     fn emit_class(&mut self, node: &Node, indent_level: usize) -> Result<()> {
+        // Emit any comments before this class
+        self.emit_comments_before(node.location.start_line, indent_level)?;
+
         self.emit_indent(indent_level)?;
         write!(self.buffer, "class ")?;
 
@@ -111,6 +186,9 @@ impl Emitter {
 
     /// Emit module definition
     fn emit_module(&mut self, node: &Node, indent_level: usize) -> Result<()> {
+        // Emit any comments before this module
+        self.emit_comments_before(node.location.start_line, indent_level)?;
+
         self.emit_indent(indent_level)?;
         write!(self.buffer, "module ")?;
 
@@ -141,6 +219,9 @@ impl Emitter {
 
     /// Emit method definition
     fn emit_method(&mut self, node: &Node, indent_level: usize) -> Result<()> {
+        // Emit any comments before this method
+        self.emit_comments_before(node.location.start_line, indent_level)?;
+
         self.emit_indent(indent_level)?;
         write!(self.buffer, "def ")?;
 
@@ -190,6 +271,9 @@ impl Emitter {
 
     /// Emit generic node by extracting from source
     fn emit_generic(&mut self, node: &Node, indent_level: usize) -> Result<()> {
+        // Emit any comments before this node
+        self.emit_comments_before(node.location.start_line, indent_level)?;
+
         if !self.source.is_empty() {
             let start = node.location.start_offset;
             let end = node.location.end_offset;
@@ -201,6 +285,9 @@ impl Emitter {
                 // Add indentation before the extracted text
                 self.emit_indent(indent_level)?;
                 write!(self.buffer, "{}", text)?;
+
+                // Emit any trailing comments on the same line
+                self.emit_trailing_comments(node.location.end_line)?;
             }
         }
         Ok(())

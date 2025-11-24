@@ -16,10 +16,17 @@ impl PrismAdapter {
     }
 
     /// Parse JSON from Ruby's PrismBridge
-    fn parse_json(&self, json: &str) -> Result<PrismNode> {
-        serde_json::from_str(json).map_err(|e| {
+    fn parse_json(&self, json: &str) -> Result<(PrismNode, Vec<PrismComment>)> {
+        // Try to parse as new format with comments first
+        if let Ok(wrapper) = serde_json::from_str::<PrismWrapper>(json) {
+            return Ok((wrapper.ast, wrapper.comments));
+        }
+
+        // Fall back to old format (single node without comments)
+        let node: PrismNode = serde_json::from_str(json).map_err(|e| {
             RfmtError::PrismError(format!("Failed to parse Prism JSON: {}", e))
-        })
+        })?;
+        Ok((node, Vec::new()))
     }
 
     /// Convert PrismNode to internal Node representation
@@ -105,8 +112,19 @@ impl PrismAdapter {
 
 impl RubyParser for PrismAdapter {
     fn parse(&self, json: &str) -> Result<Node> {
-        let prism_ast = self.parse_json(json)?;
-        self.convert_node(&prism_ast)
+        let (prism_ast, top_level_comments) = self.parse_json(json)?;
+        let mut node = self.convert_node(&prism_ast)?;
+
+        // Attach top-level comments to the root node
+        if !top_level_comments.is_empty() {
+            node.comments.extend(
+                top_level_comments
+                    .iter()
+                    .map(|c| self.convert_comment(c))
+            );
+        }
+
+        Ok(node)
     }
 
     fn name(&self) -> &'static str {
@@ -118,6 +136,13 @@ impl Default for PrismAdapter {
     fn default() -> Self {
         Self::new()
     }
+}
+
+/// Wrapper for JSON containing both AST and comments
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PrismWrapper {
+    pub ast: PrismNode,
+    pub comments: Vec<PrismComment>,
 }
 
 /// JSON representation of a Prism node from Ruby

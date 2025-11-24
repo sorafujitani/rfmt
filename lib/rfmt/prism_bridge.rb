@@ -15,7 +15,7 @@ module Rfmt
 
     # Parse Ruby source code and return serialized AST
     # @param source [String] Ruby source code to parse
-    # @return [String] JSON-serialized AST
+    # @return [String] JSON-serialized AST with comments
     # @raise [ParseError] if parsing fails
     def self.parse(source)
       result = Prism.parse(source)
@@ -24,7 +24,7 @@ module Rfmt
         handle_parse_errors(result)
       end
 
-      serialize_ast(result.value)
+      serialize_ast_with_comments(result)
     end
 
     # Parse Ruby source code from a file
@@ -61,6 +61,30 @@ module Rfmt
     # Serialize the Prism AST to JSON
     def self.serialize_ast(node)
       JSON.generate(convert_node(node))
+    end
+
+    # Serialize the Prism AST with comments to JSON
+    def self.serialize_ast_with_comments(result)
+      comments = result.comments.map do |comment|
+        {
+          comment_type: comment.class.name.split("::").last.downcase.gsub("comment", ""),
+          location: {
+            start_line: comment.location.start_line,
+            start_column: comment.location.start_column,
+            end_line: comment.location.end_line,
+            end_column: comment.location.end_column,
+            start_offset: comment.location.start_offset,
+            end_offset: comment.location.end_offset
+          },
+          text: comment.location.slice,
+          position: "leading" # Default position, will be refined by Rust
+        }
+      end
+
+      JSON.generate({
+        ast: convert_node(result.value),
+        comments: comments
+      })
     end
 
     # Convert a Prism node to our internal representation

@@ -13,9 +13,11 @@ RSpec.describe 'Prism to Rust integration' do
 
       # Verify JSON structure
       parsed = JSON.parse(prism_json)
-      expect(parsed['node_type']).to eq('program_node')
-      expect(parsed).to have_key('location')
-      expect(parsed).to have_key('children')
+      expect(parsed['ast']['node_type']).to eq('program_node')
+      expect(parsed).to have_key('ast')
+      expect(parsed).to have_key('comments')
+      expect(parsed['ast']).to have_key('location')
+      expect(parsed['ast']).to have_key('children')
     end
 
     it 'handles class definitions' do
@@ -30,9 +32,9 @@ RSpec.describe 'Prism to Rust integration' do
       prism_json = Rfmt::PrismBridge.parse(source)
       parsed = JSON.parse(prism_json)
 
-      expect(parsed['node_type']).to eq('program_node')
+      expect(parsed['ast']['node_type']).to eq('program_node')
 
-      class_node = parsed['children'].first
+      class_node = parsed['ast']['children'].first
       expect(class_node['node_type']).to eq('class_node')
       expect(class_node['metadata']['name']).to eq('User')
     end
@@ -49,7 +51,7 @@ RSpec.describe 'Prism to Rust integration' do
       prism_json = Rfmt::PrismBridge.parse(source)
       parsed = JSON.parse(prism_json)
 
-      class_node = parsed['children'].first
+      class_node = parsed['ast']['children'].first
       expect(class_node['location']['start_line']).to eq(1)
       expect(class_node['location']['end_line']).to be > 1
       expect(class_node['formatting']['multiline']).to be true
@@ -61,7 +63,7 @@ RSpec.describe 'Prism to Rust integration' do
       prism_json = Rfmt::PrismBridge.parse(source)
       parsed = JSON.parse(prism_json)
 
-      def_node = parsed['children'].first
+      def_node = parsed['ast']['children'].first
       expect(def_node['node_type']).to eq('def_node')
       expect(def_node['metadata']['name']).to eq('hello')
       # Parameters are in children
@@ -81,7 +83,7 @@ RSpec.describe 'Prism to Rust integration' do
         prism_json = Rfmt::PrismBridge.parse(source)
         parsed = JSON.parse(prism_json)
 
-        node = parsed['children'].first
+        node = parsed['ast']['children'].first
         expect(node['node_type']).to eq(expected_type), "Expected #{source} to produce #{expected_type}"
       end
     end
