@@ -140,6 +140,102 @@ bundle exec rspec --format progress
 bundle exec rspec --only-failures
 ```
 
+#### CLI Tests ⭐
+
+Test the command-line interface functionality:
+
+```bash
+# Run all CLI tests
+bundle exec rspec spec/cli_spec.rb
+
+# Run specific CLI test
+bundle exec rspec spec/cli_spec.rb -e "format with diff option"
+```
+
+**CLI Test Coverage:**
+- Version command (`rfmt version`)
+- Format command with various options (`--write`, `--no-write`, `--check`, `--diff`, `--verbose`)
+- Check mode with proper exit codes (0 for formatted, 1 for needs formatting)
+- Diff display in 3 formats (unified, color, side_by_side)
+- Multiple file processing
+- Error handling (syntax errors, missing files)
+- Init command (`.rfmt.yml` creation)
+- Config command (configuration display)
+
+**Example Test Cases:**
+```ruby
+# Test format with write option
+it 'formats and writes to file' do
+  cli.options = { write: true }
+  cli.format(temp_file.path)
+
+  formatted = File.read(temp_file.path)
+  expect(formatted).to eq(formatted_code)
+end
+
+# Test check mode exit codes
+it 'exits with code 1 when formatting is needed' do
+  cli.options = { check: true, write: false }
+
+  expect do
+    cli.format(temp_file.path)
+  end.to raise_error(SystemExit) do |error|
+    expect(error.status).to eq(1)
+  end
+end
+
+# Test diff display
+it 'shows unified diff' do
+  cli.options = { diff: true, write: false, diff_format: 'unified' }
+  expect { cli.format(temp_file.path) }.not_to raise_error
+end
+```
+
+#### Configuration Tests ⭐
+
+Test the YAML configuration system:
+
+```bash
+# Run all configuration tests
+bundle exec rspec spec/configuration_spec.rb
+
+# Run specific configuration test
+bundle exec rspec spec/configuration_spec.rb -e "discovers .rfmt.yml"
+```
+
+**Configuration Test Coverage:**
+- Auto-discovery of config files (`.rfmt.yml`, `.rfmt.yaml`, `rfmt.yml`, `rfmt.yaml`)
+- Default configuration loading
+- Custom configuration file loading
+- Configuration merging (deep merge for nested hashes)
+- Validation (line_length > 0, indent_width > 0)
+- File pattern matching (include/exclude)
+- Formatting options retrieval
+
+**Example Test Cases:**
+```ruby
+# Test config file discovery
+it 'discovers .rfmt.yml' do
+  File.write('.rfmt.yml', "version: '1.0'")
+  config = described_class.discover
+  expect(config).to be_a(described_class)
+end
+
+# Test configuration validation
+it 'validates positive line_length' do
+  expect do
+    described_class.new('formatting' => { 'line_length' => -1 })
+  end.to raise_error(Rfmt::Configuration::ConfigError, 'line_length must be positive')
+end
+
+# Test file pattern matching
+it 'includes files matching include patterns' do
+  config = described_class.new
+  files = config.files_to_format(base_path: temp_dir)
+  expect(files).to include(File.join(temp_dir, 'lib', 'test.rb'))
+end
+```
+
 ### Rust Tests
 
 #### Run All Rust Tests

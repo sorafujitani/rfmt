@@ -140,6 +140,102 @@ bundle exec rspec --format progress
 bundle exec rspec --only-failures
 ```
 
+#### CLIテスト ⭐
+
+コマンドラインインターフェース機能をテスト：
+
+```bash
+# すべてのCLIテストを実行
+bundle exec rspec spec/cli_spec.rb
+
+# 特定のCLIテストを実行
+bundle exec rspec spec/cli_spec.rb -e "format with diff option"
+```
+
+**CLIテストのカバレッジ:**
+- versionコマンド（`rfmt version`）
+- formatコマンドの各種オプション（`--write`, `--no-write`, `--check`, `--diff`, `--verbose`）
+- チェックモードの終了コード（フォーマット済みで0、未フォーマットで1）
+- 3つの形式での差分表示（unified, color, side_by_side）
+- 複数ファイルの処理
+- エラーハンドリング（構文エラー、ファイル未存在）
+- initコマンド（`.rfmt.yml`の作成）
+- configコマンド（設定の表示）
+
+**テストケースの例:**
+```ruby
+# write オプションでのフォーマットテスト
+it 'formats and writes to file' do
+  cli.options = { write: true }
+  cli.format(temp_file.path)
+
+  formatted = File.read(temp_file.path)
+  expect(formatted).to eq(formatted_code)
+end
+
+# チェックモードの終了コードテスト
+it 'exits with code 1 when formatting is needed' do
+  cli.options = { check: true, write: false }
+
+  expect do
+    cli.format(temp_file.path)
+  end.to raise_error(SystemExit) do |error|
+    expect(error.status).to eq(1)
+  end
+end
+
+# 差分表示のテスト
+it 'shows unified diff' do
+  cli.options = { diff: true, write: false, diff_format: 'unified' }
+  expect { cli.format(temp_file.path) }.not_to raise_error
+end
+```
+
+#### 設定システムのテスト ⭐
+
+YAML設定システムをテスト：
+
+```bash
+# すべての設定テストを実行
+bundle exec rspec spec/configuration_spec.rb
+
+# 特定の設定テストを実行
+bundle exec rspec spec/configuration_spec.rb -e "discovers .rfmt.yml"
+```
+
+**設定テストのカバレッジ:**
+- 設定ファイルの自動発見（`.rfmt.yml`, `.rfmt.yaml`, `rfmt.yml`, `rfmt.yaml`）
+- デフォルト設定の読み込み
+- カスタム設定ファイルの読み込み
+- 設定のマージ（ネストされたハッシュの深いマージ）
+- バリデーション（line_length > 0, indent_width > 0）
+- ファイルパターンマッチング（include/exclude）
+- フォーマット設定の取得
+
+**テストケースの例:**
+```ruby
+# 設定ファイル発見のテスト
+it 'discovers .rfmt.yml' do
+  File.write('.rfmt.yml', "version: '1.0'")
+  config = described_class.discover
+  expect(config).to be_a(described_class)
+end
+
+# 設定バリデーションのテスト
+it 'validates positive line_length' do
+  expect do
+    described_class.new('formatting' => { 'line_length' => -1 })
+  end.to raise_error(Rfmt::Configuration::ConfigError, 'line_length must be positive')
+end
+
+# ファイルパターンマッチングのテスト
+it 'includes files matching include patterns' do
+  config = described_class.new
+  files = config.files_to_format(base_path: temp_dir)
+  expect(files).to include(File.join(temp_dir, 'lib', 'test.rb'))
+end
+```
+
 ### Rustテスト
 
 #### すべてのRustテストを実行
