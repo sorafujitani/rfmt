@@ -16,19 +16,21 @@ use formatter::Formatter;
 use emitter::Emitter;
 use config::Config;
 
-fn format_ruby_code(ruby: &Ruby, json: String) -> Result<String, Error> {
-    // Phase 1: Parse JSON and validate AST structure
-    // In Phase 2, we will implement actual formatting
+fn format_ruby_code(ruby: &Ruby, source: String, json: String) -> Result<String, Error> {
+    // Parse JSON to internal AST
     let parser = PrismAdapter::new();
-
-    // Parse and validate the AST
-    let _ast = parser.parse(&json)
+    let ast = parser.parse(&json)
         .map_err(|e| e.to_magnus_error(ruby))?;
 
-    // For Phase 1, we just return a placeholder
-    // The actual formatting will be implemented in Phase 2
-    // For now, we return empty string which will be replaced by the emitter
-    Ok("".to_string())
+    // Create emitter with source code for fallback extraction
+    let config = Config::default();
+    let mut emitter = Emitter::with_source(config, source);
+
+    // Emit formatted code
+    let formatted = emitter.emit(&ast)
+        .map_err(|e| e.to_magnus_error(ruby))?;
+
+    Ok(formatted)
 }
 
 /// Parse Ruby source code and return JSON AST representation
@@ -54,7 +56,7 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
     let module = define_module("Rfmt")?;
 
     // Main formatting function
-    module.define_singleton_method("format_code", function!(format_ruby_code, 1))?;
+    module.define_singleton_method("format_code", function!(format_ruby_code, 2))?;
 
     // Debug/testing function
     module.define_singleton_method("parse_to_json", function!(parse_to_json, 1))?;

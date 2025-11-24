@@ -1,4 +1,3 @@
-use crate::ast::Location;
 use magnus::{Error as MagnusError, Ruby};
 use std::path::PathBuf;
 use thiserror::Error;
@@ -30,8 +29,18 @@ pub enum RfmtError {
     #[error("Formatting rule error in {rule}: {message}")]
     RuleError { rule: String, message: String },
 
+    #[error("Format error: {0}")]
+    FormatError(String),
+
     #[error("Internal error: {0}")]
     InternalError(String),
+}
+
+// Implement From for std::fmt::Error
+impl From<std::fmt::Error> for RfmtError {
+    fn from(err: std::fmt::Error) -> Self {
+        RfmtError::FormatError(err.to_string())
+    }
 }
 
 impl RfmtError {
@@ -43,6 +52,7 @@ impl RfmtError {
             RfmtError::PrismError(_) => "PrismError",
             RfmtError::IoError { .. } => "IOError",
             RfmtError::RuleError { .. } => "RuleError",
+            RfmtError::FormatError(_) => "FormatError",
             RfmtError::InternalError(_) => "InternalError",
         };
 

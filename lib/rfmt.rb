@@ -16,13 +16,11 @@ module Rfmt
     # Step 1: Parse with Prism (Ruby side)
     prism_json = PrismBridge.parse(source)
 
-    # Step 2: Validate AST structure in Rust
-    # This ensures the JSON is valid and can be converted to internal AST
-    format_code(prism_json)
+    # Step 2: Format in Rust
+    # Pass both source and AST to enable source extraction fallback
+    formatted = format_code(source, prism_json)
 
-    # Phase 1: Return source as-is since formatter is not implemented yet
-    # Phase 2 will implement actual formatting
-    source
+    formatted
   rescue PrismBridge::ParseError => e
     # Re-raise with more context
     raise Error, "Failed to parse Ruby code: #{e.message}"

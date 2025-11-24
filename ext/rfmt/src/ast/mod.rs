@@ -58,6 +58,19 @@ pub enum NodeType {
     // Blocks
     BlockNode,
 
+    // Constants (structural nodes, part of definitions)
+    ConstantReadNode,
+    ConstantWriteNode,
+    ConstantPathNode,
+
+    // Parameters (structural nodes, part of method definitions)
+    RequiredParameterNode,
+    OptionalParameterNode,
+    RestParameterNode,
+    KeywordParameterNode,
+    KeywordRestParameterNode,
+    BlockParameterNode,
+
     // Catch-all for unsupported types in Phase 1
     Unknown(String),
 }
@@ -84,6 +97,15 @@ impl NodeType {
             "false_node" => Self::FalseNode,
             "nil_node" => Self::NilNode,
             "block_node" => Self::BlockNode,
+            "constant_read_node" => Self::ConstantReadNode,
+            "constant_write_node" => Self::ConstantWriteNode,
+            "constant_path_node" => Self::ConstantPathNode,
+            "required_parameter_node" => Self::RequiredParameterNode,
+            "optional_parameter_node" => Self::OptionalParameterNode,
+            "rest_parameter_node" => Self::RestParameterNode,
+            "keyword_parameter_node" => Self::KeywordParameterNode,
+            "keyword_rest_parameter_node" => Self::KeywordRestParameterNode,
+            "block_parameter_node" => Self::BlockParameterNode,
             _ => Self::Unknown(s.to_string()),
         }
     }
