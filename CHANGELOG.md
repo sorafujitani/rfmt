@@ -1,5 +1,18 @@
 ## [Unreleased]
 
+## [0.2.3] - 2025-01-25
+
+### Added
+- Configuration file (rfmt.yml) is now automatically loaded and applied during formatting
+- Automatic config file discovery in current directory, parent directories, and home directory
+- Support for custom indent_width and other formatting options via rfmt.yml
+
+### Changed
+- Default config file name changed from .rfmt.yml to rfmt.yml (hidden file to regular file)
+- Backward compatibility maintained: .rfmt.yml is still supported with lower priority
+- Config file search order: rfmt.yml > rfmt.yaml > .rfmt.yml > .rfmt.yaml
+- README updated to remove exaggerated expressions and focus on factual, data-driven descriptions
+
 ## [0.2.2] - 2025-01-25
 
 ### Fixed
