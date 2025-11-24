@@ -49,13 +49,17 @@ RSpec.describe Rfmt::Config do
 
   describe '.find' do
     it 'finds config file in current directory' do
+      original_dir = Dir.pwd
       Dir.mktmpdir do |dir|
         config_path = File.join(dir, '.rfmt.yml')
         File.write(config_path, 'test')
 
-        Dir.chdir(dir) do
+        begin
+          Dir.chdir(dir)
           found = Rfmt::Config.find
           expect(File.realpath(found)).to eq(File.realpath(config_path))
+        ensure
+          Dir.chdir(original_dir) if Dir.exist?(original_dir)
         end
       end
     end
@@ -68,18 +72,26 @@ RSpec.describe Rfmt::Config do
         subdir = File.join(dir, 'sub')
         Dir.mkdir(subdir)
 
-        Dir.chdir(subdir) do
+        original_dir = Dir.pwd
+        begin
+          Dir.chdir(subdir)
           found = Rfmt::Config.find
           expect(File.realpath(found)).to eq(File.realpath(config_path))
+        ensure
+          Dir.chdir(original_dir)
         end
       end
     end
 
     it 'returns nil when no config file exists' do
       Dir.mktmpdir do |dir|
-        Dir.chdir(dir) do
+        original_dir = Dir.pwd
+        begin
+          Dir.chdir(dir)
           found = Rfmt::Config.find
           expect(found).to be_nil
+        ensure
+          Dir.chdir(original_dir)
         end
       end
     end
@@ -92,9 +104,13 @@ RSpec.describe Rfmt::Config do
         File.write(yml_path, 'yml')
         File.write(yaml_path, 'yaml')
 
-        Dir.chdir(dir) do
+        original_dir = Dir.pwd
+        begin
+          Dir.chdir(dir)
           found = Rfmt::Config.find
           expect(File.realpath(found)).to eq(File.realpath(yml_path))
+        ensure
+          Dir.chdir(original_dir)
         end
       end
     end
@@ -106,16 +122,24 @@ RSpec.describe Rfmt::Config do
         config_path = File.join(dir, '.rfmt.yml')
         File.write(config_path, 'test')
 
-        Dir.chdir(dir) do
+        original_dir = Dir.pwd
+        begin
+          Dir.chdir(dir)
           expect(Rfmt::Config.exists?).to be true
+        ensure
+          Dir.chdir(original_dir)
         end
       end
     end
 
     it 'returns false when no config file exists' do
       Dir.mktmpdir do |dir|
-        Dir.chdir(dir) do
+        original_dir = Dir.pwd
+        begin
+          Dir.chdir(dir)
           expect(Rfmt::Config.exists?).to be false
+        ensure
+          Dir.chdir(original_dir)
         end
       end
     end
@@ -133,20 +157,28 @@ RSpec.describe Rfmt::Config do
         YAML
         File.write(config_path, config_content)
 
-        Dir.chdir(dir) do
+        original_dir = Dir.pwd
+        begin
+          Dir.chdir(dir)
           config = Rfmt::Config.load
           expect(config['version']).to eq('1.0')
           expect(config['formatting']['line_length']).to eq(120)
           expect(config['formatting']['indent_width']).to eq(4)
+        ensure
+          Dir.chdir(original_dir)
         end
       end
     end
 
     it 'returns empty hash when no config file found' do
       Dir.mktmpdir do |dir|
-        Dir.chdir(dir) do
+        original_dir = Dir.pwd
+        begin
+          Dir.chdir(dir)
           config = Rfmt::Config.load
           expect(config).to eq({})
+        ensure
+          Dir.chdir(original_dir)
         end
       end
     end
@@ -156,10 +188,14 @@ RSpec.describe Rfmt::Config do
         config_path = File.join(dir, '.rfmt.yml')
         File.write(config_path, "invalid: yaml: content:")
 
-        Dir.chdir(dir) do
+        original_dir = Dir.pwd
+        begin
+          Dir.chdir(dir)
           expect {
             Rfmt::Config.load
           }.to raise_error(Rfmt::Error, /Invalid YAML/)
+        ensure
+          Dir.chdir(original_dir)
         end
       end
     end
