@@ -16,11 +16,11 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         ruby: ['3.1', '3.2', '3.3']
         rust: [stable]
-        include:
-          # Test with latest Ruby on Windows
-          - os: windows-latest
-            ruby: '3.3'
-            rust: stable
+        # Windows support is currently disabled due to rb-sys compatibility issues
+        # include:
+        #   - os: windows-latest
+        #     ruby: '3.3'
+        #     rust: stable
 
     steps:
     - uses: actions/checkout@v4
