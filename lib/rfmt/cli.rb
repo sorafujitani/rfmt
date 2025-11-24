@@ -113,27 +113,18 @@ module Rfmt
 
     desc 'init', 'Initialize rfmt configuration'
     option :force, type: :boolean, desc: 'Overwrite existing configuration'
+    option :path, type: :string, default: '.rfmt.yml', desc: 'Configuration file path'
     def init
-      config_file = '.rfmt.yml'
+      config_file = options[:path]
 
-      if File.exist?(config_file) && !options[:force]
-        say 'Configuration file already exists. Use --force to overwrite.', :yellow
-        return
+      # Use Rfmt::Config module for consistent behavior
+      result = Rfmt::Config.init(config_file, force: options[:force])
+
+      if result
+        say "Created #{config_file}", :green
+      else
+        say "Configuration file already exists at #{config_file}. Use --force to overwrite.", :yellow
       end
-
-      template_config = {
-        'version' => '1.0',
-        'formatting' => {
-          'line_length' => 100,
-          'indent_width' => 2,
-          'indent_style' => 'spaces'
-        },
-        'include' => ['**/*.rb'],
-        'exclude' => ['vendor/**/*', 'tmp/**/*']
-      }
-
-      File.write(config_file, YAML.dump(template_config))
-      say "Created #{config_file}", :green
     end
 
     private

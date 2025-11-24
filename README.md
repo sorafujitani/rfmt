@@ -160,24 +160,76 @@ end
 
 ### Configuration
 
-Create a `.rfmt.yml` file in your project root:
+#### Initializing Configuration
+
+Create a configuration file with default settings:
+
+```bash
+rfmt init
+```
+
+This creates a `.rfmt.yml` file with sensible defaults:
 
 ```yaml
 version: "1.0"
 
 formatting:
-  line_length: 100
-  indent_width: 2
-  indent_style: "spaces"
-  quote_style: "double"
+  line_length: 100        # Maximum line length (40-500)
+  indent_width: 2         # Spaces/tabs per indent (1-8)
+  indent_style: "spaces"  # "spaces" or "tabs"
+  quote_style: "double"   # "double", "single", or "consistent"
 
 include:
   - "**/*.rb"
   - "**/*.rake"
+  - "**/Rakefile"
+  - "**/Gemfile"
 
 exclude:
   - "vendor/**/*"
   - "tmp/**/*"
+  - "node_modules/**/*"
+  - "db/schema.rb"
+```
+
+**Options:**
+
+```bash
+# Specify custom path
+rfmt init --path config/rfmt.yml
+
+# Overwrite existing configuration
+rfmt init --force
+```
+
+#### Configuration File Discovery
+
+rfmt automatically searches for configuration files in this order:
+
+1. Current directory (`.rfmt.yml` or `.rfmt.yaml`)
+2. Parent directories (up to root)
+3. User home directory (`~/.rfmt.yml` or `~/.rfmt.yaml`)
+4. Default settings (if no file found)
+
+#### Ruby API for Configuration
+
+```ruby
+require 'rfmt'
+
+# Generate configuration file
+Rfmt::Config.init('.rfmt.yml', force: false)
+
+# Find configuration file
+config_path = Rfmt::Config.find
+# => "/Users/username/project/.rfmt.yml"
+
+# Check if configuration exists
+Rfmt::Config.exists?
+# => true
+
+# Load configuration
+config = Rfmt::Config.load
+# => {"version"=>"1.0", "formatting"=>{"line_length"=>100, ...}, ...}
 ```
 
 ## Error Handling

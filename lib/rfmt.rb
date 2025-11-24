@@ -54,4 +54,114 @@ module Rfmt
     prism_json = PrismBridge.parse(source)
     parse_to_json(prism_json)
   end
+
+  # Configuration management
+  module Config
+    # Default configuration template
+    DEFAULT_CONFIG = <<~YAML
+      # rfmt Configuration File
+      # This file controls how rfmt formats your Ruby code.
+      # See https://github.com/fujitanisora/rfmt for full documentation.
+
+      version: "1.0"
+
+      # Formatting options
+      formatting:
+        # Maximum line length before wrapping (40-500)
+        line_length: 100
+
+        # Number of spaces or tabs per indentation level (1-8)
+        indent_width: 2
+
+        # Use "spaces" or "tabs" for indentation
+        indent_style: "spaces"
+
+        # Quote style for strings: "double", "single", or "consistent"
+        quote_style: "double"
+
+      # Files to include in formatting (glob patterns)
+      include:
+        - "**/*.rb"
+        - "**/*.rake"
+        - "**/Rakefile"
+        - "**/Gemfile"
+
+      # Files to exclude from formatting (glob patterns)
+      exclude:
+        - "vendor/**/*"
+        - "tmp/**/*"
+        - "node_modules/**/*"
+        - "db/schema.rb"
+    YAML
+
+    # Generate a default configuration file
+    # @param path [String] Path where to create the config file (default: .rfmt.yml)
+    # @param force [Boolean] Overwrite existing file if true
+    # @return [Boolean] true if file was created, false if already exists
+    def self.init(path = ".rfmt.yml", force: false)
+      if File.exist?(path) && !force
+        warn "Configuration file already exists: #{path}"
+        warn "Use force: true to overwrite"
+        return false
+      end
+
+      File.write(path, DEFAULT_CONFIG)
+      puts "Created rfmt configuration file: #{path}"
+      true
+    end
+
+    # Find configuration file in current or parent directories
+    # @return [String, nil] Path to config file or nil if not found
+    def self.find
+      current_dir = Dir.pwd
+
+      loop do
+        [".rfmt.yml", ".rfmt.yaml"].each do |filename|
+          config_path = File.join(current_dir, filename)
+          return config_path if File.exist?(config_path)
+        end
+
+        parent = File.dirname(current_dir)
+        break if parent == current_dir  # Reached root
+        current_dir = parent
+      end
+
+      # Check user home directory
+      home_dir = Dir.home rescue nil
+      if home_dir
+        [".rfmt.yml", ".rfmt.yaml"].each do |filename|
+          config_path = File.join(home_dir, filename)
+          return config_path if File.exist?(config_path)
+        end
+      end
+
+      nil
+    end
+
+    # Check if configuration file exists
+    # @return [Boolean] true if config file exists
+    def self.exists?
+      !find.nil?
+    end
+
+    # Load and validate configuration file
+    # @param path [String, nil] Path to config file (default: auto-detect)
+    # @return [Hash] Loaded configuration
+    def self.load(path = nil)
+      require 'yaml'
+
+      config_path = path || find
+
+      unless config_path
+        warn "No configuration file found, using defaults"
+        return {}
+      end
+
+      YAML.load_file(config_path)
+    rescue Errno::ENOENT
+      raise Error, "Configuration file not found: #{config_path}"
+    rescue Psych::SyntaxError => e
+      raise Error, "Invalid YAML in configuration file: #{e.message}"
+    end
+  end
 end
