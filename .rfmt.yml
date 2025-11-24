@@ -1,0 +1,33 @@
+# rfmt Configuration File
+# This file controls how rfmt formats your Ruby code.
+# See https://github.com/fujitanisora/rfmt for full documentation.
+
+version: "1.0"
+
+# Formatting options
+formatting:
+  # Maximum line length before wrapping (40-500)
+  line_length: 100
+
+  # Number of spaces or tabs per indentation level (1-8)
+  indent_width: 2
+
+  # Use "spaces" or "tabs" for indentation
+  indent_style: "spaces"
+
+  # Quote style for strings: "double", "single", or "consistent"
+  quote_style: "double"
+
+# Files to include in formatting (glob patterns)
+include:
+  - "**/*.rb"
+  - "**/*.rake"
+  - "**/Rakefile"
+  - "**/Gemfile"
+
+# Files to exclude from formatting (glob patterns)
+exclude:
+  - "vendor/**/*"
+  - "tmp/**/*"
+  - "node_modules/**/*"
+  - "db/schema.rb"

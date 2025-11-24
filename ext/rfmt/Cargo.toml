@@ -38,6 +38,7 @@ env_logger = "0.11"
 # Configuration
 config = "0.14"
 toml = "0.8"
+dirs = "5.0"
 
 # CLI (optional)
 clap = { version = "4.4", features = ["derive"], optional = true }
