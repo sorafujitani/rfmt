@@ -65,15 +65,36 @@ Built-in logging system:
 - Performance metrics and timing data
 - Debug context information
 
-### Editor Integration
+## Performance Benchmarks
 
-Compatible editors:
+Performance comparison with RuboCop on a Rails project (111 files, 3,231 lines):
 
-- Visual Studio Code
-- RubyMine / IntelliJ IDEA
-- Vim / Neovim
-- Emacs
-- Sublime Text
+### Benchmark Results (Rails Project)
+
+| Scenario | rfmt | RuboCop | Speedup |
+|----------|------|---------|---------|
+| **Single File** | ~190ms | ~1.35s | **7.3x faster** |
+| **Directory (14 files)** | 168ms | 1.67s | **10.0x faster** |
+| **Full Project (111 files)** | 173ms | 10.09s | **58.5x faster** |
+| **Check Mode (CI/CD)** | 172ms | 1.55s | **9.0x faster** |
+
+### Key Metrics
+
+- Single file: Formats in ~190ms
+- Scaling: 58x faster on full project (111 files)
+- CI/CD: Check time reduced from 10.09s to 0.173s (98% reduction)
+- Variance: Low standard deviation across runs
+
+### Throughput Comparison
+
+| Directory | rfmt | RuboCop | Difference |
+|-----------|------|---------|------------|
+| app/models (14 files) | 83.5 files/s | 8.4 files/s | **10x throughput** |
+| test/ (30 files) | 168.1 files/s | 18.1 files/s | **9.3x throughput** |
+
+*Benchmark environment: Apple Silicon (arm64), macOS Darwin 23.6.0, Ruby 3.4.5*
+
+See [detailed benchmark report](docspriv/benchmark_report.md) for full data.
 
 ## Installation
 
@@ -312,37 +333,6 @@ class User < ApplicationRecord
 end
 ```
 
-## Performance Benchmarks
-
-Performance comparison with RuboCop on a Rails project (111 files, 3,231 lines):
-
-### Benchmark Results (Rails Project)
-
-| Scenario | rfmt | RuboCop | Speedup |
-|----------|------|---------|---------|
-| **Single File** | ~190ms | ~1.35s | **7.3x faster** |
-| **Directory (14 files)** | 168ms | 1.67s | **10.0x faster** |
-| **Full Project (111 files)** | 173ms | 10.09s | **58.5x faster** |
-| **Check Mode (CI/CD)** | 172ms | 1.55s | **9.0x faster** |
-
-### Key Metrics
-
-- Single file: Formats in ~190ms
-- Scaling: 58x faster on full project (111 files)
-- CI/CD: Check time reduced from 10.09s to 0.173s (98% reduction)
-- Variance: Low standard deviation across runs
-
-### Throughput Comparison
-
-| Directory | rfmt | RuboCop | Difference |
-|-----------|------|---------|------------|
-| app/models (14 files) | 83.5 files/s | 8.4 files/s | **10x throughput** |
-| test/ (30 files) | 168.1 files/s | 18.1 files/s | **9.3x throughput** |
-
-*Benchmark environment: Apple Silicon (arm64), macOS Darwin 23.6.0, Ruby 3.4.5*
-
-See [detailed benchmark report](docspriv/benchmark_report.md) for full data.
-
 ## Documentation
 
 Documentation is available in the [docs](docs/) directory. See [User Guide](docs/user_guide.md) or [Contributing Guide](CONTRIBUTING.md) for details.
@@ -358,7 +348,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 | Feature | rfmt | RuboCop |
 |---------|------|---------|
 | **Primary Purpose** | Code formatting | Linting + formatting |
-| **Speed** | 58x faster (tested benchmark) | Ruby-based |
+| **Speed** | 58x faster (tested benchmark) | Baseline |
 | **Configuration** | Minimal | Extensive |
 | **Code Quality Checks** | No | Yes |
 | **Bug Detection** | No | Yes |
@@ -377,7 +367,6 @@ Everyone interacting in the rfmt project's codebases, issue trackers, chat rooms
 
 - 📖 [Documentation](docs/)
 - 🐛 [Issues](https://github.com/fujitanisora/rfmt/issues)
-- 💬 [Discussions](https://github.com/fujitanisora/rfmt/discussions)
 - 📧 Email: fujitanisora0414@gmail.com
 
 ## Acknowledgments
