@@ -97,6 +97,7 @@ RSpec.describe Rfmt::Configuration do
 
   describe '#files_to_format' do
     let(:temp_dir) { Dir.mktmpdir }
+    let(:original_dir) { Dir.pwd }
 
     before do
       # Create test file structure
@@ -111,6 +112,8 @@ RSpec.describe Rfmt::Configuration do
     end
 
     after do
+      # Return to original directory before cleanup
+      Dir.chdir(original_dir) rescue nil
       FileUtils.rm_rf(temp_dir)
     end
 

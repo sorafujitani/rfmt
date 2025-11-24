@@ -89,7 +89,7 @@ RSpec.describe Rfmt::CLI do
         cli.options = { check: true, write: false }
 
         # Should not raise SystemExit since file is already formatted
-        expect { cli.format(temp_file.path) }.not_to raise_error(SystemExit)
+        expect { cli.format(temp_file.path) }.not_to raise_error
       end
     end
 

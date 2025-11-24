@@ -10,6 +10,7 @@ RSpec.describe 'Parallel Processing' do
   let(:cli) { Rfmt::CLI.new }
   let(:temp_dir) { Dir.mktmpdir }
   let(:test_files) { [] }
+  let(:original_dir) { Dir.pwd }
 
   let(:unformatted_code) do
     <<~RUBY
@@ -36,6 +37,8 @@ RSpec.describe 'Parallel Processing' do
   end
 
   after do
+    # Return to original directory before cleanup
+    Dir.chdir(original_dir) rescue nil
     test_files.each { |f| File.unlink(f) if File.exist?(f) }
     FileUtils.rm_rf(temp_dir)
   end

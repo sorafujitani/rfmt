@@ -12,6 +12,7 @@ RSpec.describe Rfmt::Cache do
   let(:cache_dir) { File.join(temp_dir, 'cache') }
   let(:cache) { described_class.new(cache_dir: cache_dir) }
   let(:test_file) { Tempfile.new(['test', '.rb'], temp_dir) }
+  let(:original_dir) { Dir.pwd }
 
   let(:test_code) do
     <<~RUBY
@@ -29,6 +30,8 @@ RSpec.describe Rfmt::Cache do
   end
 
   after do
+    # Return to original directory before cleanup
+    Dir.chdir(original_dir) rescue nil
     test_file.unlink if test_file.path && File.exist?(test_file.path)
     FileUtils.rm_rf(temp_dir)
   end
@@ -252,6 +255,7 @@ RSpec.describe 'Cache Integration with CLI' do
   let(:temp_dir) { Dir.mktmpdir }
   let(:cache_dir) { File.join(temp_dir, 'cache') }
   let(:test_file) { Tempfile.new(['test', '.rb'], temp_dir) }
+  let(:original_dir) { Dir.pwd }
 
   let(:unformatted_code) do
     <<~RUBY
@@ -273,6 +277,8 @@ RSpec.describe 'Cache Integration with CLI' do
   end
 
   after do
+    # Return to original directory before cleanup
+    Dir.chdir(original_dir) rescue nil
     test_file.unlink if test_file.path && File.exist?(test_file.path)
     FileUtils.rm_rf(temp_dir)
   end
