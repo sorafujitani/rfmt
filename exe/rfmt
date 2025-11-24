@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'rfmt/cli'
+
+begin
+  Rfmt::CLI.start(ARGV)
+rescue Interrupt
+  puts "\nInterrupted"
+  exit(130)
+rescue StandardError => e
+  warn "Error: #{e.message}"
+  warn e.backtrace.join("\n") if ENV['DEBUG']
+  exit(1)
+end

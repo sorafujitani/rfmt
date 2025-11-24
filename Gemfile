@@ -8,6 +8,12 @@ gemspec
 # Parser
 gem "prism", "~> 1.6.0"
 
+# CLI
+gem "thor", "~> 1.3"
+gem "diffy", "~> 3.4"
+gem "diff-lcs", "~> 1.5"
+gem "parallel", "~> 1.24"
+
 # Development
 gem "irb"
 gem "rake", "~> 13.0"

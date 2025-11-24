@@ -1151,6 +1151,7 @@ dependencies = [
  "magnus",
  "proptest",
  "rayon",
+ "rb-sys",
  "rmp-serde",
  "serde",
  "serde_json",
