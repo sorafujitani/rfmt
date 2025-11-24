@@ -2,7 +2,7 @@
 
 <div align="center">
 
-⚡ A fast, opinionated Ruby code formatter written in Rust ⚡
+A Ruby code formatter written in Rust
 
 [![Gem Version](https://badge.fury.io/rb/rfmt.svg)](https://badge.fury.io/rb/rfmt)
 [![Test Status](https://github.com/fujitanisora/rfmt/workflows/test/badge.svg)](https://github.com/fujitanisora/rfmt/actions)
@@ -20,54 +20,54 @@
 
 ## What is rfmt?
 
-**rfmt** is a lightning-fast Ruby code formatter that enforces consistent style across your codebase. It's designed to be:
+**rfmt** is a Ruby code formatter that enforces consistent style across your codebase. Key characteristics:
 
-- **Fast**: Written in Rust for maximum performance
-- **Opinionated**: Minimal configuration, consistent results
-- **Idempotent**: Running it multiple times produces the same output
-- **Comment-preserving**: Your comments stay exactly where they should
-- **Production-ready**: Comprehensive error handling and logging
+- **Rust implementation**: Provides faster execution than Ruby-based tools
+- **Opinionated**: Minimal configuration with consistent output
+- **Idempotent**: Running multiple times produces identical results
+- **Comment preservation**: Maintains existing comment placement
+- **Error handling**: Includes structured error messages and logging
 
 ## Features
 
-### ⚡ Performance
+### Performance
 
-rfmt is built with Rust, making it significantly faster than pure-Ruby formatters:
+Built with Rust for improved execution speed:
 
-- Formats thousands of lines per second
-- Parallel processing support
-- Smart caching for unchanged files
+- Benchmark shows 7-58x faster than RuboCop depending on project size (see Performance Benchmarks section)
+- Processes 168 files/second in tested Rails project
+- Supports parallel processing
 
-### 🎨 Consistent Style
+### Consistent Style
 
-rfmt enforces a consistent code style across your entire project:
+Enforces code style rules:
 
 - Automatic indentation
-- Consistent spacing and alignment
-- Quote style normalization
+- Spacing and alignment normalization
+- Quote style standardization
 - Method definition formatting
 
-### 🔍 Smart Error Handling
+### Error Handling
 
-rfmt provides detailed, actionable error messages:
+Provides structured error messages:
 
-- **Error codes** (E001-E999) for easy troubleshooting
-- **Code snippets** showing exactly where errors occur
-- **Help URLs** linking to detailed documentation
-- **Recovery strategies** to handle partial formatting
+- Error codes (E001-E999) for categorization
+- Code snippets showing error locations
+- Help URLs linking to documentation
+- Recovery strategies for handling errors
 
-### 📊 Comprehensive Logging
+### Logging
 
-Built-in logging system for debugging and monitoring:
+Built-in logging system:
 
-- Multiple log levels (ERROR, WARN, INFO, DEBUG, TRACE)
-- Structured output for easy parsing
-- Performance metrics and timing information
-- Debug context for complex operations
+- 5 log levels (ERROR, WARN, INFO, DEBUG, TRACE)
+- Structured output format
+- Performance metrics and timing data
+- Debug context information
 
-### 🧩 Editor Integration
+### Editor Integration
 
-Works with your favorite editor:
+Compatible editors:
 
 - Visual Studio Code
 - RubyMine / IntelliJ IDEA
@@ -168,7 +168,7 @@ Create a configuration file with default settings:
 rfmt init
 ```
 
-This creates a `.rfmt.yml` file with sensible defaults:
+This creates a `.rfmt.yml` file with default settings:
 
 ```yaml
 version: "1.0"
@@ -234,7 +234,7 @@ config = Rfmt::Config.load
 
 ## Error Handling
 
-rfmt provides detailed error messages with actionable solutions:
+rfmt provides structured error messages:
 
 ```
 [Rfmt::ParseError] Parse error in app/models/user.rb:15:10
@@ -269,7 +269,7 @@ See the [Error Reference](docs/error_reference.md) for detailed information.
 
 ## Logging
 
-rfmt includes a comprehensive logging system:
+rfmt includes a logging system:
 
 ```ruby
 # Logs are automatically output during initialization
@@ -314,9 +314,9 @@ end
 
 ## Performance Benchmarks
 
-rfmt demonstrates exceptional performance compared to RuboCop, tested on a real Rails project (111 files, 3,231 lines):
+Performance comparison with RuboCop on a Rails project (111 files, 3,231 lines):
 
-### Real-World Performance (Rails Project)
+### Benchmark Results (Rails Project)
 
 | Scenario | rfmt | RuboCop | Speedup |
 |----------|------|---------|---------|
@@ -325,12 +325,12 @@ rfmt demonstrates exceptional performance compared to RuboCop, tested on a real 
 | **Full Project (111 files)** | 173ms | 10.09s | **58.5x faster** |
 | **Check Mode (CI/CD)** | 172ms | 1.55s | **9.0x faster** |
 
-### Key Highlights
+### Key Metrics
 
-- ⚡ **Instant formatting**: Single files format in under 200ms
-- 🚀 **Scales exceptionally**: 58x faster on full project checks
-- 💨 **CI/CD optimized**: Reduces check time from 10s to 0.17s (99% reduction)
-- 📊 **Consistent performance**: Stable execution times with low variance
+- Single file: Formats in ~190ms
+- Scaling: 58x faster on full project (111 files)
+- CI/CD: Check time reduced from 10.09s to 0.173s (98% reduction)
+- Variance: Low standard deviation across runs
 
 ### Throughput Comparison
 
@@ -339,13 +339,13 @@ rfmt demonstrates exceptional performance compared to RuboCop, tested on a real 
 | app/models (14 files) | 83.5 files/s | 8.4 files/s | **10x throughput** |
 | test/ (30 files) | 168.1 files/s | 18.1 files/s | **9.3x throughput** |
 
-*Benchmarks run on Apple Silicon (arm64), macOS Darwin 23.6.0, Ruby 3.4.5*
+*Benchmark environment: Apple Silicon (arm64), macOS Darwin 23.6.0, Ruby 3.4.5*
 
-See [detailed benchmark report](docspriv/benchmark_report.md) for complete analysis.
+See [detailed benchmark report](docspriv/benchmark_report.md) for full data.
 
 ## Documentation
 
-Comprehensive documentation is available in the [docs](docs/) directory. See our [User Guide](docs/user_guide.md) or [Contributing Guide](CONTRIBUTING.md) for more details.
+Documentation is available in the [docs](docs/) directory. See [User Guide](docs/user_guide.md) or [Contributing Guide](CONTRIBUTING.md) for details.
 
 ## Contributing
 
@@ -358,12 +358,12 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 | Feature | rfmt | RuboCop |
 |---------|------|---------|
 | **Primary Purpose** | Code formatting | Linting + formatting |
-| **Speed** | **58x faster** (real benchmark) | Moderate (Ruby) |
+| **Speed** | 58x faster (tested benchmark) | Ruby-based |
 | **Configuration** | Minimal | Extensive |
 | **Code Quality Checks** | No | Yes |
 | **Bug Detection** | No | Yes |
 
-**Recommendation**: Use rfmt for fast formatting, RuboCop for code quality checks. They complement each other perfectly.
+**Note**: rfmt focuses on formatting speed, while RuboCop provides additional code quality analysis. They can be used together.
 
 ## License
 
@@ -390,8 +390,6 @@ Everyone interacting in the rfmt project's codebases, issue trackers, chat rooms
 
 <div align="center">
 
-Made with ❤️ by [Fujitani Sora](https://github.com/fs0414)
-
-**⭐ Star us on GitHub — it motivates us a lot!**
+Created by [Fujitani Sora](https://github.com/fs0414)
 
 </div>
