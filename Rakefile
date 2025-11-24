@@ -1,81 +1,81 @@
 # frozen_string_literal: true
 
-require "bundler/gem_tasks"
-require "rspec/core/rake_task"
+require 'bundler/gem_tasks'
+require 'rspec/core/rake_task'
 
 RSpec::Core::RakeTask.new(:spec)
 
-require "rubocop/rake_task"
+require 'rubocop/rake_task'
 
 RuboCop::RakeTask.new
 
-require "rb_sys/extensiontask"
+require 'rb_sys/extensiontask'
 
 task build: :compile
 
-GEMSPEC = Gem::Specification.load("rfmt.gemspec")
+GEMSPEC = Gem::Specification.load('rfmt.gemspec')
 
-RbSys::ExtensionTask.new("rfmt", GEMSPEC) do |ext|
-  ext.lib_dir = "lib/rfmt"
+RbSys::ExtensionTask.new('rfmt', GEMSPEC) do |ext|
+  ext.lib_dir = 'lib/rfmt'
 end
 
 task default: %i[compile spec rubocop]
 
 # Development tasks
 namespace :dev do
-  desc "Run all tests (Ruby + Rust)"
+  desc 'Run all tests (Ruby + Rust)'
   task :test_all do
-    puts "Running Ruby tests..."
-    Rake::Task["spec"].invoke
+    puts 'Running Ruby tests...'
+    Rake::Task['spec'].invoke
 
     puts "\nRunning Rust tests..."
-    system("cargo test --manifest-path ext/rfmt/Cargo.toml") || abort("Rust tests failed")
+    system('cargo test --manifest-path ext/rfmt/Cargo.toml') || abort('Rust tests failed')
   end
 
-  desc "Run Rust tests only"
+  desc 'Run Rust tests only'
   task :test_rust do
-    system("cargo test --manifest-path ext/rfmt/Cargo.toml") || abort("Rust tests failed")
+    system('cargo test --manifest-path ext/rfmt/Cargo.toml') || abort('Rust tests failed')
   end
 
-  desc "Run Rust tests with output"
+  desc 'Run Rust tests with output'
   task :test_rust_verbose do
-    system("cargo test --manifest-path ext/rfmt/Cargo.toml -- --nocapture") || abort("Rust tests failed")
+    system('cargo test --manifest-path ext/rfmt/Cargo.toml -- --nocapture') || abort('Rust tests failed')
   end
 
-  desc "Check Rust code with clippy"
+  desc 'Check Rust code with clippy'
   task :clippy do
-    system("cargo clippy --manifest-path ext/rfmt/Cargo.toml -- -D warnings") || abort("Clippy found issues")
+    system('cargo clippy --manifest-path ext/rfmt/Cargo.toml -- -D warnings') || abort('Clippy found issues')
   end
 
-  desc "Format Rust code"
+  desc 'Format Rust code'
   task :fmt_rust do
-    system("cargo fmt --manifest-path ext/rfmt/Cargo.toml")
+    system('cargo fmt --manifest-path ext/rfmt/Cargo.toml')
   end
 
-  desc "Check Rust formatting"
+  desc 'Check Rust formatting'
   task :fmt_rust_check do
-    system("cargo fmt --manifest-path ext/rfmt/Cargo.toml -- --check") || abort("Rust code needs formatting")
+    system('cargo fmt --manifest-path ext/rfmt/Cargo.toml -- --check') || abort('Rust code needs formatting')
   end
 
-  desc "Build Rust extension in release mode"
+  desc 'Build Rust extension in release mode'
   task :build_release do
-    system("cargo build --manifest-path ext/rfmt/Cargo.toml --release") || abort("Release build failed")
+    system('cargo build --manifest-path ext/rfmt/Cargo.toml --release') || abort('Release build failed')
   end
 
-  desc "Clean all build artifacts"
+  desc 'Clean all build artifacts'
   task :clean do
-    system("cargo clean --manifest-path ext/rfmt/Cargo.toml")
-    FileUtils.rm_rf("lib/rfmt/rfmt.bundle") if File.exist?("lib/rfmt/rfmt.bundle")
-    FileUtils.rm_rf("tmp")
+    system('cargo clean --manifest-path ext/rfmt/Cargo.toml')
+    FileUtils.rm_rf('lib/rfmt/rfmt.bundle')
+    FileUtils.rm_rf('tmp')
   end
 
-  desc "Run benchmarks"
+  desc 'Run benchmarks'
   task :bench do
-    puts "Running benchmarks..."
-    system("bundle exec rspec spec --tag benchmark") || abort("Benchmarks failed")
+    puts 'Running benchmarks...'
+    system('bundle exec rspec spec --tag benchmark') || abort('Benchmarks failed')
   end
 
-  desc "Show project statistics"
+  desc 'Show project statistics'
   task :stats do
     puts "\n=== Project Statistics ==="
     puts "\nRuby files:"
@@ -89,18 +89,18 @@ namespace :dev do
     puts "  Rust tests: #{rust_tests}"
   end
 
-  desc "Interactive development console"
+  desc 'Interactive development console'
   task :console do
-    require "irb"
-    require "rfmt"
+    require 'irb'
+    require 'rfmt'
     ARGV.clear
     IRB.start
   end
 end
 
 # Aliases for common tasks
-desc "Alias for dev:test_all"
-task test_all: "dev:test_all"
+desc 'Alias for dev:test_all'
+task test_all: 'dev:test_all'
 
-desc "Alias for dev:console"
-task console: "dev:console"
+desc 'Alias for dev:console'
+task console: 'dev:console'

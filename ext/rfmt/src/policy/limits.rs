@@ -1,4 +1,4 @@
-use crate::error::{RfmtError, Result};
+use crate::error::{Result, RfmtError};
 use log::{debug, warn};
 use std::cell::RefCell;
 use std::path::Path;

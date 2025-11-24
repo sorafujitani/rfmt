@@ -10,6 +10,7 @@ module Rfmt
     # @return [String, nil] The node name or nil if not available
     def extract_node_name(node)
       return nil unless node.respond_to?(:name)
+
       node.name.to_s
     end
 
@@ -55,6 +56,7 @@ module Rfmt
     # @return [String, nil] The message name or nil if not available
     def extract_message_name(call_node)
       return nil unless call_node.respond_to?(:message)
+
       call_node.message.to_s
     end
 
@@ -63,6 +65,7 @@ module Rfmt
     # @return [String, nil] The string content or nil if not available
     def extract_string_content(string_node)
       return nil unless string_node.respond_to?(:content)
+
       string_node.content
     end
 
@@ -71,6 +74,7 @@ module Rfmt
     # @return [String, nil] The value as string or nil if not available
     def extract_literal_value(node)
       return nil unless node.respond_to?(:value)
+
       node.value.to_s
     end
   end

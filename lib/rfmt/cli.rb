@@ -72,7 +72,7 @@ module Rfmt
         original_count = files.size
         files = files.select { |file| cache.needs_formatting?(file) }
         skipped = original_count - files.size
-        say "Skipped #{skipped} unchanged file(s) (cache hit)", :blue if skipped > 0 && options[:verbose]
+        say "Skipped #{skipped} unchanged file(s) (cache hit)", :blue if skipped.positive? && options[:verbose]
       end
 
       if files.empty?

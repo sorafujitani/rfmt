@@ -1,7 +1,7 @@
 pub mod limits;
 pub mod validation;
 
-use crate::error::{RfmtError, Result};
+use crate::error::{Result, RfmtError};
 use std::path::{Path, PathBuf};
 
 /// Security policy for rfmt operations
@@ -38,7 +38,7 @@ impl SecurityPolicy {
     /// Create a strict security policy with tighter limits
     pub fn strict() -> Self {
         Self {
-            max_file_size: 5 * 1024 * 1024, // 5MB
+            max_file_size: 5 * 1024 * 1024,     // 5MB
             max_memory_usage: 50 * 1024 * 1024, // 50MB
             timeout_seconds: 15,
             max_recursion_depth: 500,
@@ -50,7 +50,7 @@ impl SecurityPolicy {
     /// Create a permissive security policy with relaxed limits
     pub fn permissive() -> Self {
         Self {
-            max_file_size: 50 * 1024 * 1024, // 50MB
+            max_file_size: 50 * 1024 * 1024,     // 50MB
             max_memory_usage: 500 * 1024 * 1024, // 500MB
             timeout_seconds: 120,
             max_recursion_depth: 5000,
@@ -94,7 +94,7 @@ impl SecurityPolicy {
 impl Default for SecurityPolicy {
     fn default() -> Self {
         Self {
-            max_file_size: 10 * 1024 * 1024, // 10MB
+            max_file_size: 10 * 1024 * 1024,     // 10MB
             max_memory_usage: 100 * 1024 * 1024, // 100MB
             timeout_seconds: 30,
             max_recursion_depth: 1000,

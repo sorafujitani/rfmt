@@ -1,8 +1,8 @@
+use crate::error::{Result, RfmtError};
+use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
-use log::{debug, info, warn};
-use crate::error::{RfmtError, Result};
 
 /// Complete configuration structure matching .rfmt.yml format
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -185,13 +185,12 @@ impl Config {
             source: e,
         })?;
 
-        let config: Config = serde_yaml::from_str(&contents).map_err(|e| {
-            RfmtError::ConfigError {
+        let config: Config =
+            serde_yaml::from_str(&contents).map_err(|e| RfmtError::ConfigError {
                 message: format!("Failed to parse YAML: {}", e),
                 file: path.to_path_buf(),
                 suggestion: "Check YAML syntax and ensure all keys are valid".to_string(),
-            }
-        })?;
+            })?;
 
         config.validate(path)?;
 
@@ -357,10 +356,7 @@ impl Default for Config {
             version: "1.0".to_string(),
             parser: ParserConfig::default(),
             formatting: FormattingConfig::default(),
-            include: vec![
-                "**/*.rb".to_string(),
-                "**/*.rake".to_string(),
-            ],
+            include: vec!["**/*.rb".to_string(), "**/*.rake".to_string()],
             exclude: vec![
                 "vendor/**/*".to_string(),
                 "tmp/**/*".to_string(),
@@ -414,7 +410,10 @@ mod tests {
         assert_eq!(config.version, "1.0");
         assert_eq!(config.formatting.line_length, 100);
         assert_eq!(config.formatting.indent_width, 2);
-        assert!(matches!(config.formatting.indent_style, IndentStyle::Spaces));
+        assert!(matches!(
+            config.formatting.indent_style,
+            IndentStyle::Spaces
+        ));
     }
 
     #[test]
@@ -554,6 +553,9 @@ formatting:
         let config = Config::load_file(file.path()).unwrap();
         assert_eq!(config.formatting.line_length, 80);
         assert_eq!(config.formatting.indent_width, 2); // default
-        assert!(matches!(config.formatting.indent_style, IndentStyle::Spaces)); // default
+        assert!(matches!(
+            config.formatting.indent_style,
+            IndentStyle::Spaces
+        )); // default
     }
 }

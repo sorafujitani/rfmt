@@ -12,9 +12,9 @@ RSpec.describe Rfmt::PrismBridge do
     end
 
     it 'raises error for invalid syntax' do
-      expect {
+      expect do
         described_class.parse('class Foo def')
-      }.to raise_error(Rfmt::PrismBridge::ParseError)
+      end.to raise_error(Rfmt::PrismBridge::ParseError)
     end
   end
 end

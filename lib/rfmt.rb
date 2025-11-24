@@ -1,13 +1,15 @@
 # frozen_string_literal: true
 
-require_relative "rfmt/version"
-require_relative "rfmt/rfmt"
-require_relative "rfmt/prism_bridge"
+require_relative 'rfmt/version'
+require_relative 'rfmt/rfmt'
+require_relative 'rfmt/prism_bridge'
 
 module Rfmt
   class Error < StandardError; end
-  class RfmtError < Error; end  # Errors from Rust side
-  class ValidationError < RfmtError; end  # AST validation errors
+  # Errors from Rust side
+  class RfmtError < Error; end
+  # AST validation errors
+  class ValidationError < RfmtError; end
 
   # Format Ruby source code
   # @param source [String] Ruby source code to format
@@ -18,16 +20,14 @@ module Rfmt
 
     # Step 2: Format in Rust
     # Pass both source and AST to enable source extraction fallback
-    formatted = format_code(source, prism_json)
-
-    formatted
+    format_code(source, prism_json)
   rescue PrismBridge::ParseError => e
     # Re-raise with more context
     raise Error, "Failed to parse Ruby code: #{e.message}"
-  rescue RfmtError => e
+  rescue RfmtError
     # Rust side errors are re-raised as-is to preserve error details
     raise
-  rescue => e
+  rescue StandardError => e
     raise Error, "Unexpected error during formatting: #{e.class}: #{e.message}"
   end
 
@@ -98,10 +98,10 @@ module Rfmt
     # @param path [String] Path where to create the config file (default: .rfmt.yml)
     # @param force [Boolean] Overwrite existing file if true
     # @return [Boolean] true if file was created, false if already exists
-    def self.init(path = ".rfmt.yml", force: false)
+    def self.init(path = '.rfmt.yml', force: false)
       if File.exist?(path) && !force
         warn "Configuration file already exists: #{path}"
-        warn "Use force: true to overwrite"
+        warn 'Use force: true to overwrite'
         return false
       end
 
@@ -116,20 +116,25 @@ module Rfmt
       current_dir = Dir.pwd
 
       loop do
-        [".rfmt.yml", ".rfmt.yaml"].each do |filename|
+        ['.rfmt.yml', '.rfmt.yaml'].each do |filename|
           config_path = File.join(current_dir, filename)
           return config_path if File.exist?(config_path)
         end
 
         parent = File.dirname(current_dir)
-        break if parent == current_dir  # Reached root
+        break if parent == current_dir # Reached root
+
         current_dir = parent
       end
 
       # Check user home directory
-      home_dir = Dir.home rescue nil
+      home_dir = begin
+        Dir.home
+      rescue StandardError
+        nil
+      end
       if home_dir
-        [".rfmt.yml", ".rfmt.yaml"].each do |filename|
+        ['.rfmt.yml', '.rfmt.yaml'].each do |filename|
           config_path = File.join(home_dir, filename)
           return config_path if File.exist?(config_path)
         end
@@ -153,7 +158,7 @@ module Rfmt
       config_path = path || find
 
       unless config_path
-        warn "No configuration file found, using defaults"
+        warn 'No configuration file found, using defaults'
         return {}
       end
 

@@ -77,14 +77,14 @@ module Rfmt
       after_count = @cache_data.size
       pruned = before_count - after_count
 
-      save if pruned > 0
+      save if pruned.positive?
       pruned
     end
 
     private
 
     def ensure_cache_dir
-      FileUtils.mkdir_p(@cache_dir) unless Dir.exist?(@cache_dir)
+      FileUtils.mkdir_p(@cache_dir)
     rescue StandardError => e
       raise CacheError, "Failed to create cache directory: #{e.message}"
     end

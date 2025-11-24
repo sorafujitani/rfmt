@@ -1,4 +1,4 @@
-use crate::error::{RfmtError, Result};
+use crate::error::{Result, RfmtError};
 use crate::policy::SecurityPolicy;
 use log::{debug, warn};
 use std::path::{Path, PathBuf};
@@ -19,10 +19,7 @@ pub fn validate_path(path: &Path, policy: &SecurityPolicy) -> Result<PathBuf> {
         return Err(RfmtError::IoError {
             file: path.to_path_buf(),
             message: "File does not exist".to_string(),
-            source: std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "File not found",
-            ),
+            source: std::io::Error::new(std::io::ErrorKind::NotFound, "File not found"),
         });
     }
 
@@ -73,10 +70,7 @@ pub fn validate_path(path: &Path, policy: &SecurityPolicy) -> Result<PathBuf> {
 
 /// Validate file extension
 fn validate_file_extension(path: &Path) -> Result<()> {
-    let extension = path
-        .extension()
-        .and_then(|ext| ext.to_str())
-        .unwrap_or("");
+    let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
 
     match extension {
         "rb" | "rake" | "ru" => Ok(()),

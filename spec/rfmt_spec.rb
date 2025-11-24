@@ -24,9 +24,9 @@ RSpec.describe Rfmt do
     it 'raises error for invalid Ruby syntax' do
       invalid_source = 'class Foo def'
 
-      expect {
+      expect do
         Rfmt.format(invalid_source)
-      }.to raise_error(Rfmt::Error)
+      end.to raise_error(Rfmt::Error)
     end
   end
 

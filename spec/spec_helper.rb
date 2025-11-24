@@ -19,6 +19,8 @@ RSpec.configure do |config|
 
   # Ensure we're in the correct directory after all tests complete
   config.after(:suite) do
-    Dir.chdir(ORIGINAL_TEST_DIR) rescue nil
+    Dir.chdir(ORIGINAL_TEST_DIR)
+  rescue StandardError
+    nil
   end
 end

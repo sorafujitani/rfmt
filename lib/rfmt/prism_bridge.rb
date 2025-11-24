@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require "prism"
-require "json"
-require_relative "prism_node_extractor"
+require 'prism'
+require 'json'
+require_relative 'prism_node_extractor'
 
 module Rfmt
   # PrismBridge provides the Ruby-side integration with the Prism parser
@@ -20,9 +20,7 @@ module Rfmt
     def self.parse(source)
       result = Prism.parse(source)
 
-      if result.failure?
-        handle_parse_errors(result)
-      end
+      handle_parse_errors(result) if result.failure?
 
       serialize_ast_with_comments(result)
     end
@@ -35,11 +33,9 @@ module Rfmt
     def self.parse_file(file_path)
       source = File.read(file_path)
       parse(source)
-    rescue Errno::ENOENT => e
+    rescue Errno::ENOENT
       raise ParseError, "File not found: #{file_path}"
     end
-
-    private
 
     # Handle parsing errors from Prism
     def self.handle_parse_errors(result)
@@ -67,7 +63,7 @@ module Rfmt
     def self.serialize_ast_with_comments(result)
       comments = result.comments.map do |comment|
         {
-          comment_type: comment.class.name.split("::").last.downcase.gsub("comment", ""),
+          comment_type: comment.class.name.split('::').last.downcase.gsub('comment', ''),
           location: {
             start_line: comment.location.start_line,
             start_column: comment.location.start_column,
@@ -77,14 +73,14 @@ module Rfmt
             end_offset: comment.location.end_offset
           },
           text: comment.location.slice,
-          position: "leading" # Default position, will be refined by Rust
+          position: 'leading' # Default position, will be refined by Rust
         }
       end
 
       JSON.generate({
-        ast: convert_node(result.value),
-        comments: comments
-      })
+                      ast: convert_node(result.value),
+                      comments: comments
+                    })
     end
 
     # Convert a Prism node to our internal representation
@@ -105,8 +101,8 @@ module Rfmt
     def self.node_type_name(node)
       # Prism node class names are like "Prism::ProgramNode"
       # We want just "program_node" in snake_case
-      node.class.name.split("::").last.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
-        .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase
+      node.class.name.split('::').last.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+          .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase
     end
 
     # Extract location information from node
@@ -129,58 +125,56 @@ module Rfmt
       begin
         # Different node types have different child accessors
         children = case node
-        when Prism::ProgramNode
-          node.statements ? node.statements.body : []
-        when Prism::StatementsNode
-          node.body || []
-        when Prism::ClassNode
-          [
-            node.constant_path,
-            node.superclass,
-            node.body
-          ].compact
-        when Prism::ModuleNode
-          [
-            node.constant_path,
-            node.body
-          ].compact
-        when Prism::DefNode
-          params = if node.parameters
-            node.parameters.child_nodes.compact
-          else
-            []
-          end
-          params + [node.body].compact
-        when Prism::CallNode
-          result = []
-          result << node.receiver if node.receiver
-          if node.arguments
-            result.concat(node.arguments.child_nodes.compact)
-          end
-          result << node.block if node.block
-          result
-        when Prism::IfNode, Prism::UnlessNode
-          [
-            node.predicate,
-            node.statements,
-            node.consequent
-          ].compact
-        when Prism::ArrayNode
-          node.elements || []
-        when Prism::HashNode
-          node.elements || []
-        when Prism::BlockNode
-          params = if node.parameters
-            node.parameters.child_nodes.compact
-          else
-            []
-          end
-          params + [node.body].compact
-        else
-          # For unknown types, try to get child nodes if they exist
-          []
-        end
-      rescue => e
+                   when Prism::ProgramNode
+                     node.statements ? node.statements.body : []
+                   when Prism::StatementsNode
+                     node.body || []
+                   when Prism::ClassNode
+                     [
+                       node.constant_path,
+                       node.superclass,
+                       node.body
+                     ].compact
+                   when Prism::ModuleNode
+                     [
+                       node.constant_path,
+                       node.body
+                     ].compact
+                   when Prism::DefNode
+                     params = if node.parameters
+                                node.parameters.child_nodes.compact
+                              else
+                                []
+                              end
+                     params + [node.body].compact
+                   when Prism::CallNode
+                     result = []
+                     result << node.receiver if node.receiver
+                     result.concat(node.arguments.child_nodes.compact) if node.arguments
+                     result << node.block if node.block
+                     result
+                   when Prism::IfNode, Prism::UnlessNode
+                     [
+                       node.predicate,
+                       node.statements,
+                       node.consequent
+                     ].compact
+                   when Prism::ArrayNode
+                     node.elements || []
+                   when Prism::HashNode
+                     node.elements || []
+                   when Prism::BlockNode
+                     params = if node.parameters
+                                node.parameters.child_nodes.compact
+                              else
+                                []
+                              end
+                     params + [node.body].compact
+                   else
+                     # For unknown types, try to get child nodes if they exist
+                     []
+                   end
+      rescue StandardError => e
         # Log warning in debug mode but continue processing
         warn "Warning: Failed to extract children from #{node.class}: #{e.message}" if $DEBUG
         children = []
@@ -195,43 +189,43 @@ module Rfmt
 
       case node
       when Prism::ClassNode
-        if name = extract_node_name(node)
-          metadata["name"] = name
+        if (name = extract_node_name(node))
+          metadata['name'] = name
         end
-        if superclass = extract_superclass_name(node)
-          metadata["superclass"] = superclass
+        if (superclass = extract_superclass_name(node))
+          metadata['superclass'] = superclass
         end
       when Prism::ModuleNode
-        if name = extract_node_name(node)
-          metadata["name"] = name
+        if (name = extract_node_name(node))
+          metadata['name'] = name
         end
       when Prism::DefNode
-        if name = extract_node_name(node)
-          metadata["name"] = name
+        if (name = extract_node_name(node))
+          metadata['name'] = name
         end
-        metadata["parameters_count"] = extract_parameter_count(node).to_s
+        metadata['parameters_count'] = extract_parameter_count(node).to_s
       when Prism::CallNode
-        if name = extract_node_name(node)
-          metadata["name"] = name
+        if (name = extract_node_name(node))
+          metadata['name'] = name
         end
-        if message = extract_message_name(node)
-          metadata["message"] = message
+        if (message = extract_message_name(node))
+          metadata['message'] = message
         end
       when Prism::StringNode
-        if content = extract_string_content(node)
-          metadata["content"] = content
+        if (content = extract_string_content(node))
+          metadata['content'] = content
         end
       when Prism::IntegerNode
-        if value = extract_literal_value(node)
-          metadata["value"] = value
+        if (value = extract_literal_value(node))
+          metadata['value'] = value
         end
       when Prism::FloatNode
-        if value = extract_literal_value(node)
-          metadata["value"] = value
+        if (value = extract_literal_value(node))
+          metadata['value'] = value
         end
       when Prism::SymbolNode
-        if value = extract_literal_value(node)
-          metadata["value"] = value
+        if (value = extract_literal_value(node))
+          metadata['value'] = value
         end
       end
 
@@ -239,7 +233,7 @@ module Rfmt
     end
 
     # Extract comments associated with the node
-    def self.extract_comments(node)
+    def self.extract_comments(_node)
       # Prism attaches comments to the parse result, not individual nodes
       # For Phase 1, we'll return empty array and implement in Phase 2
       []

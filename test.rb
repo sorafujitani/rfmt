@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rfmt'
 
 puts "rfmt version: #{Rfmt::VERSION}"
@@ -11,5 +13,5 @@ code = <<~RUBY
 RUBY
 
 formatted = Rfmt.format(code)
-puts "Formatted code:"
+puts 'Formatted code:'
 puts formatted

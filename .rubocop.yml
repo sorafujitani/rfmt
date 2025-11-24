@@ -4,11 +4,17 @@ AllCops:
   Exclude:
     - 'vendor/**/*'
     - 'spec/fixtures/**/*'
+    - 'tmp/**/*'
+    - 'pkg/**/*'
+    - 'ext/rfmt/spec/**/*'
 
 # RSpec files often have large describe/context blocks
 Metrics/BlockLength:
+  Max: 50
   Exclude:
     - 'spec/**/*_spec.rb'
+    - 'rfmt.gemspec'
+    - 'Rakefile'
 
 # Allow constants in RSpec test files
 Lint/ConstantDefinitionInBlock:
@@ -17,9 +23,61 @@ Lint/ConstantDefinitionInBlock:
 
 # Show diff method is intentionally verbose for debugging
 Metrics/AbcSize:
+  Max: 20
   Exclude:
     - 'spec/snapshot_spec.rb'
+    - 'lib/rfmt/cli.rb'
+    - 'lib/rfmt/prism_bridge.rb'
+    - 'bin/release'
 
 Metrics/MethodLength:
+  Max: 20
   Exclude:
     - 'spec/snapshot_spec.rb'
+    - 'lib/rfmt.rb'
+    - 'lib/rfmt/cli.rb'
+    - 'lib/rfmt/prism_bridge.rb'
+    - 'lib/rfmt/prism_node_extractor.rb'
+    - 'bin/release'
+    - 'Rakefile'
+
+Metrics/ClassLength:
+  Max: 200
+  Exclude:
+    - 'lib/rfmt/cli.rb'
+    - 'lib/rfmt/prism_bridge.rb'
+    - 'bin/release'
+
+Metrics/CyclomaticComplexity:
+  Max: 10
+  Exclude:
+    - 'lib/rfmt/cli.rb'
+    - 'lib/rfmt/prism_bridge.rb'
+
+Metrics/PerceivedComplexity:
+  Max: 10
+  Exclude:
+    - 'lib/rfmt/cli.rb'
+    - 'lib/rfmt/prism_bridge.rb'
+
+# Lint violations that are acceptable for specific cases
+Lint/DuplicateBranch:
+  Enabled: false
+
+Lint/IneffectiveAccessModifier:
+  Enabled: false
+
+# Gemspec warnings
+Gemspec/DuplicatedAssignment:
+  Enabled: false
+
+Gemspec/RequiredRubyVersion:
+  Enabled: false
+
+# Allow missing top-level documentation for internal modules
+Style/Documentation:
+  Enabled: false
+
+# Allow predicate methods without ? suffix for init-like methods
+Naming/PredicateMethod:
+  Enabled: false
