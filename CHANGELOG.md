@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.2.2] - 2025-01-25
+
+### Fixed
+- Fixed blank line formatting to output single blank line instead of double blank lines
+
 ## [0.2.1] - 2025-01-25
 
 ### Fixed
