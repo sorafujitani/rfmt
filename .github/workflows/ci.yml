@@ -25,16 +25,16 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
+
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
-
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: ${{ matrix.rust }}
 
     - name: Cache Rust dependencies
       uses: actions/cache@v4
@@ -68,16 +68,16 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
+
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: '3.3'
         bundler-cache: true
-
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        components: clippy
 
     - name: Run RuboCop
       run: bundle exec rubocop
@@ -91,14 +91,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: '3.3'
         bundler-cache: true
-
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
 
     - name: Install dependencies
       run: bundle install
