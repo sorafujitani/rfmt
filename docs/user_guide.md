@@ -37,7 +37,7 @@ bundle exec rake compile
 ### Verify Installation
 
 ```bash
-rfmt --version
+rfmt version
 ```
 
 ## Basic Usage
