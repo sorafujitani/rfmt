@@ -154,13 +154,13 @@ rfmt init --force
 Format a single file:
 
 ```bash
-rfmt format lib/user.rb
+rfmt exec lib/user.rb
 ```
 
 Format multiple files:
 
 ```bash
-rfmt format lib/**/*.rb
+rfmt exec lib/**/*.rb
 ```
 
 Check if files need formatting (CI/CD):
@@ -172,7 +172,7 @@ rfmt check .
 Show diff without modifying files:
 
 ```bash
-rfmt format lib/user.rb --diff
+rfmt exec lib/user.rb --diff
 ```
 
 ### Ruby API

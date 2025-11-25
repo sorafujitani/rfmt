@@ -45,25 +45,25 @@ rfmt version
 ### 単一ファイルのフォーマット
 
 ```bash
-rfmt format lib/my_file.rb
+rfmt exec lib/my_file.rb
 ```
 
 ファイルを変更せずにプレビューするには：
 
 ```bash
-rfmt format --check lib/my_file.rb
+rfmt exec --check lib/my_file.rb
 ```
 
 ### 複数ファイルのフォーマット
 
 ```bash
-rfmt format lib/**/*.rb
+rfmt exec lib/**/*.rb
 ```
 
 ### プロジェクト全体のフォーマット
 
 ```bash
-rfmt format .
+rfmt exec .
 ```
 
 ### フォーマットが必要かチェック
@@ -79,7 +79,7 @@ CI/CDパイプラインで便利です。フォーマットが必要なファイ
 ### 標準入力からのフォーマット
 
 ```bash
-echo "class Foo;def bar;42;end;end" | rfmt format -
+echo "class Foo;def bar;42;end;end" | rfmt exec -
 ```
 
 ## 設定
@@ -176,9 +176,9 @@ formatting:
 
 ### コマンド
 
-#### `rfmt format [FILES...]`
+#### `rfmt exec [FILES...]`
 
-Rubyファイルをフォーマットします。
+Rubyファイルに対してフォーマットを実行します。
 
 **オプション:**
 - `--check`: ファイルを変更せずにフォーマットが必要かチェック
@@ -190,18 +190,18 @@ Rubyファイルをフォーマットします。
 
 ```bash
 # ファイルをフォーマットして変更
-rfmt format lib/user.rb lib/post.rb
+rfmt exec lib/user.rb lib/post.rb
 
 # フォーマットをチェック（CI/CD用）
-rfmt format --check lib/**/*.rb
+rfmt exec --check lib/**/*.rb
 
 # 変更せずに差分を表示
-rfmt format --diff lib/user.rb
+rfmt exec --diff lib/user.rb
 ```
 
 #### `rfmt check [FILES...]`
 
-ファイルがフォーマットを必要とするかチェック（`format --check` のエイリアス）。
+ファイルがフォーマットを必要とするかチェック（`exec --check` のエイリアス）。
 
 ```bash
 rfmt check .
@@ -417,7 +417,7 @@ formatting:
 
 2. **設定が見つからない:** `.rfmt.yml` がgitにコミットされていることを確認
 
-3. **ファイルがフォーマットを必要とする:** まずローカルで `rfmt format .` を実行
+3. **ファイルがフォーマットを必要とする:** まずローカルで `rfmt exec .` を実行
 
 ## FAQ
 
@@ -468,7 +468,7 @@ repos:
     hooks:
       - id: rfmt
         name: rfmt
-        entry: bundle exec rfmt format
+        entry: bundle exec rfmt exec
         language: system
         files: \.rb$
 ```
@@ -481,7 +481,7 @@ pre-commit:
   commands:
     rfmt:
       glob: "*.rb"
-      run: bundle exec rfmt format {staged_files}
+      run: bundle exec rfmt exec {staged_files}
 ```
 
 ### サポートされているRubyバージョンは？

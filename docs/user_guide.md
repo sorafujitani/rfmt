@@ -45,25 +45,25 @@ rfmt version
 ### Format a Single File
 
 ```bash
-rfmt format lib/my_file.rb
+rfmt exec lib/my_file.rb
 ```
 
 This will format the file in place. To preview changes without modifying the file:
 
 ```bash
-rfmt format --check lib/my_file.rb
+rfmt exec --check lib/my_file.rb
 ```
 
 ### Format Multiple Files
 
 ```bash
-rfmt format lib/**/*.rb
+rfmt exec lib/**/*.rb
 ```
 
 ### Format Entire Project
 
 ```bash
-rfmt format .
+rfmt exec .
 ```
 
 ### Check if Files Need Formatting
@@ -79,7 +79,7 @@ This is useful in CI/CD pipelines. It exits with a non-zero status if any files 
 ### Format from Standard Input
 
 ```bash
-echo "class Foo;def bar;42;end;end" | rfmt format -
+echo "class Foo;def bar;42;end;end" | rfmt exec -
 ```
 
 ## Configuration
@@ -176,9 +176,9 @@ formatting:
 
 ### Commands
 
-#### `rfmt format [FILES...]`
+#### `rfmt exec [FILES...]`
 
-Format Ruby files.
+Execute formatting on Ruby files.
 
 **Options:**
 - `--check`: Check if files need formatting without modifying them
@@ -190,18 +190,18 @@ Format Ruby files.
 
 ```bash
 # Format and modify files
-rfmt format lib/user.rb lib/post.rb
+rfmt exec lib/user.rb lib/post.rb
 
 # Check formatting (CI/CD)
-rfmt format --check lib/**/*.rb
+rfmt exec --check lib/**/*.rb
 
 # Show diff without modifying
-rfmt format --diff lib/user.rb
+rfmt exec --diff lib/user.rb
 ```
 
 #### `rfmt check [FILES...]`
 
-Check if files need formatting (alias for `format --check`).
+Check if files need formatting (alias for `exec --check`).
 
 ```bash
 rfmt check .
@@ -416,7 +416,7 @@ formatting:
 
 2. **Configuration not found:** Ensure `.rfmt.yml` is committed to git
 
-3. **Files need formatting:** Run `rfmt format .` locally first
+3. **Files need formatting:** Run `rfmt exec .` locally first
 
 ## FAQ
 
@@ -467,7 +467,7 @@ repos:
     hooks:
       - id: rfmt
         name: rfmt
-        entry: bundle exec rfmt format
+        entry: bundle exec rfmt exec
         language: system
         files: \.rb$
 ```
@@ -480,7 +480,7 @@ pre-commit:
   commands:
     rfmt:
       glob: "*.rb"
-      run: bundle exec rfmt format {staged_files}
+      run: bundle exec rfmt exec {staged_files}
 ```
 
 ### What Ruby versions are supported?

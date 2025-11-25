@@ -17,7 +17,7 @@ RSpec.describe Rfmt::CLI do
     end
   end
 
-  describe '#format' do
+  describe '#exec' do
     it 'formats a Ruby file' do
       require 'tempfile'
 
@@ -25,7 +25,7 @@ RSpec.describe Rfmt::CLI do
         file.write("class Foo\ndef bar\n42\nend\nend")
         file.close
 
-        expect { cli.format([file.path]) }.not_to raise_error
+        expect { cli.exec([file.path]) }.not_to raise_error
       end
     end
   end

@@ -43,7 +43,7 @@ module Rfmt
     class_option :config, type: :string, desc: 'Path to configuration file'
     class_option :verbose, type: :boolean, aliases: '-v', desc: 'Verbose output'
 
-    desc 'format [FILES]', 'Format Ruby files'
+    desc 'exec [FILES]', 'Format Ruby files'
     option :write, type: :boolean, default: true, desc: 'Write formatted output'
     option :check, type: :boolean, desc: "Check if files are formatted (don't write)"
     option :diff, type: :boolean, desc: 'Show diff of changes'
@@ -52,7 +52,7 @@ module Rfmt
     option :jobs, type: :numeric, desc: 'Number of parallel jobs (default: CPU count)'
     option :cache, type: :boolean, default: true, desc: 'Use cache to skip unchanged files'
     option :cache_dir, type: :string, desc: 'Cache directory (default: ~/.cache/rfmt)'
-    def format(*files)
+    def exec(*files)
       config = load_config
       files = files.empty? ? config.files_to_format : files.flatten
 
@@ -92,7 +92,7 @@ module Rfmt
 
     desc 'check [FILES]', 'Check if files need formatting'
     def check(*files)
-      invoke :format, files, check: true, write: false
+      invoke :exec, files, check: true, write: false
     end
 
     desc 'version', 'Show version'
