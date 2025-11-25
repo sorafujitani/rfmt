@@ -1,5 +1,25 @@
 ## [Unreleased]
 
+## [0.3.0] - 2025-11-25
+
+### Changed
+- **BREAKING**: Default configuration file name changed from `rfmt.yml` to `.rfmt.yml`
+  - `rfmt init` now creates `.rfmt.yml` instead of `rfmt.yml`
+  - Configuration file search order updated: `.rfmt.yml` > `.rfmt.yaml` > `rfmt.yml` > `rfmt.yaml`
+  - This follows Ruby community conventions for hidden configuration files
+  - Backward compatibility maintained: `rfmt.yml` is still supported
+- Updated README.md to use `.rfmt.yml` in all examples and documentation
+- Updated benchmark data with latest accurate measurements (3,241 lines, more realistic performance ratios)
+- Removed exaggerated performance claims from README and documentation
+- Simplified feature descriptions in README (removed Error Handling and Logging from Features section)
+
+### Documentation
+- Updated user guides (English and Japanese) to reflect `.rfmt.yml` as default
+- Updated version information in documentation to 0.2.4 → 0.3.0
+- Updated benchmark documentation with accurate data from latest measurements
+- Added configuration verification examples in examples/ directory
+- Improved Ruby API examples with clearer input/output distinction
+
 ## [0.2.4] - 2025-11-25
 
 ### Fixed
