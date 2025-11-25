@@ -3,9 +3,7 @@
 require 'thor'
 
 # Check for verbose flag before loading rfmt to set debug mode early
-if ARGV.include?('-v') || ARGV.include?('--verbose')
-  ENV['RFMT_DEBUG'] = '1'
-end
+ENV['RFMT_DEBUG'] = '1' if ARGV.include?('-v') || ARGV.include?('--verbose')
 
 require 'rfmt'
 require 'rfmt/configuration'
