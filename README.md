@@ -175,6 +175,14 @@ Show diff without modifying files:
 rfmt exec lib/user.rb --diff
 ```
 
+Enable verbose output for debugging:
+
+```bash
+rfmt exec lib/user.rb --verbose
+# or use environment variable
+DEBUG=1 rfmt exec lib/user.rb
+```
+
 ### Ruby API
 
 **Input (unformatted code):**

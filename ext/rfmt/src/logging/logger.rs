@@ -22,10 +22,22 @@ impl RfmtLogger {
     }
 
     pub fn init() {
+        // Check for debug mode via environment variables
+        let debug_mode = std::env::var("DEBUG").is_ok()
+            || std::env::var("RFMT_DEBUG").is_ok()
+            || std::env::var("RUST_LOG").is_ok();
+
         let level = std::env::var("RFMT_LOG")
             .ok()
             .and_then(|s| s.parse().ok())
-            .unwrap_or(LevelFilter::Info);
+            .unwrap_or_else(|| {
+                if debug_mode {
+                    LevelFilter::Info
+                } else {
+                    // In normal mode, only show warnings and errors
+                    LevelFilter::Warn
+                }
+            });
         let logger = Self::new(level);
         log::set_boxed_logger(Box::new(logger)).expect("Failed to initialize logger");
         log::set_max_level(LevelFilter::Trace);

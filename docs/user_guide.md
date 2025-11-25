@@ -174,6 +174,13 @@ formatting:
 
 ## Command Line Interface
 
+### Global Options
+
+These options are available for all commands:
+
+- `--config PATH`: Path to custom configuration file
+- `--verbose` or `-v`: Enable verbose output and debug logging
+
 ### Commands
 
 #### `rfmt exec [FILES...]`
@@ -417,6 +424,35 @@ formatting:
 2. **Configuration not found:** Ensure `.rfmt.yml` is committed to git
 
 3. **Files need formatting:** Run `rfmt exec .` locally first
+
+### Getting Debug Information
+
+If you encounter issues, you can enable debug logging to see detailed information:
+
+**Using the --verbose flag:**
+```bash
+rfmt exec file.rb --verbose
+# or
+rfmt exec file.rb -v
+```
+
+**Using environment variables:**
+```bash
+# Enable debug logging with DEBUG
+DEBUG=1 rfmt exec file.rb
+
+# Enable rfmt-specific debug logging
+RFMT_DEBUG=1 rfmt exec file.rb
+
+# Control log level directly
+RFMT_LOG=debug rfmt exec file.rb
+```
+
+Debug logging will show:
+- Initialization messages
+- Configuration file discovery
+- File processing details
+- Internal Rust extension operations
 
 ## FAQ
 

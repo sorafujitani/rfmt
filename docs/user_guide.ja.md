@@ -174,6 +174,13 @@ formatting:
 
 ## コマンドラインインターフェース
 
+### グローバルオプション
+
+すべてのコマンドで使用可能なオプション：
+
+- `--config PATH`: カスタム設定ファイルのパス
+- `--verbose` または `-v`: 詳細な出力とデバッグログを有効化
+
 ### コマンド
 
 #### `rfmt exec [FILES...]`
@@ -418,6 +425,35 @@ formatting:
 2. **設定が見つからない:** `.rfmt.yml` がgitにコミットされていることを確認
 
 3. **ファイルがフォーマットを必要とする:** まずローカルで `rfmt exec .` を実行
+
+### デバッグ情報の取得
+
+問題が発生した場合、デバッグログを有効にして詳細情報を確認できます：
+
+**--verboseフラグの使用:**
+```bash
+rfmt exec file.rb --verbose
+# または
+rfmt exec file.rb -v
+```
+
+**環境変数の使用:**
+```bash
+# DEBUGでデバッグログを有効化
+DEBUG=1 rfmt exec file.rb
+
+# rfmt固有のデバッグログを有効化
+RFMT_DEBUG=1 rfmt exec file.rb
+
+# ログレベルを直接制御
+RFMT_LOG=debug rfmt exec file.rb
+```
+
+デバッグログで表示される内容：
+- 初期化メッセージ
+- 設定ファイルの検出
+- ファイル処理の詳細
+- 内部Rust拡張の操作
 
 ## FAQ
 
