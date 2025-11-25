@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rfmt (0.3.0)
+    rfmt (0.4.0)
       rb_sys (~> 0.9.91)
 
 GEM

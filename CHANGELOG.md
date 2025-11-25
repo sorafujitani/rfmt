@@ -1,5 +1,22 @@
 ## [Unreleased]
 
+## [0.4.0] - 2025-11-26
+
+### Added
+- Verbose mode option (`--verbose` flag) for detailed output during formatting
+- Git commit hook configuration with Lefthook integration for automatic formatting
+- RubyGems badge and installation instructions in README
+
+### Changed
+- Improved documentation structure and readability in user guides (English and Japanese)
+- Enhanced logging system with verbose output support
+- Updated benchmark documentation in README
+
+### Fixed
+- Command formatting to execution conversion issues
+- Documentation version command display
+- Various code quality improvements based on Clippy suggestions
+
 ## [0.3.0] - 2025-11-25
 
 ### Changed
