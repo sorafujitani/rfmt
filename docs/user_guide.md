@@ -121,9 +121,9 @@ exclude:
 
 rfmt looks for configuration in the following order:
 
-1. `.rfmt.yml` in the current directory
-2. `.rfmt.yml` in parent directories (walking up the tree)
-3. `~/.rfmt.yml` (user-level configuration)
+1. `.rfmt.yml`, `.rfmt.yaml`, `rfmt.yml`, or `rfmt.yaml` in the current directory
+2. Same files in parent directories (walking up the tree)
+3. Same files in home directory (user-level configuration)
 4. Default configuration
 
 ### Configuration Options
@@ -228,25 +228,24 @@ rfmt version
 ```ruby
 require 'rfmt'
 
+# Input (unformatted code)
 source = <<~RUBY
   class User
-    def initialize(name)
-      @name=name
-    end
+  def initialize(name)
+  @name=name
+  end
   end
 RUBY
 
 formatted = Rfmt.format(source)
 puts formatted
-```
 
-**Output:**
-```ruby
-class User
-  def initialize(name)
-    @name = name
-  end
-end
+# Output (formatted code):
+# class User
+#   def initialize(name)
+#     @name=name
+#   end
+# end
 ```
 
 ### Format with Configuration
@@ -573,6 +572,6 @@ See our [Contributing Guide](../CONTRIBUTING.md) for details on:
 
 ---
 
-**Version:** 0.1.0
-**Last Updated:** 2025-11-24
+**Version:** 0.2.4
+**Last Updated:** 2025-11-25
 **License:** MIT

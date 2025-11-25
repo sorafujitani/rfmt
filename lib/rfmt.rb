@@ -95,10 +95,10 @@ module Rfmt
     YAML
 
     # Generate a default configuration file
-    # @param path [String] Path where to create the config file (default: rfmt.yml)
+    # @param path [String] Path where to create the config file (default: .rfmt.yml)
     # @param force [Boolean] Overwrite existing file if true
     # @return [Boolean] true if file was created, false if already exists
-    def self.init(path = 'rfmt.yml', force: false)
+    def self.init(path = '.rfmt.yml', force: false)
       if File.exist?(path) && !force
         warn "Configuration file already exists: #{path}"
         warn 'Use force: true to overwrite'
@@ -116,7 +116,7 @@ module Rfmt
       current_dir = Dir.pwd
 
       loop do
-        ['rfmt.yml', 'rfmt.yaml', '.rfmt.yml', '.rfmt.yaml'].each do |filename|
+        ['.rfmt.yml', '.rfmt.yaml', 'rfmt.yml', 'rfmt.yaml'].each do |filename|
           config_path = File.join(current_dir, filename)
           return config_path if File.exist?(config_path)
         end
@@ -134,7 +134,7 @@ module Rfmt
         nil
       end
       if home_dir
-        ['rfmt.yml', 'rfmt.yaml', '.rfmt.yml', '.rfmt.yaml'].each do |filename|
+        ['.rfmt.yml', '.rfmt.yaml', 'rfmt.yml', 'rfmt.yaml'].each do |filename|
           config_path = File.join(home_dir, filename)
           return config_path if File.exist?(config_path)
         end

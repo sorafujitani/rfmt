@@ -31,11 +31,7 @@ A Ruby code formatter written in Rust
 
 ### Performance
 
-Built with Rust for improved execution speed:
-
-- Benchmark shows 7-58x faster than RuboCop depending on project size (see Performance Benchmarks section)
-- Processes 168 files/second in tested Rails project
-- Supports parallel processing
+Built with Rust for improved execution speed. See Performance Benchmarks section for details.
 
 ### Consistent Style
 
@@ -48,34 +44,24 @@ Enforces code style rules:
 
 ## Performance Benchmarks
 
-Performance comparison with RuboCop on a Rails project (111 files, 3,231 lines):
+Performance comparison with RuboCop on a Rails project (111 files, 3,241 lines):
 
-### Benchmark Results (Rails Project)
+| Test Type | Files | rfmt | RuboCop | Ratio |
+|-----------|-------|------|---------|-------|
+| Single File | 1 | 191ms | 1.38s | 7.2x |
+| Directory | 14 | 176ms | 1.68s | 9.6x |
+| Full Project (check) | 111 | 172ms | 4.36s | 25.4x |
 
-| Scenario | rfmt | RuboCop | Speedup |
-|----------|------|---------|---------|
-| **Single File** | ~190ms | ~1.35s | **7.3x faster** |
-| **Directory (14 files)** | 168ms | 1.67s | **10.0x faster** |
-| **Full Project (111 files)** | 173ms | 10.09s | **58.5x faster** |
-| **Check Mode (CI/CD)** | 172ms | 1.55s | **9.0x faster** |
+**Observations:**
+- rfmt execution time remains constant (172-191ms) regardless of file count
+- Low variance across runs (standard deviation: 8-23ms)
 
-### Key Metrics
+**Test Environment:**
+- CPU: Apple Silicon (arm64)
+- Ruby: 3.4.5
+- rfmt: 0.2.4, RuboCop: 1.81.7
 
-- Single file: Formats in ~190ms
-- Scaling: 58x faster on full project (111 files)
-- CI/CD: Check time reduced from 10.09s to 0.173s (98% reduction)
-- Variance: Low standard deviation across runs
-
-### Throughput Comparison
-
-| Directory | rfmt | RuboCop | Difference |
-|-----------|------|---------|------------|
-| app/models (14 files) | 83.5 files/s | 8.4 files/s | **10x throughput** |
-| test/ (30 files) | 168.1 files/s | 18.1 files/s | **9.3x throughput** |
-
-*Benchmark environment: Apple Silicon (arm64), macOS Darwin 23.6.0, Ruby 3.4.5*
-
-See [detailed benchmark report](docspriv/benchmark_report.md) for full data.
+See [detailed benchmark report](docs/benchmark.md) for complete data.
 
 ## Installation
 
@@ -121,7 +107,7 @@ First, create a configuration file with default settings:
 rfmt init
 ```
 
-This creates a `rfmt.yml` file with default settings:
+This creates a `.rfmt.yml` file with default settings:
 
 ```yaml
 version: "1.0"
@@ -149,7 +135,7 @@ exclude:
 
 ```bash
 # Specify custom path
-rfmt init --path config/rfmt.yml
+rfmt init --path config/.rfmt.yml
 
 # Overwrite existing configuration
 rfmt init --force
@@ -216,9 +202,9 @@ end
 
 rfmt automatically searches for configuration files in this order:
 
-1. Current directory (`rfmt.yml`, `rfmt.yaml`, `.rfmt.yml`, or `.rfmt.yaml`)
+1. Current directory (`.rfmt.yml`, `.rfmt.yaml`, `rfmt.yml`, or `rfmt.yaml`)
 2. Parent directories (up to root)
-3. User home directory (`rfmt.yml`, `rfmt.yaml`, `.rfmt.yml`, or `.rfmt.yaml`)
+3. User home directory (`.rfmt.yml`, `.rfmt.yaml`, `rfmt.yml`, or `rfmt.yaml`)
 4. Default settings (if no file found)
 
 #### Ruby API for Configuration
@@ -227,11 +213,11 @@ rfmt automatically searches for configuration files in this order:
 require 'rfmt'
 
 # Generate configuration file
-Rfmt::Config.init('rfmt.yml', force: false)
+Rfmt::Config.init('.rfmt.yml', force: false)
 
 # Find configuration file
 config_path = Rfmt::Config.find
-# => "/Users/username/project/rfmt.yml"
+# => "/Users/username/project/.rfmt.yml"
 
 # Check if configuration exists
 Rfmt::Config.exists?
@@ -241,59 +227,6 @@ Rfmt::Config.exists?
 config = Rfmt::Config.load
 # => {"version"=>"1.0", "formatting"=>{"line_length"=>100, ...}, ...}
 ```
-
-## Error Handling
-
-rfmt provides structured error messages:
-
-```
-[Rfmt::ParseError] Parse error in app/models/user.rb:15:10
-Expected closing 'end' for class definition
-
-Code:
-  13 | class User < ApplicationRecord
-  14 |   def initialize(name)
-  15 |     @name = name
-     |          ^
-  16 | # Missing 'end' for method
-  17 | end
-
-Help: https://rfmt.dev/errors/E001
-```
-
-### Error Codes
-
-| Code | Type | Description |
-|------|------|-------------|
-| E001 | ParseError | Ruby syntax error |
-| E002 | ConfigError | Invalid configuration |
-| E003 | IoError | File read/write error |
-| E004 | FormattingError | Formatting process error |
-| E005 | RuleError | Rule application failed |
-| E006 | UnsupportedFeature | Feature not yet supported |
-| E007 | PrismError | Parser integration error |
-| E008 | FormatError | General formatting error |
-| E999 | InternalError | Internal bug (please report!) |
-
-See the [Error Reference](docs/error_reference.md) for detailed information.
-
-## Logging
-
-rfmt includes a logging system:
-
-```ruby
-# Logs are automatically output during initialization
-require 'rfmt'
-# [INFO] rfmt - Initializing rfmt Rust extension
-# [INFO] rfmt - rfmt Rust extension initialized successfully
-```
-
-Log levels:
-- **ERROR**: Critical errors
-- **WARN**: Warnings
-- **INFO**: General information (default)
-- **DEBUG**: Debug information
-- **TRACE**: Detailed trace information
 
 ## Examples
 
@@ -324,7 +257,11 @@ end
 
 ## Documentation
 
-Documentation is available in the [docs](docs/) directory. See [User Guide](docs/user_guide.md) or [Contributing Guide](CONTRIBUTING.md) for details.
+Documentation is available in the [docs](docs/) directory:
+
+- [User Guide](docs/user_guide.md) - Comprehensive usage guide
+- [Error Reference](docs/error_reference.md) - Error codes and troubleshooting
+- [Contributing Guide](CONTRIBUTING.md) - How to contribute
 
 ## Contributing
 
@@ -337,12 +274,11 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 | Feature | rfmt | RuboCop |
 |---------|------|---------|
 | **Primary Purpose** | Code formatting | Linting + formatting |
-| **Speed** | 58x faster (tested benchmark) | Baseline |
 | **Configuration** | Minimal | Extensive |
 | **Code Quality Checks** | No | Yes |
 | **Bug Detection** | No | Yes |
 
-**Note**: rfmt focuses on formatting speed, while RuboCop provides additional code quality analysis. They can be used together.
+**Note**: rfmt focuses on code formatting, while RuboCop provides additional code quality analysis. They can be used together.
 
 ## License
 

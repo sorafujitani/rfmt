@@ -8,6 +8,11 @@ AllCops:
     - 'pkg/**/*'
     - 'ext/rfmt/spec/**/*'
 
+Layout/LineLength:
+  Max: 120
+  Exclude:
+    - 'scripts/**/*'
+
 # RSpec files often have large describe/context blocks
 Metrics/BlockLength:
   Max: 50
@@ -29,6 +34,7 @@ Metrics/AbcSize:
     - 'lib/rfmt/cli.rb'
     - 'lib/rfmt/prism_bridge.rb'
     - 'bin/release'
+    - 'scripts/**/*'
 
 Metrics/MethodLength:
   Max: 20
@@ -40,6 +46,7 @@ Metrics/MethodLength:
     - 'lib/rfmt/prism_node_extractor.rb'
     - 'bin/release'
     - 'Rakefile'
+    - 'scripts/**/*'
 
 Metrics/ClassLength:
   Max: 200
@@ -47,6 +54,7 @@ Metrics/ClassLength:
     - 'lib/rfmt/cli.rb'
     - 'lib/rfmt/prism_bridge.rb'
     - 'bin/release'
+    - 'scripts/**/*'
 
 Metrics/CyclomaticComplexity:
   Max: 10
