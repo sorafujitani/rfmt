@@ -44,13 +44,20 @@ Enforces code style rules:
 
 ## Performance Benchmarks
 
-Performance comparison with RuboCop on a Rails project (111 files, 3,241 lines):
+Execution time comparison on a Rails project (111 files, 3,241 lines):
 
 | Test Type | Files | rfmt | RuboCop | Ratio |
 |-----------|-------|------|---------|-------|
 | Single File | 1 | 191ms | 1.38s | 7.2x |
 | Directory | 14 | 176ms | 1.68s | 9.6x |
 | Full Project (check) | 111 | 172ms | 4.36s | 25.4x |
+
+**About this comparison:**
+- RuboCop times include startup overhead and loading all cops (linting rules)
+- RuboCop was run with default configuration (all cops enabled)
+- rfmt is a formatting-only tool with minimal overhead
+- Both tools were measured in check mode (no file modifications)
+- Results are averages from 10 runs per test
 
 **Observations:**
 - rfmt execution time remains constant (172-191ms) regardless of file count
@@ -59,7 +66,7 @@ Performance comparison with RuboCop on a Rails project (111 files, 3,241 lines):
 **Test Environment:**
 - CPU: Apple Silicon (arm64)
 - Ruby: 3.4.5
-- rfmt: 0.2.4, RuboCop: 1.81.7
+- rfmt: 0.3.0, RuboCop: 1.81.7
 
 See [detailed benchmark report](docs/benchmark.md) for complete data.
 
