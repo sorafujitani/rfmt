@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+## [0.4.1] - 2025-11-28
+
+### Fixed
+- CLI exec message output optimization for better user experience
+- RuboCop compliance issues resolved
+
+### Changed
+- Improved output formatting with colored success/failure messages
+- Debug logs now only shown with `--verbose` flag or debug environment variables
+- Enhanced progress indicators during file processing
+
 ## [0.4.0] - 2025-11-26
 
 ### Added
