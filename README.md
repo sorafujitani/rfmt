@@ -13,6 +13,8 @@ A Ruby code formatter written in Rust
 [Documentation](#documentation) •
 [Contributing](#contributing)
 
+<a href="https://flatt.tech/oss/gmo/trampoline" target="_blank"><img src="https://flatt.tech/assets/images/badges/gmo-oss.svg" height="24px"/></a>
+
 </div>
 
 ---
