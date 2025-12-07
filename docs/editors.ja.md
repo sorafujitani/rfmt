@@ -99,25 +99,6 @@ formatter: rfmt
 formatter: rfmt
 ```
 
-## Sublime Text
-
-### LSPパッケージ
-
-1. [LSPパッケージ](https://packagecontrol.io/packages/LSP)をインストール
-2. [LSP-ruby-lsp](https://packagecontrol.io/packages/LSP-ruby-lsp)をインストール
-3. LSP.sublime-settingsで設定:
-   ```json
-   {
-     "clients": {
-       "ruby-lsp": {
-         "initializationOptions": {
-           "formatter": "rfmt"
-         }
-       }
-     }
-   }
-   ```
-
 ## トラブルシューティング
 
 ### アドオンが検出されない
