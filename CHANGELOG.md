@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+## [0.5.0] - 2025-12-07
+
+### Changed
+- Synchronized markdown command documentation
+- Added project logo
+
+### Fixed
+- Removed unnecessary exec command
+
 ## [0.4.1] - 2025-11-28
 
 ### Fixed
