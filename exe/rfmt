@@ -3,8 +3,14 @@
 
 require 'rfmt/cli'
 
+# Known subcommands - if first arg is not one of these, prepend 'format'
+SUBCOMMANDS = %w[format check version config cache init help].freeze
+
+args = ARGV.dup
+args.unshift('format') if args.empty? || (!SUBCOMMANDS.include?(args.first) && !args.first.start_with?('-'))
+
 begin
-  Rfmt::CLI.start(ARGV)
+  Rfmt::CLI.start(args)
 rescue Interrupt
   puts "\nInterrupted"
   exit(130)
