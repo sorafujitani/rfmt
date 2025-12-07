@@ -45,25 +45,25 @@ rfmt version
 ### Format a Single File
 
 ```bash
-rfmt exec lib/my_file.rb
+rfmt lib/my_file.rb
 ```
 
 This will format the file in place. To preview changes without modifying the file:
 
 ```bash
-rfmt exec --check lib/my_file.rb
+rfmt --check lib/my_file.rb
 ```
 
 ### Format Multiple Files
 
 ```bash
-rfmt exec lib/**/*.rb
+rfmt lib/**/*.rb
 ```
 
 ### Format Entire Project
 
 ```bash
-rfmt exec .
+rfmt .
 ```
 
 ### Check if Files Need Formatting
@@ -79,7 +79,7 @@ This is useful in CI/CD pipelines. It exits with a non-zero status if any files 
 ### Format from Standard Input
 
 ```bash
-echo "class Foo;def bar;42;end;end" | rfmt exec -
+echo "class Foo;def bar;42;end;end" | rfmt -
 ```
 
 ## Configuration
@@ -183,9 +183,9 @@ These options are available for all commands:
 
 ### Commands
 
-#### `rfmt exec [FILES...]`
+#### `rfmt [FILES...]` (default)
 
-Execute formatting on Ruby files.
+Format Ruby files. This is the default command.
 
 **Options:**
 - `--check`: Check if files need formatting without modifying them
@@ -197,18 +197,18 @@ Execute formatting on Ruby files.
 
 ```bash
 # Format and modify files
-rfmt exec lib/user.rb lib/post.rb
+rfmt lib/user.rb lib/post.rb
 
 # Check formatting (CI/CD)
-rfmt exec --check lib/**/*.rb
+rfmt --check lib/**/*.rb
 
 # Show diff without modifying
-rfmt exec --diff lib/user.rb
+rfmt --diff lib/user.rb
 ```
 
 #### `rfmt check [FILES...]`
 
-Check if files need formatting (alias for `exec --check`).
+Check if files need formatting (alias for `rfmt --check`).
 
 ```bash
 rfmt check .
@@ -423,7 +423,7 @@ formatting:
 
 2. **Configuration not found:** Ensure `.rfmt.yml` is committed to git
 
-3. **Files need formatting:** Run `rfmt exec .` locally first
+3. **Files need formatting:** Run `rfmt .` locally first
 
 ### Getting Debug Information
 
@@ -431,21 +431,21 @@ If you encounter issues, you can enable debug logging to see detailed informatio
 
 **Using the --verbose flag:**
 ```bash
-rfmt exec file.rb --verbose
+rfmt file.rb --verbose
 # or
-rfmt exec file.rb -v
+rfmt file.rb -v
 ```
 
 **Using environment variables:**
 ```bash
 # Enable debug logging with DEBUG
-DEBUG=1 rfmt exec file.rb
+DEBUG=1 rfmt file.rb
 
 # Enable rfmt-specific debug logging
-RFMT_DEBUG=1 rfmt exec file.rb
+RFMT_DEBUG=1 rfmt file.rb
 
 # Control log level directly
-RFMT_LOG=debug rfmt exec file.rb
+RFMT_LOG=debug rfmt file.rb
 ```
 
 Debug logging will show:
@@ -503,7 +503,7 @@ repos:
     hooks:
       - id: rfmt
         name: rfmt
-        entry: bundle exec rfmt exec
+        entry: bundle exec rfmt
         language: system
         files: \.rb$
 ```
@@ -516,7 +516,7 @@ pre-commit:
   commands:
     rfmt:
       glob: "*.rb"
-      run: bundle exec rfmt exec {staged_files}
+      run: bundle exec rfmt {staged_files}
 ```
 
 ### What Ruby versions are supported?

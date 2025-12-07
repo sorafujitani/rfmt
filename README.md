@@ -156,13 +156,13 @@ rfmt init --force
 Format a single file:
 
 ```bash
-rfmt exec lib/user.rb
+rfmt lib/user.rb
 ```
 
 Format multiple files:
 
 ```bash
-rfmt exec lib/**/*.rb
+rfmt lib/**/*.rb
 ```
 
 Check if files need formatting (CI/CD):
@@ -174,15 +174,15 @@ rfmt check .
 Show diff without modifying files:
 
 ```bash
-rfmt exec lib/user.rb --diff
+rfmt lib/user.rb --diff
 ```
 
 Enable verbose output for debugging:
 
 ```bash
-rfmt exec lib/user.rb --verbose
+rfmt lib/user.rb --verbose
 # or use environment variable
-DEBUG=1 rfmt exec lib/user.rb
+DEBUG=1 rfmt lib/user.rb
 ```
 
 ### Ruby API

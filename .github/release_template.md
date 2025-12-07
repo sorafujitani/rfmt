@@ -33,17 +33,17 @@ gem 'rfmt', '~> VERSION'
 
 Format a file:
 ```bash
-rfmt exec path/to/file.rb
+rfmt path/to/file.rb
 ```
 
 Format multiple files:
 ```bash
-rfmt exec app/**/*.rb lib/**/*.rb
+rfmt app/**/*.rb lib/**/*.rb
 ```
 
 Check formatting without making changes:
 ```bash
-rfmt exec --check app/**/*.rb
+rfmt --check app/**/*.rb
 ```
 
 ## Full Changelog

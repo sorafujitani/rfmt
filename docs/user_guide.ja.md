@@ -45,25 +45,25 @@ rfmt version
 ### 単一ファイルのフォーマット
 
 ```bash
-rfmt exec lib/my_file.rb
+rfmt lib/my_file.rb
 ```
 
 ファイルを変更せずにプレビューするには：
 
 ```bash
-rfmt exec --check lib/my_file.rb
+rfmt --check lib/my_file.rb
 ```
 
 ### 複数ファイルのフォーマット
 
 ```bash
-rfmt exec lib/**/*.rb
+rfmt lib/**/*.rb
 ```
 
 ### プロジェクト全体のフォーマット
 
 ```bash
-rfmt exec .
+rfmt .
 ```
 
 ### フォーマットが必要かチェック
@@ -79,7 +79,7 @@ CI/CDパイプラインで便利です。フォーマットが必要なファイ
 ### 標準入力からのフォーマット
 
 ```bash
-echo "class Foo;def bar;42;end;end" | rfmt exec -
+echo "class Foo;def bar;42;end;end" | rfmt -
 ```
 
 ## 設定
@@ -183,9 +183,9 @@ formatting:
 
 ### コマンド
 
-#### `rfmt exec [FILES...]`
+#### `rfmt [FILES...]`（デフォルト）
 
-Rubyファイルに対してフォーマットを実行します。
+Rubyファイルをフォーマットします。これがデフォルトコマンドです。
 
 **オプション:**
 - `--check`: ファイルを変更せずにフォーマットが必要かチェック
@@ -197,18 +197,18 @@ Rubyファイルに対してフォーマットを実行します。
 
 ```bash
 # ファイルをフォーマットして変更
-rfmt exec lib/user.rb lib/post.rb
+rfmt lib/user.rb lib/post.rb
 
 # フォーマットをチェック（CI/CD用）
-rfmt exec --check lib/**/*.rb
+rfmt --check lib/**/*.rb
 
 # 変更せずに差分を表示
-rfmt exec --diff lib/user.rb
+rfmt --diff lib/user.rb
 ```
 
 #### `rfmt check [FILES...]`
 
-ファイルがフォーマットを必要とするかチェック（`exec --check` のエイリアス）。
+ファイルがフォーマットを必要とするかチェック（`rfmt --check` のエイリアス）。
 
 ```bash
 rfmt check .
@@ -424,7 +424,7 @@ formatting:
 
 2. **設定が見つからない:** `.rfmt.yml` がgitにコミットされていることを確認
 
-3. **ファイルがフォーマットを必要とする:** まずローカルで `rfmt exec .` を実行
+3. **ファイルがフォーマットを必要とする:** まずローカルで `rfmt .` を実行
 
 ### デバッグ情報の取得
 
@@ -432,21 +432,21 @@ formatting:
 
 **--verboseフラグの使用:**
 ```bash
-rfmt exec file.rb --verbose
+rfmt file.rb --verbose
 # または
-rfmt exec file.rb -v
+rfmt file.rb -v
 ```
 
 **環境変数の使用:**
 ```bash
 # DEBUGでデバッグログを有効化
-DEBUG=1 rfmt exec file.rb
+DEBUG=1 rfmt file.rb
 
 # rfmt固有のデバッグログを有効化
-RFMT_DEBUG=1 rfmt exec file.rb
+RFMT_DEBUG=1 rfmt file.rb
 
 # ログレベルを直接制御
-RFMT_LOG=debug rfmt exec file.rb
+RFMT_LOG=debug rfmt file.rb
 ```
 
 デバッグログで表示される内容：
@@ -504,7 +504,7 @@ repos:
     hooks:
       - id: rfmt
         name: rfmt
-        entry: bundle exec rfmt exec
+        entry: bundle exec rfmt
         language: system
         files: \.rb$
 ```
@@ -517,7 +517,7 @@ pre-commit:
   commands:
     rfmt:
       glob: "*.rb"
-      run: bundle exec rfmt exec {staged_files}
+      run: bundle exec rfmt {staged_files}
 ```
 
 ### サポートされているRubyバージョンは？
