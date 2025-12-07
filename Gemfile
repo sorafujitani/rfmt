@@ -32,3 +32,8 @@ group :test do
   gem 'rspec-benchmark', '~> 0.6'
   gem 'simplecov', '~> 0.22'
 end
+
+# Ruby LSP integration (optional)
+group :development do
+  gem 'ruby-lsp', '>= 0.17.0'
+end
