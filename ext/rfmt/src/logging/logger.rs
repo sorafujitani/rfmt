@@ -37,8 +37,10 @@ impl RfmtLogger {
                 LevelFilter::Warn
             });
         let logger = Self::new(level);
-        log::set_boxed_logger(Box::new(logger)).expect("Failed to initialize logger");
-        log::set_max_level(LevelFilter::Trace);
+        // Ignore if logger is already set (e.g., in ruby_lsp environment)
+        if log::set_boxed_logger(Box::new(logger)).is_ok() {
+            log::set_max_level(LevelFilter::Trace);
+        }
     }
 }
 

@@ -54,7 +54,7 @@ fn rust_version() -> String {
 }
 
 #[magnus::init]
-fn init(ruby: &Ruby) -> Result<(), Error> {
+fn init(_ruby: &Ruby) -> Result<(), Error> {
     logging::RfmtLogger::init();
     log::info!("Initializing rfmt Rust extension");
 
@@ -63,15 +63,6 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
     module.define_singleton_method("format_code", function!(format_ruby_code, 2))?;
     module.define_singleton_method("parse_to_json", function!(parse_to_json, 1))?;
     module.define_singleton_method("rust_version", function!(rust_version, 0))?;
-
-    let rfmt_error = ruby.define_error("RfmtError", ruby.exception_standard_error())?;
-    ruby.define_error("ParseError", rfmt_error)?;
-    ruby.define_error("ConfigError", rfmt_error)?;
-    ruby.define_error("PrismError", rfmt_error)?;
-    ruby.define_error("RuleError", rfmt_error)?;
-    ruby.define_error("InternalError", rfmt_error)?;
-    ruby.define_error("FormattingError", rfmt_error)?;
-    ruby.define_error("UnsupportedFeature", rfmt_error)?;
 
     log::info!("rfmt Rust extension initialized successfully");
     Ok(())
