@@ -1,5 +1,19 @@
 ## [Unreleased]
 
+## [1.0.0] - 2025-12-11
+
+### Breaking Changes
+- First stable release (v1.0.0)
+
+### Changed
+- Set JSON as default output format
+- Updated Japanese documentation
+- Code formatting improvements
+
+### Fixed
+- TOML configuration parsing fix
+- Logger initialization fix
+
 ## [0.5.0] - 2025-12-07
 
 ### Changed
