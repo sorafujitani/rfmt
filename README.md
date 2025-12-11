@@ -10,6 +10,7 @@ A Ruby code formatter written in Rust
 [Installation](#installation) •
 [Usage](#usage) •
 [Features](#features) •
+[Editor Integration](#editor-integration) •
 [Documentation](#documentation) •
 [Contributing](#contributing)
 
@@ -272,6 +273,33 @@ class User < ApplicationRecord
   end
 end
 ```
+
+## Editor Integration
+
+### Neovim
+
+Format Ruby files on save using autocmd:
+
+```lua
+-- ~/.config/nvim/init.lua
+
+vim.api.nvim_create_autocmd("BufWritePre", {
+  pattern = { "*.rb", "*.rake", "Gemfile", "Rakefile" },
+  callback = function()
+    local filepath = vim.fn.expand("%:p")
+    local result = vim.fn.system({ "rfmt", filepath })
+    if vim.v.shell_error == 0 then
+      vim.cmd("edit!")
+    end
+  end,
+})
+```
+
+### Coming Soon
+
+- **VS Code** - Extension in development
+- **RubyMine** - Plugin in development
+- **Zed** - Extension in development
 
 ## Development
 
