@@ -3,6 +3,13 @@ use crate::config::{Config, IndentStyle};
 use crate::error::Result;
 use std::fmt::Write;
 
+/// Block style for Ruby blocks
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum BlockStyle {
+    DoEnd,  // do ... end
+    Braces, // { ... }
+}
+
 /// Code emitter that converts AST back to Ruby source code
 pub struct Emitter {
     config: Config,
@@ -115,6 +122,7 @@ impl Emitter {
             NodeType::DefNode => self.emit_method(node, indent_level)?,
             NodeType::IfNode => self.emit_if_unless(node, indent_level, false, "if")?,
             NodeType::UnlessNode => self.emit_if_unless(node, indent_level, false, "unless")?,
+            NodeType::CallNode => self.emit_call(node, indent_level)?,
             _ => self.emit_generic(node, indent_level)?,
         }
         Ok(())
@@ -426,6 +434,183 @@ impl Emitter {
             write!(self.buffer, "end")?;
         }
 
+        Ok(())
+    }
+
+    /// Emit method call, handling blocks specially for proper indentation
+    fn emit_call(&mut self, node: &Node, indent_level: usize) -> Result<()> {
+        // Emit any comments before this call
+        self.emit_comments_before(node.location.start_line, indent_level)?;
+
+        // Check if this call has a block (last child is BlockNode)
+        let has_block = node
+            .children
+            .last()
+            .map(|c| matches!(c.node_type, NodeType::BlockNode))
+            .unwrap_or(false);
+
+        if !has_block {
+            // No block - use generic emission (extracts from source)
+            return self.emit_generic_without_comments(node, indent_level);
+        }
+
+        // Has block - need to handle specially
+        let block_node = node.children.last().unwrap();
+
+        // Determine block style from source (do...end vs { })
+        let block_style = self.detect_block_style(block_node);
+
+        // Emit the call part (receiver.method(args)) from source
+        self.emit_call_without_block(node, block_node, indent_level)?;
+
+        match block_style {
+            BlockStyle::DoEnd => self.emit_do_end_block(block_node, indent_level)?,
+            BlockStyle::Braces => self.emit_brace_block(block_node, indent_level)?,
+        }
+
+        Ok(())
+    }
+
+    /// Detect whether block uses do...end or { } style
+    fn detect_block_style(&self, block_node: &Node) -> BlockStyle {
+        if self.source.is_empty() {
+            return BlockStyle::DoEnd; // Default fallback
+        }
+
+        let start = block_node.location.start_offset;
+        if let Some(first_char) = self.source.get(start..start + 1) {
+            if first_char == "{" {
+                return BlockStyle::Braces;
+            }
+        }
+
+        BlockStyle::DoEnd // Default (includes 'do' keyword)
+    }
+
+    /// Emit the method call part without the block
+    fn emit_call_without_block(
+        &mut self,
+        call_node: &Node,
+        block_node: &Node,
+        indent_level: usize,
+    ) -> Result<()> {
+        self.emit_indent(indent_level)?;
+
+        if !self.source.is_empty() {
+            let start = call_node.location.start_offset;
+            let end = block_node.location.start_offset;
+
+            if let Some(text) = self.source.get(start..end) {
+                // Trim trailing whitespace but preserve the content
+                write!(self.buffer, "{}", text.trim_end())?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Emit a do...end style block with proper indentation
+    fn emit_do_end_block(&mut self, block_node: &Node, indent_level: usize) -> Result<()> {
+        // Add space before 'do' and emit 'do'
+        write!(self.buffer, " do")?;
+
+        // Emit block parameters if present (|x, y|)
+        self.emit_block_parameters(block_node)?;
+
+        self.buffer.push('\n');
+
+        // Find and emit the body (StatementsNode among children)
+        for child in &block_node.children {
+            if matches!(child.node_type, NodeType::StatementsNode) {
+                self.emit_statements(child, indent_level + 1)?;
+                self.buffer.push('\n');
+                break;
+            }
+        }
+
+        // Emit 'end'
+        self.emit_indent(indent_level)?;
+        write!(self.buffer, "end")?;
+
+        Ok(())
+    }
+
+    /// Emit a { } style block
+    fn emit_brace_block(&mut self, block_node: &Node, indent_level: usize) -> Result<()> {
+        // Determine if block should be inline or multiline
+        let is_multiline = block_node.location.start_line != block_node.location.end_line;
+
+        if is_multiline {
+            // Multiline brace block
+            write!(self.buffer, " {{")?;
+            self.emit_block_parameters(block_node)?;
+            self.buffer.push('\n');
+
+            // Emit body
+            for child in &block_node.children {
+                if matches!(child.node_type, NodeType::StatementsNode) {
+                    self.emit_statements(child, indent_level + 1)?;
+                    self.buffer.push('\n');
+                    break;
+                }
+            }
+
+            self.emit_indent(indent_level)?;
+            write!(self.buffer, "}}")?;
+        } else {
+            // Inline brace block - extract from source to preserve spacing
+            write!(self.buffer, " ")?;
+            if let Some(text) = self
+                .source
+                .get(block_node.location.start_offset..block_node.location.end_offset)
+            {
+                write!(self.buffer, "{}", text)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Emit block parameters (|x, y|)
+    fn emit_block_parameters(&mut self, block_node: &Node) -> Result<()> {
+        if self.source.is_empty() {
+            return Ok(());
+        }
+
+        let start = block_node.location.start_offset;
+        let end = block_node.location.end_offset;
+
+        if let Some(block_source) = self.source.get(start..end) {
+            // Only look at the first line of the block for parameters
+            let first_line = block_source.lines().next().unwrap_or("");
+
+            // Find |...| pattern in the first line only
+            if let Some(pipe_start) = first_line.find('|') {
+                // Find matching pipe after first one
+                if let Some(pipe_end) = first_line[pipe_start + 1..].find('|') {
+                    let params = &first_line[pipe_start..=pipe_start + 1 + pipe_end];
+                    write!(self.buffer, " {}", params)?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Emit generic node without re-emitting comments (for use when comments already handled)
+    fn emit_generic_without_comments(&mut self, node: &Node, indent_level: usize) -> Result<()> {
+        if !self.source.is_empty() {
+            let start = node.location.start_offset;
+            let end = node.location.end_offset;
+
+            let text_owned = self.source.get(start..end).map(|s| s.to_string());
+
+            if let Some(text) = text_owned {
+                self.emit_indent(indent_level)?;
+                write!(self.buffer, "{}", text)?;
+                self.emit_trailing_comments(node.location.end_line)?;
+            }
+        }
         Ok(())
     }
 
