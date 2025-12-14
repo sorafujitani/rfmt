@@ -96,6 +96,12 @@ namespace :dev do
     ARGV.clear
     IRB.start
   end
+
+  desc 'Check node type coverage against Ruby files'
+  task :node_coverage, [:dir] do |_t, args|
+    dir = args[:dir] || 'lib/'
+    system("ruby scripts/check_node_coverage.rb #{dir}")
+  end
 end
 
 # Aliases for common tasks
