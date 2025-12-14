@@ -165,14 +165,28 @@ impl Emitter {
         for (i, child) in node.children.iter().enumerate() {
             self.emit_node(child, indent_level)?;
 
-            // Add newlines between statements, normalizing to max 1 blank line
             if i < node.children.len() - 1 {
                 let current_end_line = child.location.end_line;
-                let next_start_line = node.children[i + 1].location.start_line;
-                let line_diff = next_start_line.saturating_sub(current_end_line);
+                let next_child = &node.children[i + 1];
+                let next_start_line = next_child.location.start_line;
 
-                // Add 1 newline if consecutive, 2 newlines (1 blank line) if there was a gap
+                // Find the first comment between current and next node (if any)
+                let first_comment_line = self
+                    .all_comments
+                    .iter()
+                    .filter(|c| {
+                        c.location.start_line > current_end_line
+                            && c.location.end_line < next_start_line
+                    })
+                    .map(|c| c.location.start_line)
+                    .min();
+
+                // Calculate line diff based on whether there's a comment
+                let effective_next_line = first_comment_line.unwrap_or(next_start_line);
+                let line_diff = effective_next_line.saturating_sub(current_end_line);
+
                 let newlines = if line_diff > 1 { 2 } else { 1 };
+
                 for _ in 0..newlines {
                     self.buffer.push('\n');
                 }
@@ -683,22 +697,29 @@ impl Emitter {
 
     /// Emit generic node by extracting from source
     fn emit_generic(&mut self, node: &Node, indent_level: usize) -> Result<()> {
-        // Emit any comments before this node
         self.emit_comments_before(node.location.start_line, indent_level)?;
 
         if !self.source.is_empty() {
             let start = node.location.start_offset;
             let end = node.location.end_offset;
 
-            // Clone text first to avoid borrow conflict
             let text_owned = self.source.get(start..end).map(|s| s.to_string());
 
             if let Some(text) = text_owned {
-                // Add indentation before the extracted text
                 self.emit_indent(indent_level)?;
                 write!(self.buffer, "{}", text)?;
 
-                // Emit any trailing comments on the same line
+                // Mark comments within this node's range as emitted
+                // (they are included in the source extraction)
+                for (idx, comment) in self.all_comments.iter().enumerate() {
+                    if !self.emitted_comment_indices.contains(&idx)
+                        && comment.location.start_line >= node.location.start_line
+                        && comment.location.end_line <= node.location.end_line
+                    {
+                        self.emitted_comment_indices.push(idx);
+                    }
+                }
+
                 self.emit_trailing_comments(node.location.end_line)?;
             }
         }
