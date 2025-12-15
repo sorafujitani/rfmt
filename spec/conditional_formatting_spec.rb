@@ -11,7 +11,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
         end
       RUBY
 
-      expected = <<~RUBY.chomp
+      expected = <<~RUBY
         if x > 0
           puts "positive"
         end
@@ -30,7 +30,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
         end
       RUBY
 
-      expected = <<~RUBY.chomp
+      expected = <<~RUBY
         if x > 0
           puts "positive"
         else
@@ -53,7 +53,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
         end
       RUBY
 
-      expected = <<~RUBY.chomp
+      expected = <<~RUBY
         if x > 0
           puts "positive"
         elsif x < 0
@@ -80,7 +80,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
         end
       RUBY
 
-      expected = <<~RUBY.chomp
+      expected = <<~RUBY
         if x == 1
           puts "one"
         elsif x == 2
@@ -102,7 +102,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
         end
       RUBY
 
-      expected = <<~RUBY.chomp
+      expected = <<~RUBY
         if condition
         end
       RUBY
@@ -120,7 +120,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
         end
       RUBY
 
-      expected = <<~RUBY.chomp
+      expected = <<~RUBY
         unless x.nil?
           puts "present"
         end
@@ -139,7 +139,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
         end
       RUBY
 
-      expected = <<~RUBY.chomp
+      expected = <<~RUBY
         unless x > 0
           puts "not positive"
         else
@@ -155,7 +155,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
   describe 'postfix if/unless formatting' do
     it 'preserves postfix if' do
       source = 'puts "yes" if x > 0'
-      expected = 'puts "yes" if x > 0'
+      expected = "puts \"yes\" if x > 0\n"
 
       result = Rfmt.format(source)
       expect(result).to eq(expected)
@@ -163,7 +163,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
 
     it 'preserves postfix unless' do
       source = 'puts "yes" unless x.nil?'
-      expected = 'puts "yes" unless x.nil?'
+      expected = "puts \"yes\" unless x.nil?\n"
 
       result = Rfmt.format(source)
       expect(result).to eq(expected)
@@ -171,7 +171,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
 
     it 'formats postfix if with complex statement' do
       source = 'do_something(a, b, c) if condition?'
-      expected = 'do_something(a, b, c) if condition?'
+      expected = "do_something(a, b, c) if condition?\n"
 
       result = Rfmt.format(source)
       expect(result).to eq(expected)
@@ -185,7 +185,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
         end
       RUBY
 
-      expected = <<~RUBY.chomp
+      expected = <<~RUBY
         def foo
           return nil if x.nil?
           x * 2
@@ -204,7 +204,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
         end
       RUBY
 
-      expected = <<~RUBY.chomp
+      expected = <<~RUBY
         def validate
           return unless record
           process(record)
@@ -228,7 +228,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
         end
       RUBY
 
-      expected = <<~RUBY.chomp
+      expected = <<~RUBY
         if a > 0
           if b > 0
             puts "both positive"
@@ -253,7 +253,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
         end
       RUBY
 
-      expected = <<~RUBY.chomp
+      expected = <<~RUBY
         if a
           if b
             if c
@@ -278,7 +278,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
         end
       RUBY
 
-      expected = <<~RUBY.chomp
+      expected = <<~RUBY
         unless a.nil?
           if b > 0
             puts "a present, b positive"
@@ -303,7 +303,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
         end
       RUBY
 
-      expected = <<~RUBY.chomp
+      expected = <<~RUBY
         if x > 0
           if y > 0
             puts "x and y positive"
@@ -334,7 +334,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
         end
       RUBY
 
-      expected = <<~RUBY.chomp
+      expected = <<~RUBY
         class Validator
           def check(value)
             if value > 0
@@ -366,7 +366,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
         end
       RUBY
 
-      expected = <<~RUBY.chomp
+      expected = <<~RUBY
         def validate(record)
           return false unless record
           return false if record.invalid?
@@ -413,7 +413,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
 
     it 'formats postfix with return statement' do
       source = 'return :error if failed?'
-      expected = 'return :error if failed?'
+      expected = "return :error if failed?\n"
 
       result = Rfmt.format(source)
       expect(result).to eq(expected)

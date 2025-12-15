@@ -34,13 +34,13 @@ RSpec.describe RubyLsp::Rfmt::FormatterRunner do
     end
 
     context 'with empty source' do
-      it 'returns empty string' do
+      it 'returns newline for empty input' do
         source = ''
         document = double('Document', source: source)
 
         result = runner.run_formatting(uri, document)
 
-        expect(result).to eq('')
+        expect(result).to eq("\n")
       end
     end
   end
