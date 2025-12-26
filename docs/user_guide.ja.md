@@ -28,7 +28,7 @@ gem install rfmt
 ### ソースからインストール
 
 ```bash
-git clone https://github.com/fujitanisora/rfmt.git
+git clone https://github.com/fs0414/rfmt.git
 cd rfmt
 bundle install
 bundle exec rake compile
@@ -385,7 +385,7 @@ formatting:
 
 **原因:** コードがrfmtでまだサポートされていないRuby機能を使用
 
-**解決方法:** [ロードマップ](https://github.com/fujitanisora/rfmt/blob/main/ROADMAP.md)を確認するか、issueを作成
+**解決方法:** [ロードマップ](https://github.com/fs0414/rfmt/blob/main/ROADMAP.md)を確認するか、issueを作成
 
 ## トラブルシューティング
 
@@ -541,8 +541,8 @@ rfmtは **Ruby 3.0以上** をサポートします。以下でテストして�
 ### ヘルプはどこで得られますか？
 
 - 📖 ドキュメント: https://rfmt.dev/docs
-- 🐛 Issues: https://github.com/fujitanisora/rfmt/issues
-- 💬 Discussions: https://github.com/fujitanisora/rfmt/discussions
+- 🐛 Issues: https://github.com/fs0414/rfmt/issues
+- 💬 Discussions: https://github.com/fs0414/rfmt/discussions
 - 📧 Email: fujitanisora0414@gmail.com
 
 ## 次のステップ

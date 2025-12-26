@@ -86,8 +86,8 @@ Help: https://rfmt.dev/errors/E001
    ```
 
 **Related Issues:**
-- [#42](https://github.com/fujitanisora/rfmt/issues/42): Improved error messages for parse errors
-- [#15](https://github.com/fujitanisora/rfmt/issues/15): Support for heredoc syntax
+- [#42](https://github.com/fs0414/rfmt/issues/42): Improved error messages for parse errors
+- [#15](https://github.com/fs0414/rfmt/issues/15): Support for heredoc syntax
 
 ---
 
@@ -181,7 +181,7 @@ exclude:                  # Array of glob patterns
 ```
 
 **Related Issues:**
-- [#23](https://github.com/fujitanisora/rfmt/issues/23): Better error messages for config errors
+- [#23](https://github.com/fs0414/rfmt/issues/23): Better error messages for config errors
 
 ---
 
@@ -237,7 +237,7 @@ Help: https://rfmt.dev/errors/E003
    ```
 
 **Related Issues:**
-- [#31](https://github.com/fujitanisora/rfmt/issues/31): Better error recovery for locked files
+- [#31](https://github.com/fs0414/rfmt/issues/31): Better error recovery for locked files
 
 ---
 
@@ -289,7 +289,7 @@ Help: https://rfmt.dev/errors/E004
    ```
 
 **Related Issues:**
-- [#55](https://github.com/fujitanisora/rfmt/issues/55): Handling of complex nested blocks
+- [#55](https://github.com/fs0414/rfmt/issues/55): Handling of complex nested blocks
 
 ---
 
@@ -330,7 +330,7 @@ Help: https://rfmt.dev/errors/E005
    This is likely a bug in the formatting rules
 
 **Related Issues:**
-- [#67](https://github.com/fujitanisora/rfmt/issues/67): Rule conflict resolution
+- [#67](https://github.com/fs0414/rfmt/issues/67): Rule conflict resolution
 
 ---
 
@@ -351,7 +351,7 @@ Help: https://rfmt.dev/errors/E005
 [Rfmt::UnsupportedFeature] Unsupported feature: Pattern matching with pinning operator
 
 This feature is planned for a future release.
-Please track: https://github.com/fujitanisora/rfmt/issues/89
+Please track: https://github.com/fs0414/rfmt/issues/89
 
 Help: https://rfmt.dev/errors/E006
 ```
@@ -386,8 +386,8 @@ Help: https://rfmt.dev/errors/E006
 - Complex pattern matching edge cases
 
 **Related Issues:**
-- [#89](https://github.com/fujitanisora/rfmt/issues/89): Pattern matching support
-- [#102](https://github.com/fujitanisora/rfmt/issues/102): Numbered parameters
+- [#89](https://github.com/fs0414/rfmt/issues/89): Pattern matching support
+- [#102](https://github.com/fs0414/rfmt/issues/102): Numbered parameters
 
 ---
 
@@ -436,7 +436,7 @@ Help: https://rfmt.dev/errors/E007
    - Code that triggers the error
 
 **Related Issues:**
-- [#118](https://github.com/fujitanisora/rfmt/issues/118): Prism 1.0 compatibility
+- [#118](https://github.com/fs0414/rfmt/issues/118): Prism 1.0 compatibility
 
 ---
 
@@ -499,7 +499,7 @@ Backtrace:
   at /path/to/rfmt/src/emitter.rs:123
   at /path/to/rfmt/src/formatter.rs:456
 
-Please report this as a bug at: https://github.com/fujitanisora/rfmt/issues
+Please report this as a bug at: https://github.com/fs0414/rfmt/issues
 
 Help: https://rfmt.dev/errors/E999
 ```
@@ -525,7 +525,7 @@ Help: https://rfmt.dev/errors/E999
    ```
 
 **Related Issues:**
-- [#new](https://github.com/fujitanisora/rfmt/issues/new): Report new bug
+- [#new](https://github.com/fs0414/rfmt/issues/new): Report new bug
 
 ---
 
@@ -564,9 +564,9 @@ puts Rfmt.rust_version
 
 If you encounter an error not covered here:
 
-1. **Search existing issues:** https://github.com/fujitanisora/rfmt/issues
-2. **Check discussions:** https://github.com/fujitanisora/rfmt/discussions
-3. **Create a new issue:** https://github.com/fujitanisora/rfmt/issues/new
+1. **Search existing issues:** https://github.com/fs0414/rfmt/issues
+2. **Check discussions:** https://github.com/fs0414/rfmt/discussions
+3. **Create a new issue:** https://github.com/fs0414/rfmt/issues/new
 
 When reporting issues, include:
 

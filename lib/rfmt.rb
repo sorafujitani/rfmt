@@ -61,7 +61,7 @@ module Rfmt
     DEFAULT_CONFIG = <<~YAML
       # rfmt Configuration File
       # This file controls how rfmt formats your Ruby code.
-      # See https://github.com/fujitanisora/rfmt for full documentation.
+      # See https://github.com/fs0414/rfmt for full documentation.
 
       version: "1.0"
 
