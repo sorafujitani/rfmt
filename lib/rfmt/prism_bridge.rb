@@ -312,14 +312,14 @@ module Rfmt
 
       case node
       when Prism::ClassNode
-        if (name = extract_node_name(node))
+        if (name = extract_class_or_module_name(node))
           metadata['name'] = name
         end
         if (superclass = extract_superclass_name(node))
           metadata['superclass'] = superclass
         end
       when Prism::ModuleNode
-        if (name = extract_node_name(node))
+        if (name = extract_class_or_module_name(node))
           metadata['name'] = name
         end
       when Prism::DefNode
@@ -327,6 +327,15 @@ module Rfmt
           metadata['name'] = name
         end
         metadata['parameters_count'] = extract_parameter_count(node).to_s
+        # Check if this is a class method (def self.method_name)
+        if node.respond_to?(:receiver) && node.receiver
+          receiver = node.receiver
+          if receiver.is_a?(Prism::SelfNode)
+            metadata['receiver'] = 'self'
+          elsif receiver.respond_to?(:slice)
+            metadata['receiver'] = receiver.slice
+          end
+        end
       when Prism::CallNode
         if (name = extract_node_name(node))
           metadata['name'] = name
@@ -350,6 +359,9 @@ module Rfmt
         if (value = extract_literal_value(node))
           metadata['value'] = value
         end
+      when Prism::IfNode, Prism::UnlessNode
+        # Detect ternary operator: if_keyword_loc is nil for ternary
+        metadata['is_ternary'] = node.if_keyword_loc.nil?.to_s if node.respond_to?(:if_keyword_loc)
       end
 
       metadata

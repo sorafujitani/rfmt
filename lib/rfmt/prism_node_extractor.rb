@@ -14,6 +14,31 @@ module Rfmt
       node.name.to_s
     end
 
+    # Extract full name from class or module node (handles namespaced names like Foo::Bar::Baz)
+    # @param node [Prism::ClassNode, Prism::ModuleNode] The class or module node
+    # @return [String, nil] The full name or nil if not available
+    def extract_class_or_module_name(node)
+      return nil unless node.respond_to?(:constant_path)
+
+      cp = node.constant_path
+      return node.name.to_s if cp.nil?
+
+      case cp
+      when Prism::ConstantReadNode
+        cp.name.to_s
+      when Prism::ConstantPathNode
+        if cp.respond_to?(:full_name)
+          cp.full_name.to_s
+        elsif cp.respond_to?(:slice)
+          cp.slice
+        else
+          cp.location.slice
+        end
+      else
+        node.name.to_s
+      end
+    end
+
     # Extract superclass name from a class node
     # @param class_node [Prism::ClassNode] The class node
     # @return [String, nil] The superclass name or nil if not available

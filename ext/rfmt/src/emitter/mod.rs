@@ -50,12 +50,36 @@ impl Emitter {
 
         self.emit_node(ast, 0)?;
 
+        // Emit any remaining comments that weren't emitted
+        self.emit_remaining_comments()?;
+
         // Ensure file ends with a newline
         if !self.buffer.ends_with('\n') {
             self.buffer.push('\n');
         }
 
         Ok(self.buffer.clone())
+    }
+
+    /// Emit all comments that haven't been emitted yet
+    fn emit_remaining_comments(&mut self) -> Result<()> {
+        let mut last_end_line: Option<usize> = None;
+        for (idx, comment) in self.all_comments.iter().enumerate() {
+            if self.emitted_comment_indices.contains(&idx) {
+                continue;
+            }
+            // Preserve blank lines between comments
+            if let Some(prev_line) = last_end_line {
+                let gap = comment.location.start_line.saturating_sub(prev_line);
+                for _ in 1..gap {
+                    self.buffer.push('\n');
+                }
+            }
+            writeln!(self.buffer, "{}", comment.text)?;
+            self.emitted_comment_indices.push(idx);
+            last_end_line = Some(comment.location.end_line);
+        }
+        Ok(())
     }
 
     /// Recursively collect all comments from the AST
@@ -218,22 +242,29 @@ impl Emitter {
             write!(self.buffer, " < {}", superclass)?;
         }
 
+        // Emit trailing comments on the class definition line (e.g., # rubocop:disable)
+        self.emit_trailing_comments(node.location.start_line)?;
         self.buffer.push('\n');
 
-        // Emit body (children), but skip structural nodes like constant_read_node
+        // Emit body (children), but skip structural nodes (class name, superclass)
+        // Use start_line check to properly handle CallNode superclasses like ActiveRecord::Migration[8.0]
+        let class_start_line = node.location.start_line;
         for child in &node.children {
+            // Skip nodes on the same line as class definition (name, superclass)
+            if child.location.start_line == class_start_line {
+                continue;
+            }
             if self.is_structural_node(&child.node_type) {
                 continue;
             }
             self.emit_node(child, indent_level + 1)?;
-            // Note: don't add newline here, statements node will handle it
         }
 
         // Add newline before end if there was body content
         if node
             .children
             .iter()
-            .any(|c| !self.is_structural_node(&c.node_type))
+            .any(|c| c.location.start_line != class_start_line && !self.is_structural_node(&c.node_type))
         {
             self.buffer.push('\n');
         }
@@ -256,6 +287,8 @@ impl Emitter {
             write!(self.buffer, "{}", name)?;
         }
 
+        // Emit trailing comments on the module definition line
+        self.emit_trailing_comments(node.location.start_line)?;
         self.buffer.push('\n');
 
         // Emit body (children), but skip structural nodes
@@ -289,6 +322,11 @@ impl Emitter {
         self.emit_indent(indent_level)?;
         write!(self.buffer, "def ")?;
 
+        // Handle class methods (def self.method_name)
+        if let Some(receiver) = node.metadata.get("receiver") {
+            write!(self.buffer, "{}.", receiver)?;
+        }
+
         if let Some(name) = node.metadata.get("name") {
             write!(self.buffer, "{}", name)?;
         }
@@ -321,6 +359,8 @@ impl Emitter {
             }
         }
 
+        // Emit trailing comment on same line as def
+        self.emit_trailing_comments(node.location.start_line)?;
         self.buffer.push('\n');
 
         // Emit body (children), but skip structural nodes like parameter nodes
@@ -398,28 +438,78 @@ impl Emitter {
         write!(self.buffer, "rescue")?;
 
         // Extract exception classes and variable from source
+        // Handle multi-line rescue clauses (e.g., multiple exception classes spanning lines)
         if !self.source.is_empty() && node.location.end_offset <= self.source.len() {
             if let Some(source_text) = self
                 .source
                 .get(node.location.start_offset..node.location.end_offset)
             {
-                // Get the rescue line to extract exception class and variable
-                if let Some(rescue_line) = source_text.lines().next() {
-                    // Remove "rescue" prefix and get the rest (exception class => var)
-                    let after_rescue = rescue_line.trim_start_matches("rescue").trim();
-                    if !after_rescue.is_empty() {
-                        write!(self.buffer, " {}", after_rescue)?;
+                // Find the rescue declaration part (first line only, unless trailing comma/backslash)
+                let mut rescue_decl = String::new();
+                let mut expect_continuation = false;
+
+                for line in source_text.lines() {
+                    let trimmed = line.trim();
+
+                    if rescue_decl.is_empty() {
+                        // First line - remove "rescue" prefix
+                        let after_rescue = trimmed.trim_start_matches("rescue").trim();
+                        if !after_rescue.is_empty() {
+                            // Check if line ends with continuation marker
+                            expect_continuation =
+                                after_rescue.ends_with(',') || after_rescue.ends_with('\\');
+                            rescue_decl.push_str(after_rescue.trim_end_matches('\\').trim());
+                        }
+                        if !expect_continuation {
+                            break;
+                        }
+                    } else if expect_continuation {
+                        // Continuation line after trailing comma or backslash
+                        if !rescue_decl.ends_with(' ') && !rescue_decl.ends_with(',') {
+                            rescue_decl.push(' ');
+                        }
+                        let content = trimmed.trim_end_matches('\\').trim();
+                        rescue_decl.push_str(content);
+                        expect_continuation =
+                            trimmed.ends_with(',') || trimmed.ends_with('\\');
+                        if !expect_continuation {
+                            break;
+                        }
+                    } else {
+                        break;
                     }
+                }
+
+                if !rescue_decl.is_empty() {
+                    write!(self.buffer, " {}", rescue_decl)?;
                 }
             }
         }
 
         self.buffer.push('\n');
 
-        // Emit rescue body (last child is typically StatementsNode)
-        if let Some(body) = node.children.last() {
-            if matches!(body.node_type, NodeType::StatementsNode) {
-                self.emit_node(body, indent_level)?;
+        // Emit rescue body and handle subsequent rescue nodes
+        // Children structure:
+        // - ConstantReadNode/ConstantPathNode (exception classes)
+        // - LocalVariableTargetNode (optional, exception variable)
+        // - StatementsNode (rescue body)
+        // - RescueNode (optional, subsequent rescue clause)
+        for child in &node.children {
+            match &child.node_type {
+                NodeType::StatementsNode => {
+                    self.emit_node(child, indent_level)?;
+                }
+                NodeType::RescueNode => {
+                    // Emit subsequent rescue clause
+                    // Ensure newline before subsequent rescue
+                    if !self.buffer.ends_with('\n') {
+                        self.buffer.push('\n');
+                    }
+                    self.emit_rescue(child, indent_level)?;
+                }
+                _ => {
+                    // Skip exception classes and variable (already handled above)
+                }
             }
         }
 
@@ -612,6 +702,59 @@ impl Emitter {
             return Ok(());
         }
 
+        // Check for ternary operator
+        let is_ternary = node
+            .metadata
+            .get("is_ternary")
+            .map(|v| v == "true")
+            .unwrap_or(false);
+
+        if is_ternary && !is_elsif {
+            self.emit_comments_before(node.location.start_line, indent_level)?;
+            self.emit_indent(indent_level)?;
+
+            // Emit condition
+            if let Some(predicate) = node.children.first() {
+                if !self.source.is_empty() {
+                    let start = predicate.location.start_offset;
+                    let end = predicate.location.end_offset;
+                    if let Some(text) = self.source.get(start..end) {
+                        write!(self.buffer, "{}", text)?;
+                    }
+                }
+            }
+
+            write!(self.buffer, " ? ")?;
+
+            // Emit then expression
+            if let Some(statements) = node.children.get(1) {
+                if !self.source.is_empty() {
+                    let start = statements.location.start_offset;
+                    let end = statements.location.end_offset;
+                    if let Some(text) = self.source.get(start..end) {
+                        write!(self.buffer, "{}", text.trim())?;
+                    }
+                }
+            }
+
+            write!(self.buffer, " : ")?;
+
+            // Emit else expression
+            if let Some(else_node) = node.children.get(2) {
+                if let Some(else_statements) = else_node.children.first() {
+                    if !self.source.is_empty() {
+                        let start = else_statements.location.start_offset;
+                        let end = else_statements.location.end_offset;
+                        if let Some(text) = self.source.get(start..end) {
+                            write!(self.buffer, "{}", text.trim())?;
+                        }
+                    }
+                }
+            }
+
+            return Ok(());
+        }
+
         // Normal if/unless/elsif
         if !is_elsif {
             self.emit_comments_before(node.location.start_line, indent_level)?;
@@ -637,6 +780,8 @@ impl Emitter {
             }
         }
 
+        // Emit trailing comment on same line as if/unless/elsif
+        self.emit_trailing_comments(node.location.start_line)?;
         self.buffer.push('\n');
 
         // Emit then clause (second child is StatementsNode)
@@ -760,6 +905,8 @@ impl Emitter {
         // Emit block parameters if present (|x, y|)
         self.emit_block_parameters(block_node)?;
 
+        // Emit trailing comment on same line as do |...|
+        self.emit_trailing_comments(block_node.location.start_line)?;
         self.buffer.push('\n');
 
         // Find and emit the body (StatementsNode among children)
@@ -933,6 +1080,8 @@ impl Emitter {
             }
         }
 
+        // Emit trailing comment on same line as while/until
+        self.emit_trailing_comments(node.location.start_line)?;
         self.buffer.push('\n');
 
         // Emit body - second child (StatementsNode)
@@ -1001,6 +1150,7 @@ impl Emitter {
     }
 
     /// Check if node is structural (part of definition syntax, not body)
+    /// These nodes are part of class/module/method definitions and should not be emitted as body
     fn is_structural_node(&self, node_type: &NodeType) -> bool {
         matches!(
             node_type,
@@ -1016,6 +1166,18 @@ impl Emitter {
                 | NodeType::KeywordRestParameterNode
                 | NodeType::BlockParameterNode
         )
+    }
+
+    /// Check if this node is part of class definition structure (name, superclass)
+    /// These should be skipped when emitting class body
+    fn is_class_structural_child(&self, node: &Node, class_node: &Node) -> bool {
+        // Skip nodes that are on the same line as the class definition
+        // These are typically the class name and superclass
+        if node.location.start_line == class_node.location.start_line {
+            return true;
+        }
+        // Also check for structural node types
+        self.is_structural_node(&node.node_type)
     }
 }
 
