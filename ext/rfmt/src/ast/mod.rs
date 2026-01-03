@@ -56,9 +56,38 @@ pub enum NodeType {
     TrueNode,
     FalseNode,
     NilNode,
+    SymbolNode,
 
     // Blocks
     BlockNode,
+
+    // Case/When
+    CaseNode,
+    WhenNode,
+
+    // HashNode
+    AssocNode,
+    KeywordHashNode,
+
+    // Variables
+    LocalVariableReadNode,
+    LocalVariableWriteNode,
+    InstanceVariableReadNode,
+    InstanceVariableWriteNode,
+
+    // Lambda
+    LambdaNode,
+
+    // Control flow
+    ReturnNode,
+    EnsureNode,
+
+    // Strings
+    InterpolatedStringNode,
+    EmbeddedStatementsNode,
+
+    // Logical
+    OrNode,
 
     // Constants (structural nodes, part of definitions)
     ConstantReadNode,
@@ -79,8 +108,6 @@ pub enum NodeType {
 }
 
 impl NodeType {
-    /// Parse node type from Prism type string
-    /// Returns Unknown variant for unsupported node types
     pub fn from_str(s: &str) -> Self {
         match s {
             "program_node" => Self::ProgramNode,
