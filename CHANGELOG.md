@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [1.2.3] - 2026-01-04
+
+### Fixed
+- Fix migration file formatting (`emit_rescue` handling for rescue blocks)
+
 ## [1.2.2] - 2026-01-04
 
 ### Fixed
