@@ -27,3 +27,6 @@ target/
 # Lefthook
 .lefthook/
 lefthook-local.yml
+.DS_Store
+**/.DS_Store
+

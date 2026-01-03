@@ -102,7 +102,7 @@ bundle install
 ### From Source
 
 ```bash
-git clone https://github.com/fujitanisora/rfmt.git
+git clone https://github.com/fs0414/rfmt.git
 cd rfmt
 bundle install
 bundle exec rake compile
@@ -379,7 +379,7 @@ Everyone interacting in the rfmt project's codebases, issue trackers, chat rooms
 ## Support
 
 - 📖 [Documentation](docs/)
-- 🐛 [Issues](https://github.com/fujitanisora/rfmt/issues)
+- 🐛 [Issues](https://github.com/fs0414/rfmt/issues)
 - 📧 Email: fujitanisora0414@gmail.com
 
 ## Acknowledgments

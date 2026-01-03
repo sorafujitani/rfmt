@@ -176,8 +176,8 @@ Before each release, we verify:
 ## Contact
 
 - **Security Issues**: fujitanisora0414@gmail.com
-- **General Issues**: https://github.com/fujitanisora/rfmt/issues
-- **Discussions**: https://github.com/fujitanisora/rfmt/discussions
+- **General Issues**: https://github.com/fs0414/rfmt/issues
+- **Discussions**: https://github.com/fs0414/rfmt/discussions
 
 ## Acknowledgments
 

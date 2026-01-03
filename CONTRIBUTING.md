@@ -30,7 +30,7 @@ This project adheres to the Contributor Covenant [Code of Conduct](CODE_OF_CONDU
 
 ### Finding an Issue to Work On
 
-1. Browse the [issue tracker](https://github.com/fujitanisora/rfmt/issues)
+1. Browse the [issue tracker](https://github.com/fs0414/rfmt/issues)
 2. Look for issues labeled `good first issue` or `help wanted`
 3. Comment on the issue to let others know you're working on it
 4. For larger changes, discuss your approach in the issue before starting
@@ -45,7 +45,7 @@ git clone https://github.com/YOUR_USERNAME/rfmt.git
 cd rfmt
 
 # Add the upstream repository
-git remote add upstream https://github.com/fujitanisora/rfmt.git
+git remote add upstream https://github.com/fs0414/rfmt.git
 ```
 
 ### 2. Install Dependencies
@@ -534,7 +534,7 @@ cargo doc --open
 ## Questions?
 
 - 📖 Read the [User Guide](docs/user_guide.md)
-- 💬 Ask in [Discussions](https://github.com/fujitanisora/rfmt/discussions)
+- 💬 Ask in [Discussions](https://github.com/fs0414/rfmt/discussions)
 - 📧 Email: fujitanisora0414@gmail.com
 
 ## License

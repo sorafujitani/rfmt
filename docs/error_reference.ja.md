@@ -86,8 +86,8 @@
    ```
 
 **関連Issue:**
-- [#42](https://github.com/fujitanisora/rfmt/issues/42): 構文エラーのエラーメッセージ改善
-- [#15](https://github.com/fujitanisora/rfmt/issues/15): ヒアドキュメント構文のサポート
+- [#42](https://github.com/fs0414/rfmt/issues/42): 構文エラーのエラーメッセージ改善
+- [#15](https://github.com/fs0414/rfmt/issues/15): ヒアドキュメント構文のサポート
 
 ---
 
@@ -181,7 +181,7 @@ exclude:                  # Globパターンの配列
 ```
 
 **関連Issue:**
-- [#23](https://github.com/fujitanisora/rfmt/issues/23): 設定エラーのエラーメッセージ改善
+- [#23](https://github.com/fs0414/rfmt/issues/23): 設定エラーのエラーメッセージ改善
 
 ---
 
@@ -237,7 +237,7 @@ exclude:                  # Globパターンの配列
    ```
 
 **関連Issue:**
-- [#31](https://github.com/fujitanisora/rfmt/issues/31): ロックされたファイルのエラー回復改善
+- [#31](https://github.com/fs0414/rfmt/issues/31): ロックされたファイルのエラー回復改善
 
 ---
 
@@ -289,7 +289,7 @@ exclude:                  # Globパターンの配列
    ```
 
 **関連Issue:**
-- [#55](https://github.com/fujitanisora/rfmt/issues/55): 複雑なネストブロックの処理
+- [#55](https://github.com/fs0414/rfmt/issues/55): 複雑なネストブロックの処理
 
 ---
 
@@ -330,7 +330,7 @@ exclude:                  # Globパターンの配列
    これはフォーマットルールのバグの可能性があります
 
 **関連Issue:**
-- [#67](https://github.com/fujitanisora/rfmt/issues/67): ルール競合の解決
+- [#67](https://github.com/fs0414/rfmt/issues/67): ルール競合の解決
 
 ---
 
@@ -351,7 +351,7 @@ exclude:                  # Globパターンの配列
 [Rfmt::UnsupportedFeature] 未サポート機能: ピンニング演算子を使用したパターンマッチング
 
 この機能は将来のリリースで予定されています。
-追跡: https://github.com/fujitanisora/rfmt/issues/89
+追跡: https://github.com/fs0414/rfmt/issues/89
 
 ヘルプ: https://rfmt.dev/errors/E006
 ```
@@ -386,8 +386,8 @@ exclude:                  # Globパターンの配列
 - 複雑なパターンマッチングのエッジケース
 
 **関連Issue:**
-- [#89](https://github.com/fujitanisora/rfmt/issues/89): パターンマッチングサポート
-- [#102](https://github.com/fujitanisora/rfmt/issues/102): 番号付きパラメータ
+- [#89](https://github.com/fs0414/rfmt/issues/89): パターンマッチングサポート
+- [#102](https://github.com/fs0414/rfmt/issues/102): 番号付きパラメータ
 
 ---
 
@@ -436,7 +436,7 @@ ASTのノード構造が無効です
    - エラーをトリガーするコード
 
 **関連Issue:**
-- [#118](https://github.com/fujitanisora/rfmt/issues/118): Prism 1.0互換性
+- [#118](https://github.com/fs0414/rfmt/issues/118): Prism 1.0互換性
 
 ---
 
@@ -499,7 +499,7 @@ ASTのノード構造が無効です
   at /path/to/rfmt/src/emitter.rs:123
   at /path/to/rfmt/src/formatter.rs:456
 
-これをバグとして報告してください: https://github.com/fujitanisora/rfmt/issues
+これをバグとして報告してください: https://github.com/fs0414/rfmt/issues
 
 ヘルプ: https://rfmt.dev/errors/E999
 ```
@@ -525,7 +525,7 @@ ASTのノード構造が無効です
    ```
 
 **関連Issue:**
-- [#new](https://github.com/fujitanisora/rfmt/issues/new): 新しいバグを報告
+- [#new](https://github.com/fs0414/rfmt/issues/new): 新しいバグを報告
 
 ---
 
@@ -564,9 +564,9 @@ puts Rfmt.rust_version
 
 ここでカバーされていないエラーに遭遇した場合：
 
-1. **既存のissueを検索:** https://github.com/fujitanisora/rfmt/issues
-2. **ディスカッションを確認:** https://github.com/fujitanisora/rfmt/discussions
-3. **新しいissueを作成:** https://github.com/fujitanisora/rfmt/issues/new
+1. **既存のissueを検索:** https://github.com/fs0414/rfmt/issues
+2. **ディスカッションを確認:** https://github.com/fs0414/rfmt/discussions
+3. **新しいissueを作成:** https://github.com/fs0414/rfmt/issues/new
 
 問題を報告する際は、以下を含めてください：
 

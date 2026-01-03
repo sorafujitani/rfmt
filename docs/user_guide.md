@@ -28,7 +28,7 @@ gem install rfmt
 ### Install from Source
 
 ```bash
-git clone https://github.com/fujitanisora/rfmt.git
+git clone https://github.com/fs0414/rfmt.git
 cd rfmt
 bundle install
 bundle exec rake compile
@@ -384,7 +384,7 @@ formatting:
 
 **Cause:** Code uses a Ruby feature not yet supported by rfmt
 
-**Solution:** Check the [roadmap](https://github.com/fujitanisora/rfmt/blob/main/ROADMAP.md) or file an issue
+**Solution:** Check the [roadmap](https://github.com/fs0414/rfmt/blob/main/ROADMAP.md) or file an issue
 
 ## Troubleshooting
 
@@ -540,8 +540,8 @@ See our [Contributing Guide](../CONTRIBUTING.md) for details on:
 ### Where can I get help?
 
 - 📖 Documentation: https://rfmt.dev/docs
-- 🐛 Issues: https://github.com/fujitanisora/rfmt/issues
-- 💬 Discussions: https://github.com/fujitanisora/rfmt/discussions
+- 🐛 Issues: https://github.com/fs0414/rfmt/issues
+- 💬 Discussions: https://github.com/fs0414/rfmt/discussions
 - 📧 Email: fujitanisora0414@gmail.com
 
 ## Next Steps
