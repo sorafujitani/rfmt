@@ -50,8 +50,11 @@ impl Emitter {
 
         self.emit_node(ast, 0)?;
 
+        // Find the last emitted code line for proper blank line handling
+        let last_code_line = Self::find_last_code_line(ast);
+
         // Emit any remaining comments that weren't emitted
-        self.emit_remaining_comments()?;
+        self.emit_remaining_comments(last_code_line)?;
 
         // Ensure file ends with a newline
         if !self.buffer.ends_with('\n') {
@@ -61,14 +64,30 @@ impl Emitter {
         Ok(self.buffer.clone())
     }
 
+    /// Find the last line of code in the AST (excluding comments)
+    fn find_last_code_line(ast: &Node) -> usize {
+        let mut max_line = ast.location.end_line;
+        for child in &ast.children {
+            let child_end = Self::find_last_code_line(child);
+            if child_end > max_line {
+                max_line = child_end;
+            }
+        }
+        max_line
+    }
+
     /// Emit all comments that haven't been emitted yet
-    fn emit_remaining_comments(&mut self) -> Result<()> {
-        let mut last_end_line: Option<usize> = None;
+    fn emit_remaining_comments(&mut self, last_code_line: usize) -> Result<()> {
+        let mut last_end_line: Option<usize> = Some(last_code_line);
         for (idx, comment) in self.all_comments.iter().enumerate() {
             if self.emitted_comment_indices.contains(&idx) {
                 continue;
             }
-            // Preserve blank lines between comments
+            // Ensure we start on a new line for remaining comments
+            if !self.buffer.ends_with('\n') {
+                self.buffer.push('\n');
+            }
+            // Preserve blank lines between code/comments
             if let Some(prev_line) = last_end_line {
                 let gap = comment.location.start_line.saturating_sub(prev_line);
                 for _ in 1..gap {
@@ -104,19 +123,99 @@ impl Emitter {
             }
 
             if comment.location.end_line < line {
-                comments_to_emit.push((idx, comment.text.clone(), comment.location.end_line));
+                comments_to_emit.push((
+                    idx,
+                    comment.text.clone(),
+                    comment.location.start_line,
+                    comment.location.end_line,
+                ));
             }
         }
 
+        // Sort by start_line to emit in order
+        comments_to_emit.sort_by_key(|(_, _, start, _)| *start);
+
         let comments_count = comments_to_emit.len();
-        for (i, (idx, text, comment_end_line)) in comments_to_emit.into_iter().enumerate() {
+        let mut last_comment_end_line: Option<usize> = None;
+
+        for (i, (idx, text, comment_start_line, comment_end_line)) in
+            comments_to_emit.into_iter().enumerate()
+        {
+            // Preserve blank lines between comments
+            if let Some(prev_end) = last_comment_end_line {
+                let gap = comment_start_line.saturating_sub(prev_end);
+                for _ in 1..gap {
+                    self.buffer.push('\n');
+                }
+            }
+
             writeln!(self.buffer, "{}{}", indent_str, text)?;
             self.emitted_comment_indices.push(idx);
+            last_comment_end_line = Some(comment_end_line);
 
-            // Only add blank line after the LAST comment if there was a gap in the original
+            // Add blank line after the LAST comment if there was a gap to the code
             if i == comments_count - 1 && line > comment_end_line + 1 {
                 self.buffer.push('\n');
             }
+        }
+
+        Ok(())
+    }
+
+    /// Check if there are any unemitted comments in the given line range
+    fn has_comments_in_range(&self, start_line: usize, end_line: usize) -> bool {
+        self.all_comments.iter().enumerate().any(|(idx, comment)| {
+            !self.emitted_comment_indices.contains(&idx)
+                && comment.location.start_line >= start_line
+                && comment.location.end_line < end_line
+        })
+    }
+
+    /// Emit comments that are within a given line range (exclusive of end_line)
+    fn emit_comments_in_range(
+        &mut self,
+        start_line: usize,
+        end_line: usize,
+        indent_level: usize,
+    ) -> Result<()> {
+        let indent_str = match self.config.formatting.indent_style {
+            IndentStyle::Spaces => " ".repeat(self.config.formatting.indent_width * indent_level),
+            IndentStyle::Tabs => "\t".repeat(indent_level),
+        };
+
+        let mut comments_to_emit = Vec::new();
+        for (idx, comment) in self.all_comments.iter().enumerate() {
+            if self.emitted_comment_indices.contains(&idx) {
+                continue;
+            }
+
+            if comment.location.start_line >= start_line && comment.location.end_line < end_line {
+                comments_to_emit.push((
+                    idx,
+                    comment.text.clone(),
+                    comment.location.start_line,
+                    comment.location.end_line,
+                ));
+            }
+        }
+
+        // Sort by start_line to emit in order
+        comments_to_emit.sort_by_key(|(_, _, start, _)| *start);
+
+        let mut last_comment_end_line: Option<usize> = None;
+
+        for (idx, text, comment_start_line, comment_end_line) in comments_to_emit {
+            // Preserve blank lines between comments
+            if let Some(prev_end) = last_comment_end_line {
+                let gap = comment_start_line.saturating_sub(prev_end);
+                for _ in 1..gap {
+                    self.buffer.push('\n');
+                }
+            }
+
+            writeln!(self.buffer, "{}{}", indent_str, text)?;
+            self.emitted_comment_indices.push(idx);
+            last_comment_end_line = Some(comment_end_line);
         }
 
         Ok(())
@@ -249,6 +348,9 @@ impl Emitter {
         // Emit body (children), but skip structural nodes (class name, superclass)
         // Use start_line check to properly handle CallNode superclasses like ActiveRecord::Migration[8.0]
         let class_start_line = node.location.start_line;
+        let class_end_line = node.location.end_line;
+        let mut has_body_content = false;
+
         for child in &node.children {
             // Skip nodes on the same line as class definition (name, superclass)
             if child.location.start_line == class_start_line {
@@ -257,13 +359,18 @@ impl Emitter {
             if self.is_structural_node(&child.node_type) {
                 continue;
             }
+            has_body_content = true;
             self.emit_node(child, indent_level + 1)?;
         }
 
-        // Add newline before end if there was body content
-        if node.children.iter().any(|c| {
-            c.location.start_line != class_start_line && !self.is_structural_node(&c.node_type)
-        }) {
+        // Emit comments that are inside the class body but not attached to any node
+        // These are comments between class_start_line and class_end_line
+        self.emit_comments_in_range(class_start_line + 1, class_end_line, indent_level + 1)?;
+
+        // Add newline before end if there was body content or internal comments
+        if (has_body_content || self.has_comments_in_range(class_start_line + 1, class_end_line))
+            && !self.buffer.ends_with('\n')
+        {
             self.buffer.push('\n');
         }
 
@@ -289,19 +396,25 @@ impl Emitter {
         self.emit_trailing_comments(node.location.start_line)?;
         self.buffer.push('\n');
 
+        let module_start_line = node.location.start_line;
+        let module_end_line = node.location.end_line;
+        let mut has_body_content = false;
+
         // Emit body (children), but skip structural nodes
         for child in &node.children {
             if self.is_structural_node(&child.node_type) {
                 continue;
             }
+            has_body_content = true;
             self.emit_node(child, indent_level + 1)?;
         }
 
-        // Add newline before end if there was body content
-        if node
-            .children
-            .iter()
-            .any(|c| !self.is_structural_node(&c.node_type))
+        // Emit comments that are inside the module body but not attached to any node
+        self.emit_comments_in_range(module_start_line + 1, module_end_line, indent_level + 1)?;
+
+        // Add newline before end if there was body content or internal comments
+        if (has_body_content || self.has_comments_in_range(module_start_line + 1, module_end_line))
+            && !self.buffer.ends_with('\n')
         {
             self.buffer.push('\n');
         }
@@ -463,7 +576,8 @@ impl Emitter {
                         }
                     } else if expect_continuation {
                         // Continuation line after trailing comma or backslash
-                        if !rescue_decl.ends_with(' ') && !rescue_decl.ends_with(',') {
+                        // Add space after comma or if no trailing space
+                        if !rescue_decl.ends_with(' ') {
                             rescue_decl.push(' ');
                         }
                         let content = trimmed.trim_end_matches('\\').trim();
@@ -995,6 +1109,20 @@ impl Emitter {
             if let Some(text) = text_owned {
                 self.emit_indent(indent_level)?;
                 write!(self.buffer, "{}", text)?;
+
+                // Mark comments that are strictly inside this node's line range as emitted
+                // (they are included in the source extraction)
+                // Don't mark trailing comments on the last line (they come after the node ends)
+                for (idx, comment) in self.all_comments.iter().enumerate() {
+                    if !self.emitted_comment_indices.contains(&idx)
+                        && comment.location.start_line >= node.location.start_line
+                        && comment.location.end_line < node.location.end_line
+                    {
+                        self.emitted_comment_indices.push(idx);
+                    }
+                }
+
+                // Emit trailing comments on the same line (after the node ends)
                 self.emit_trailing_comments(node.location.end_line)?;
             }
         }
@@ -1015,12 +1143,13 @@ impl Emitter {
                 self.emit_indent(indent_level)?;
                 write!(self.buffer, "{}", text)?;
 
-                // Mark comments within this node's range as emitted
+                // Mark comments that are strictly inside this node's line range as emitted
                 // (they are included in the source extraction)
+                // Don't mark trailing comments on the last line (they come after the node ends)
                 for (idx, comment) in self.all_comments.iter().enumerate() {
                     if !self.emitted_comment_indices.contains(&idx)
                         && comment.location.start_line >= node.location.start_line
-                        && comment.location.end_line <= node.location.end_line
+                        && comment.location.end_line < node.location.end_line
                     {
                         self.emitted_comment_indices.push(idx);
                     }
