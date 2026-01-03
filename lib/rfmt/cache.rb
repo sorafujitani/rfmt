@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'digest/sha2'
+require 'openssl'
 require 'json'
 require 'fileutils'
 
@@ -105,7 +105,7 @@ module Rfmt
 
     def file_hash(file_path)
       content = File.read(file_path)
-      Digest::SHA2.new(256).hexdigest(content)
+      OpenSSL::Digest::SHA256.hexdigest(content)
     rescue StandardError => e
       raise CacheError, "Failed to read file #{file_path}: #{e.message}"
     end

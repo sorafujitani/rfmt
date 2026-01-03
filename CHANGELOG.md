@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [1.2.2] - 2026-01-04
+
+### Fixed
+- Ruby 3.4.1 compatibility: Use `OpenSSL::Digest::SHA256` instead of `Digest::SHA2` to avoid `metadata is not initialized properly` error in Ruby 3.4.1
+
 ## [1.2.1] - 2026-01-04
 
 ### Fixed
