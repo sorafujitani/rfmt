@@ -184,6 +184,22 @@ module Rfmt
                      result << node.statements if node.statements
                      result << node.subsequent if node.subsequent
                      result
+                   when Prism::SymbolNode, Prism::LocalVariableReadNode, Prism::InstanceVariableReadNode
+                     []
+                   when Prism::LocalVariableWriteNode, Prism::InstanceVariableWriteNode
+                     [node.value].compact
+                   when Prism::ReturnNode
+                     node.arguments ? node.arguments.child_nodes.compact : []
+                   when Prism::OrNode
+                     [node.left, node.right].compact
+                   when Prism::AssocNode
+                     [node.key, node.value].compact
+                   when Prism::KeywordHashNode
+                     node.elements || []
+                   when Prism::InterpolatedStringNode
+                     node.parts || []
+                   when Prism::EmbeddedStatementsNode
+                     [node.statements].compact
                    else
                      # For unknown types, try to get child nodes if they exist
                      []
