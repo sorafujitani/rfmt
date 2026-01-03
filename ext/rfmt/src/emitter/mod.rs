@@ -261,11 +261,9 @@ impl Emitter {
         }
 
         // Add newline before end if there was body content
-        if node
-            .children
-            .iter()
-            .any(|c| c.location.start_line != class_start_line && !self.is_structural_node(&c.node_type))
-        {
+        if node.children.iter().any(|c| {
+            c.location.start_line != class_start_line && !self.is_structural_node(&c.node_type)
+        }) {
             self.buffer.push('\n');
         }
 
@@ -470,8 +468,7 @@ impl Emitter {
                         }
                         let content = trimmed.trim_end_matches('\\').trim();
                         rescue_decl.push_str(content);
-                        expect_continuation =
-                            trimmed.ends_with(',') || trimmed.ends_with('\\');
+                        expect_continuation = trimmed.ends_with(',') || trimmed.ends_with('\\');
                         if !expect_continuation {
                             break;
                         }
