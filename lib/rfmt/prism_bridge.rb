@@ -210,6 +210,10 @@ module Rfmt
                      node.parts || []
                    when Prism::EmbeddedStatementsNode
                      [node.statements].compact
+                   when Prism::CaseNode
+                     [node.predicate, *node.conditions, node.else_clause].compact
+                   when Prism::WhenNode
+                     [*node.conditions, node.statements].compact
                    else
                      # For unknown types, try to get child nodes if they exist
                      []

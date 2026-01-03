@@ -136,6 +136,8 @@ impl Emitter {
             NodeType::RescueNode => self.emit_rescue(node, indent_level)?,
             NodeType::EnsureNode => self.emit_ensure(node, indent_level)?,
             NodeType::LambdaNode => self.emit_lambda(node, indent_level)?,
+            NodeType::CaseNode => self.emit_case(node, indent_level)?,
+            NodeType::WhenNode => self.emit_when(node, indent_level)?,
             _ => self.emit_generic(node, indent_level)?,
         }
         Ok(())
@@ -452,6 +454,104 @@ impl Emitter {
         // Lambda syntax is complex (-> vs lambda, {} vs do-end)
         // Use source extraction to preserve original style
         self.emit_generic_without_comments(node, indent_level)
+    }
+
+    /// Emit case node
+    fn emit_case(&mut self, node: &Node, indent_level: usize) -> Result<()> {
+        self.emit_comments_before(node.location.start_line, indent_level)?;
+        self.emit_indent(indent_level)?;
+
+        // Write "case" keyword
+        write!(self.buffer, "case")?;
+
+        // Find predicate (first child that isn't WhenNode or ElseNode)
+        let mut when_start_idx = 0;
+        if let Some(first_child) = node.children.first() {
+            if !matches!(
+                first_child.node_type,
+                NodeType::WhenNode | NodeType::ElseNode
+            ) {
+                // This is the predicate - extract from source
+                let start = first_child.location.start_offset;
+                let end = first_child.location.end_offset;
+                if let Some(text) = self.source.get(start..end) {
+                    write!(self.buffer, " {}", text)?;
+                }
+                when_start_idx = 1;
+            }
+        }
+
+        self.buffer.push('\n');
+
+        // Emit when clauses and else
+        for child in node.children.iter().skip(when_start_idx) {
+            match &child.node_type {
+                NodeType::WhenNode => {
+                    self.emit_when(child, indent_level)?;
+                    self.buffer.push('\n');
+                }
+                NodeType::ElseNode => {
+                    self.emit_indent(indent_level)?;
+                    writeln!(self.buffer, "else")?;
+                    // Emit else body
+                    for else_child in &child.children {
+                        if matches!(else_child.node_type, NodeType::StatementsNode) {
+                            self.emit_statements(else_child, indent_level + 1)?;
+                        } else {
+                            self.emit_node(else_child, indent_level + 1)?;
+                        }
+                    }
+                    self.buffer.push('\n');
+                }
+                _ => {}
+            }
+        }
+
+        // Emit "end" keyword
+        self.emit_indent(indent_level)?;
+        write!(self.buffer, "end")?;
+
+        Ok(())
+    }
+
+    /// Emit when node
+    fn emit_when(&mut self, node: &Node, indent_level: usize) -> Result<()> {
+        self.emit_comments_before(node.location.start_line, indent_level)?;
+        self.emit_indent(indent_level)?;
+
+        write!(self.buffer, "when ")?;
+
+        // Collect conditions (all children except StatementsNode)
+        let conditions: Vec<_> = node
+            .children
+            .iter()
+            .filter(|c| !matches!(c.node_type, NodeType::StatementsNode))
+            .collect();
+
+        // Emit conditions with comma separator
+        for (i, cond) in conditions.iter().enumerate() {
+            let start = cond.location.start_offset;
+            let end = cond.location.end_offset;
+            if let Some(text) = self.source.get(start..end) {
+                write!(self.buffer, "{}", text)?;
+            }
+            if i < conditions.len() - 1 {
+                write!(self.buffer, ", ")?;
+            }
+        }
+
+        self.buffer.push('\n');
+
+        // Emit statements body
+        if let Some(statements) = node
+            .children
+            .iter()
+            .find(|c| matches!(c.node_type, NodeType::StatementsNode))
+        {
+            self.emit_statements(statements, indent_level + 1)?;
+        }
+
+        Ok(())
     }
 
     /// Emit if/unless/elsif/else node
