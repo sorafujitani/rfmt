@@ -175,8 +175,18 @@ module Rfmt
                    when Prism::BeginNode
                      [
                        node.statements,
-                       node.rescue_clause
+                       node.rescue_clause,
+                       node.ensure_clause
                      ].compact
+                   when Prism::EnsureNode
+                     [node.statements].compact
+                   when Prism::LambdaNode
+                     params = if node.parameters
+                                node.parameters.child_nodes.compact
+                              else
+                                []
+                              end
+                     params + [node.body].compact
                    when Prism::RescueNode
                      result = []
                      result.concat(node.exceptions) if node.exceptions
