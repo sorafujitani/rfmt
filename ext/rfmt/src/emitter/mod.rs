@@ -221,6 +221,55 @@ impl Emitter {
         Ok(())
     }
 
+    /// Emit comments that are within a given line range, preserving blank lines from prev_line
+    fn emit_comments_in_range_with_prev_line(
+        &mut self,
+        start_line: usize,
+        end_line: usize,
+        indent_level: usize,
+        prev_line: usize,
+    ) -> Result<()> {
+        let indent_str = match self.config.formatting.indent_style {
+            IndentStyle::Spaces => " ".repeat(self.config.formatting.indent_width * indent_level),
+            IndentStyle::Tabs => "\t".repeat(indent_level),
+        };
+
+        let mut comments_to_emit = Vec::new();
+        for (idx, comment) in self.all_comments.iter().enumerate() {
+            if self.emitted_comment_indices.contains(&idx) {
+                continue;
+            }
+
+            if comment.location.start_line >= start_line && comment.location.end_line < end_line {
+                comments_to_emit.push((
+                    idx,
+                    comment.text.clone(),
+                    comment.location.start_line,
+                    comment.location.end_line,
+                ));
+            }
+        }
+
+        // Sort by start_line to emit in order
+        comments_to_emit.sort_by_key(|(_, _, start, _)| *start);
+
+        let mut last_end_line: usize = prev_line;
+
+        for (idx, text, comment_start_line, comment_end_line) in comments_to_emit {
+            // Preserve blank lines between previous content and this comment
+            let gap = comment_start_line.saturating_sub(last_end_line);
+            for _ in 1..gap {
+                self.buffer.push('\n');
+            }
+
+            writeln!(self.buffer, "{}{}", indent_str, text)?;
+            self.emitted_comment_indices.push(idx);
+            last_end_line = comment_end_line;
+        }
+
+        Ok(())
+    }
+
     /// Emit comments that appear on the same line (trailing comments)
     fn emit_trailing_comments(&mut self, line: usize) -> Result<()> {
         let mut indices_to_emit = Vec::new();
@@ -376,6 +425,8 @@ impl Emitter {
 
         self.emit_indent(indent_level)?;
         write!(self.buffer, "end")?;
+        // Emit trailing comments on end line (e.g., `end # rubocop:disable`)
+        self.emit_trailing_comments(node.location.end_line)?;
 
         Ok(())
     }
@@ -421,6 +472,8 @@ impl Emitter {
 
         self.emit_indent(indent_level)?;
         write!(self.buffer, "end")?;
+        // Emit trailing comments on end line (e.g., `end # rubocop:disable`)
+        self.emit_trailing_comments(node.location.end_line)?;
 
         Ok(())
     }
@@ -493,6 +546,8 @@ impl Emitter {
 
         self.emit_indent(indent_level)?;
         write!(self.buffer, "end")?;
+        // Emit trailing comments on end line (e.g., `end # rubocop:disable`)
+        self.emit_trailing_comments(node.location.end_line)?;
 
         Ok(())
     }
@@ -524,6 +579,8 @@ impl Emitter {
 
             self.emit_indent(indent_level)?;
             write!(self.buffer, "end")?;
+            // Emit trailing comments on end line
+            self.emit_trailing_comments(node.location.end_line)?;
         } else {
             // Implicit begin - emit children directly
             for (i, child) in node.children.iter().enumerate() {
@@ -714,6 +771,8 @@ impl Emitter {
         // Emit "end" keyword
         self.emit_indent(indent_level)?;
         write!(self.buffer, "end")?;
+        // Emit trailing comments on end line
+        self.emit_trailing_comments(node.location.end_line)?;
 
         Ok(())
     }
@@ -931,6 +990,8 @@ impl Emitter {
         if !is_elsif {
             self.emit_indent(indent_level)?;
             write!(self.buffer, "end")?;
+            // Emit trailing comments on end line
+            self.emit_trailing_comments(node.location.end_line)?;
         }
 
         Ok(())
@@ -1021,17 +1082,46 @@ impl Emitter {
         self.buffer.push('\n');
 
         // Find and emit the body (StatementsNode among children)
+        let block_start_line = block_node.location.start_line;
+        let block_end_line = block_node.location.end_line;
+        let mut last_stmt_end_line = block_start_line;
+
         for child in &block_node.children {
             if matches!(child.node_type, NodeType::StatementsNode) {
                 self.emit_statements(child, indent_level + 1)?;
+                // Track the last statement's end line for blank line preservation
+                if let Some(last_child) = child.children.last() {
+                    last_stmt_end_line = last_child.location.end_line;
+                }
                 self.buffer.push('\n');
                 break;
             }
         }
 
+        // Emit comments that are inside the block but not attached to any node
+        // (comments between last statement and 'end')
+        let had_internal_comments =
+            self.has_comments_in_range(block_start_line + 1, block_end_line);
+        if had_internal_comments {
+            // Preserve blank line between last statement and first comment
+            self.emit_comments_in_range_with_prev_line(
+                block_start_line + 1,
+                block_end_line,
+                indent_level + 1,
+                last_stmt_end_line,
+            )?;
+        }
+
+        // Add newline if there were internal comments
+        if had_internal_comments && !self.buffer.ends_with('\n') {
+            self.buffer.push('\n');
+        }
+
         // Emit 'end'
         self.emit_indent(indent_level)?;
         write!(self.buffer, "end")?;
+        // Emit trailing comments on end line
+        self.emit_trailing_comments(block_end_line)?;
 
         Ok(())
     }
@@ -1220,6 +1310,8 @@ impl Emitter {
 
         self.emit_indent(indent_level)?;
         write!(self.buffer, "end")?;
+        // Emit trailing comments on end line
+        self.emit_trailing_comments(node.location.end_line)?;
 
         Ok(())
     }
@@ -1271,6 +1363,8 @@ impl Emitter {
 
         self.emit_indent(indent_level)?;
         write!(self.buffer, "end")?;
+        // Emit trailing comments on end line
+        self.emit_trailing_comments(node.location.end_line)?;
 
         Ok(())
     }

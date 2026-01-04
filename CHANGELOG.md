@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [1.2.5] - 2026-01-04
+
+### Fixed
+- Fix trailing comments on `end` keyword (e.g., `end # rubocop:disable`)
+- Fix block internal comments being moved outside the block
+- Fix blank line preservation between code and comments inside blocks
+
 ## [1.2.4] - 2026-01-04
 
 ### Fixed
