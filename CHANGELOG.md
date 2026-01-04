@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [1.2.6] - 2026-01-04
+
+### Changed
+- Version bump
+
 ## [1.2.5] - 2026-01-04
 
 ### Fixed
