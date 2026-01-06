@@ -19,7 +19,7 @@ rb-sys = "0.9.117"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.9"
-rmp-serde = "1.1"  # MessagePack
+rmp-serde = "1.1.2"  # MessagePack - pinned for Cargo 1.77 compatibility
 
 # Error handling
 thiserror = "1.0"
