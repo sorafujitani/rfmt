@@ -23,6 +23,7 @@ target/
 # Development
 .rspec_status
 .rake_tasks~
+.ruby-version
 
 # Lefthook
 .lefthook/
