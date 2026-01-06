@@ -17,6 +17,16 @@ GEMSPEC = Gem::Specification.load('rfmt.gemspec')
 
 RbSys::ExtensionTask.new('rfmt', GEMSPEC) do |ext|
   ext.lib_dir = 'lib/rfmt'
+  ext.cross_compile = true
+  ext.cross_platform = %w[
+    x86_64-linux
+    x86_64-linux-musl
+    aarch64-linux
+    aarch64-linux-musl
+    x86_64-darwin
+    arm64-darwin
+    x64-mingw-ucrt
+  ]
 end
 
 task default: %i[compile spec rubocop]
