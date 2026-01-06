@@ -1,5 +1,20 @@
 ## [Unreleased]
 
+## [1.3.0] - 2026-01-07
+
+### Added
+- Precompiled native gem support for multiple platforms:
+  - Linux x86_64 (glibc and musl)
+  - Linux aarch64 (glibc and musl)
+  - macOS x86_64 (Intel) and arm64 (Apple Silicon)
+  - Windows x64
+- Users no longer need Rust toolchain (cargo) to install rfmt
+- GitHub issue and PR templates
+
+### Changed
+- Release workflow now uses `oxidize-rb/actions/cross-gem` for cross-compilation
+- gemspec updated to exclude compiled artifacts from source gem
+
 ## [1.2.7] - 2026-01-04
 
 ### Changed
