@@ -15,6 +15,10 @@
 - Release workflow now uses `oxidize-rb/actions/cross-gem` for cross-compilation
 - gemspec updated to exclude compiled artifacts from source gem
 
+### Fixed
+- CI cross-compile compatibility: Downgrade Cargo.lock to version 3 for older Cargo
+- Remove `.ruby-version` from repository to avoid rbenv errors in CI containers
+
 ## [1.2.7] - 2026-01-04
 
 ### Changed
