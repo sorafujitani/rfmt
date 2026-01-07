@@ -1,6 +1,7 @@
 use crate::ast::{Comment, Node, NodeType};
 use crate::config::{Config, IndentStyle};
 use crate::error::Result;
+use std::collections::HashSet;
 use std::fmt::Write;
 
 /// Block style for Ruby blocks
@@ -16,7 +17,7 @@ pub struct Emitter {
     source: String,
     buffer: String,
     all_comments: Vec<Comment>,
-    emitted_comment_indices: Vec<usize>,
+    emitted_comment_indices: HashSet<usize>,
 }
 
 impl Emitter {
@@ -26,7 +27,7 @@ impl Emitter {
             source: String::new(),
             buffer: String::new(),
             all_comments: Vec::new(),
-            emitted_comment_indices: Vec::new(),
+            emitted_comment_indices: HashSet::new(),
         }
     }
 
@@ -37,7 +38,7 @@ impl Emitter {
             source,
             buffer: String::new(),
             all_comments: Vec::new(),
-            emitted_comment_indices: Vec::new(),
+            emitted_comment_indices: HashSet::new(),
         }
     }
 
@@ -107,7 +108,7 @@ impl Emitter {
             }
 
             writeln!(self.buffer, "{}", comment.text)?;
-            self.emitted_comment_indices.push(idx);
+            self.emitted_comment_indices.insert(idx);
             last_end_line = Some(comment.location.end_line);
             is_first_comment = false;
         }
@@ -163,7 +164,7 @@ impl Emitter {
             }
 
             writeln!(self.buffer, "{}{}", indent_str, text)?;
-            self.emitted_comment_indices.push(idx);
+            self.emitted_comment_indices.insert(idx);
             last_comment_end_line = Some(comment_end_line);
 
             // Add blank line after the LAST comment if there was a gap to the code
@@ -227,7 +228,7 @@ impl Emitter {
             }
 
             writeln!(self.buffer, "{}{}", indent_str, text)?;
-            self.emitted_comment_indices.push(idx);
+            self.emitted_comment_indices.insert(idx);
             last_comment_end_line = Some(comment_end_line);
         }
 
@@ -276,7 +277,7 @@ impl Emitter {
             }
 
             writeln!(self.buffer, "{}{}", indent_str, text)?;
-            self.emitted_comment_indices.push(idx);
+            self.emitted_comment_indices.insert(idx);
             last_end_line = comment_end_line;
         }
 
@@ -300,7 +301,7 @@ impl Emitter {
         // Now emit the collected comments
         for (idx, text) in indices_to_emit {
             write!(self.buffer, " {}", text)?;
-            self.emitted_comment_indices.push(idx);
+            self.emitted_comment_indices.insert(idx);
         }
 
         Ok(())
@@ -1210,7 +1211,7 @@ impl Emitter {
                         && comment.location.start_line >= node.location.start_line
                         && comment.location.end_line < node.location.end_line
                     {
-                        self.emitted_comment_indices.push(idx);
+                        self.emitted_comment_indices.insert(idx);
                     }
                 }
 
@@ -1243,7 +1244,7 @@ impl Emitter {
                         && comment.location.start_line >= node.location.start_line
                         && comment.location.end_line < node.location.end_line
                     {
-                        self.emitted_comment_indices.push(idx);
+                        self.emitted_comment_indices.insert(idx);
                     }
                 }
 
