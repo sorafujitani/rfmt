@@ -1530,6 +1530,7 @@ impl Emitter {
                 | NodeType::KeywordRestParameterNode
                 | NodeType::BlockParameterNode
                 | NodeType::ForwardingParameterNode
+                | NodeType::NoKeywordsParameterNode
         )
     }
 }

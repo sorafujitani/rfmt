@@ -208,6 +208,7 @@ pub enum NodeType {
     // Forwarding
     ForwardingArgumentsNode,
     ForwardingParameterNode,
+    NoKeywordsParameterNode,
 
     // References
     BackReferenceReadNode,
@@ -362,6 +363,7 @@ impl NodeType {
             // Forwarding
             "forwarding_arguments_node" => Self::ForwardingArgumentsNode,
             "forwarding_parameter_node" => Self::ForwardingParameterNode,
+            "no_keywords_parameter_node" => Self::NoKeywordsParameterNode,
             // References
             "back_reference_read_node" => Self::BackReferenceReadNode,
             "numbered_reference_read_node" => Self::NumberedReferenceReadNode,

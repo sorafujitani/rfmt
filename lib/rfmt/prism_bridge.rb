@@ -316,8 +316,9 @@ module Rfmt
                      [node.expression].compact
                    when Prism::PinnedVariableNode
                      [node.variable].compact
-                   # Forwarding
-                   when Prism::ForwardingArgumentsNode, Prism::ForwardingParameterNode
+                   # Forwarding and special parameters
+                   when Prism::ForwardingArgumentsNode, Prism::ForwardingParameterNode,
+                        Prism::NoKeywordsParameterNode
                      []
                    # References
                    when Prism::BackReferenceReadNode, Prism::NumberedReferenceReadNode
