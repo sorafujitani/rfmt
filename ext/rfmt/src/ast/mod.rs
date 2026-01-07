@@ -189,6 +189,48 @@ pub enum NodeType {
     PreExecutionNode,
     PostExecutionNode,
 
+    // Numeric literals
+    RationalNode,
+    ImaginaryNode,
+
+    // String interpolation
+    EmbeddedVariableNode,
+
+    // Pattern matching patterns
+    ArrayPatternNode,
+    HashPatternNode,
+    FindPatternNode,
+    CapturePatternNode,
+    AlternationPatternNode,
+    PinnedExpressionNode,
+    PinnedVariableNode,
+
+    // Forwarding
+    ForwardingArgumentsNode,
+    ForwardingParameterNode,
+
+    // References
+    BackReferenceReadNode,
+    NumberedReferenceReadNode,
+
+    // Call/Index compound assignment
+    CallAndWriteNode,
+    CallOrWriteNode,
+    CallOperatorWriteNode,
+    IndexAndWriteNode,
+    IndexOrWriteNode,
+    IndexOperatorWriteNode,
+
+    // Match
+    MatchWriteNode,
+    MatchLastLineNode,
+    InterpolatedMatchLastLineNode,
+
+    // Other
+    FlipFlopNode,
+    ImplicitNode,
+    ImplicitRestNode,
+
     Unknown(String),
 }
 
@@ -304,6 +346,40 @@ impl NodeType {
             "source_encoding_node" => Self::SourceEncodingNode,
             "pre_execution_node" => Self::PreExecutionNode,
             "post_execution_node" => Self::PostExecutionNode,
+            // Numeric literals
+            "rational_node" => Self::RationalNode,
+            "imaginary_node" => Self::ImaginaryNode,
+            // String interpolation
+            "embedded_variable_node" => Self::EmbeddedVariableNode,
+            // Pattern matching patterns
+            "array_pattern_node" => Self::ArrayPatternNode,
+            "hash_pattern_node" => Self::HashPatternNode,
+            "find_pattern_node" => Self::FindPatternNode,
+            "capture_pattern_node" => Self::CapturePatternNode,
+            "alternation_pattern_node" => Self::AlternationPatternNode,
+            "pinned_expression_node" => Self::PinnedExpressionNode,
+            "pinned_variable_node" => Self::PinnedVariableNode,
+            // Forwarding
+            "forwarding_arguments_node" => Self::ForwardingArgumentsNode,
+            "forwarding_parameter_node" => Self::ForwardingParameterNode,
+            // References
+            "back_reference_read_node" => Self::BackReferenceReadNode,
+            "numbered_reference_read_node" => Self::NumberedReferenceReadNode,
+            // Call/Index compound assignment
+            "call_and_write_node" => Self::CallAndWriteNode,
+            "call_or_write_node" => Self::CallOrWriteNode,
+            "call_operator_write_node" => Self::CallOperatorWriteNode,
+            "index_and_write_node" => Self::IndexAndWriteNode,
+            "index_or_write_node" => Self::IndexOrWriteNode,
+            "index_operator_write_node" => Self::IndexOperatorWriteNode,
+            // Match
+            "match_write_node" => Self::MatchWriteNode,
+            "match_last_line_node" => Self::MatchLastLineNode,
+            "interpolated_match_last_line_node" => Self::InterpolatedMatchLastLineNode,
+            // Other
+            "flip_flop_node" => Self::FlipFlopNode,
+            "implicit_node" => Self::ImplicitNode,
+            "implicit_rest_node" => Self::ImplicitRestNode,
             _ => Self::Unknown(s.to_string()),
         }
     }

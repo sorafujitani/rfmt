@@ -295,6 +295,50 @@ module Rfmt
                      []
                    when Prism::PreExecutionNode, Prism::PostExecutionNode
                      [node.statements].compact
+                   # Numeric literals
+                   when Prism::RationalNode, Prism::ImaginaryNode
+                     [node.numeric].compact
+                   # String interpolation
+                   when Prism::EmbeddedVariableNode
+                     [node.variable].compact
+                   # Pattern matching patterns
+                   when Prism::ArrayPatternNode
+                     [*node.requireds, node.rest, *node.posts].compact
+                   when Prism::HashPatternNode
+                     [*node.elements, node.rest].compact
+                   when Prism::FindPatternNode
+                     [node.left, *node.requireds, node.right].compact
+                   when Prism::CapturePatternNode
+                     [node.value, node.target].compact
+                   when Prism::AlternationPatternNode
+                     [node.left, node.right].compact
+                   when Prism::PinnedExpressionNode
+                     [node.expression].compact
+                   when Prism::PinnedVariableNode
+                     [node.variable].compact
+                   # Forwarding
+                   when Prism::ForwardingArgumentsNode, Prism::ForwardingParameterNode
+                     []
+                   # References
+                   when Prism::BackReferenceReadNode, Prism::NumberedReferenceReadNode
+                     []
+                   # Call/Index compound assignment
+                   when Prism::CallAndWriteNode, Prism::CallOrWriteNode, Prism::CallOperatorWriteNode
+                     [node.receiver, node.value].compact
+                   when Prism::IndexAndWriteNode, Prism::IndexOrWriteNode, Prism::IndexOperatorWriteNode
+                     [node.receiver, node.arguments, node.value].compact
+                   # Match
+                   when Prism::MatchWriteNode
+                     [node.call, *node.targets].compact
+                   when Prism::MatchLastLineNode, Prism::InterpolatedMatchLastLineNode
+                     []
+                   # Other
+                   when Prism::FlipFlopNode
+                     [node.left, node.right].compact
+                   when Prism::ImplicitNode
+                     [node.value].compact
+                   when Prism::ImplicitRestNode
+                     []
                    else
                      # For unknown types, try to get child nodes if they exist
                      []
