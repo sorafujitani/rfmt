@@ -18,6 +18,8 @@ pub struct Emitter {
     buffer: String,
     all_comments: Vec<Comment>,
     emitted_comment_indices: HashSet<usize>,
+    /// Cached indent strings by level (index = level, value = indent string)
+    indent_cache: Vec<String>,
 }
 
 impl Emitter {
@@ -28,6 +30,7 @@ impl Emitter {
             buffer: String::new(),
             all_comments: Vec::new(),
             emitted_comment_indices: HashSet::new(),
+            indent_cache: Vec::new(),
         }
     }
 
@@ -39,6 +42,7 @@ impl Emitter {
             buffer: String::new(),
             all_comments: Vec::new(),
             emitted_comment_indices: HashSet::new(),
+            indent_cache: Vec::new(),
         }
     }
 
@@ -62,7 +66,7 @@ impl Emitter {
             self.buffer.push('\n');
         }
 
-        Ok(self.buffer.clone())
+        Ok(std::mem::take(&mut self.buffer))
     }
 
     /// Find the last line of code in the AST (excluding comments)
@@ -125,10 +129,7 @@ impl Emitter {
 
     /// Emit comments that appear before a given line
     fn emit_comments_before(&mut self, line: usize, indent_level: usize) -> Result<()> {
-        let indent_str = match self.config.formatting.indent_style {
-            IndentStyle::Spaces => " ".repeat(self.config.formatting.indent_width * indent_level),
-            IndentStyle::Tabs => "\t".repeat(indent_level),
-        };
+        let indent_str = self.get_indent(indent_level).to_string();
 
         let mut comments_to_emit = Vec::new();
         for (idx, comment) in self.all_comments.iter().enumerate() {
@@ -192,10 +193,7 @@ impl Emitter {
         end_line: usize,
         indent_level: usize,
     ) -> Result<()> {
-        let indent_str = match self.config.formatting.indent_style {
-            IndentStyle::Spaces => " ".repeat(self.config.formatting.indent_width * indent_level),
-            IndentStyle::Tabs => "\t".repeat(indent_level),
-        };
+        let indent_str = self.get_indent(indent_level).to_string();
 
         let mut comments_to_emit = Vec::new();
         for (idx, comment) in self.all_comments.iter().enumerate() {
@@ -243,10 +241,7 @@ impl Emitter {
         indent_level: usize,
         prev_line: usize,
     ) -> Result<()> {
-        let indent_str = match self.config.formatting.indent_style {
-            IndentStyle::Spaces => " ".repeat(self.config.formatting.indent_width * indent_level),
-            IndentStyle::Tabs => "\t".repeat(indent_level),
-        };
+        let indent_str = self.get_indent(indent_level).to_string();
 
         let mut comments_to_emit = Vec::new();
         for (idx, comment) in self.all_comments.iter().enumerate() {
@@ -1254,13 +1249,23 @@ impl Emitter {
         Ok(())
     }
 
+    /// Get cached indent string for a given level
+    fn get_indent(&mut self, level: usize) -> &str {
+        // Extend cache if needed
+        while self.indent_cache.len() <= level {
+            let len = self.indent_cache.len();
+            let indent = match self.config.formatting.indent_style {
+                IndentStyle::Spaces => " ".repeat(self.config.formatting.indent_width * len),
+                IndentStyle::Tabs => "\t".repeat(len),
+            };
+            self.indent_cache.push(indent);
+        }
+        &self.indent_cache[level]
+    }
+
     /// Emit indentation
     fn emit_indent(&mut self, level: usize) -> Result<()> {
-        let indent_str = match self.config.formatting.indent_style {
-            IndentStyle::Spaces => " ".repeat(self.config.formatting.indent_width * level),
-            IndentStyle::Tabs => "\t".repeat(level),
-        };
-
+        let indent_str = self.get_indent(level).to_string();
         write!(self.buffer, "{}", indent_str)?;
         Ok(())
     }
