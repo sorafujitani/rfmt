@@ -1,7 +1,7 @@
 use crate::ast::{Comment, Node, NodeType};
 use crate::config::{Config, IndentStyle};
 use crate::error::Result;
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::fmt::Write;
 
 /// Block style for Ruby blocks
@@ -20,6 +20,9 @@ pub struct Emitter {
     emitted_comment_indices: HashSet<usize>,
     /// Cached indent strings by level (index = level, value = indent string)
     indent_cache: Vec<String>,
+    /// Index of comment indices by start line for O(log n) lookup
+    /// Key: start_line, Value: Vec of comment indices that start on that line
+    comments_by_line: BTreeMap<usize, Vec<usize>>,
 }
 
 impl Emitter {
@@ -31,6 +34,7 @@ impl Emitter {
             all_comments: Vec::new(),
             emitted_comment_indices: HashSet::new(),
             indent_cache: Vec::new(),
+            comments_by_line: BTreeMap::new(),
         }
     }
 
@@ -43,6 +47,7 @@ impl Emitter {
             all_comments: Vec::new(),
             emitted_comment_indices: HashSet::new(),
             indent_cache: Vec::new(),
+            comments_by_line: BTreeMap::new(),
         }
     }
 
@@ -50,8 +55,10 @@ impl Emitter {
     pub fn emit(&mut self, ast: &Node) -> Result<String> {
         self.buffer.clear();
         self.emitted_comment_indices.clear();
+        self.comments_by_line.clear();
 
         self.collect_comments(ast);
+        self.build_comment_index();
 
         self.emit_node(ast, 0)?;
 
@@ -127,25 +134,75 @@ impl Emitter {
         }
     }
 
+    /// Build the comment index by start line for O(log n) range lookups
+    fn build_comment_index(&mut self) {
+        for (idx, comment) in self.all_comments.iter().enumerate() {
+            self.comments_by_line
+                .entry(comment.location.start_line)
+                .or_default()
+                .push(idx);
+        }
+    }
+
+    /// Get comment indices in the given line range [start_line, end_line)
+    /// Uses BTreeMap range for O(log n) lookup instead of O(n) iteration
+    fn get_comment_indices_in_range(&self, start_line: usize, end_line: usize) -> Vec<usize> {
+        self.comments_by_line
+            .range(start_line..end_line)
+            .flat_map(|(_, indices)| indices.iter().copied())
+            .filter(|&idx| !self.emitted_comment_indices.contains(&idx))
+            .collect()
+    }
+
+    /// Get comment indices before a given line (exclusive)
+    /// Uses BTreeMap range for O(log n) lookup
+    fn get_comment_indices_before(&self, line: usize) -> Vec<usize> {
+        self.comments_by_line
+            .range(..line)
+            .flat_map(|(_, indices)| indices.iter().copied())
+            .filter(|&idx| {
+                !self.emitted_comment_indices.contains(&idx)
+                    && self.all_comments[idx].location.end_line < line
+            })
+            .collect()
+    }
+
+    /// Get comment indices on a specific line (for trailing comments)
+    /// Uses BTreeMap get for O(log n) lookup
+    fn get_comment_indices_on_line(&self, line: usize) -> Vec<usize> {
+        self.comments_by_line
+            .get(&line)
+            .map(|indices| {
+                indices
+                    .iter()
+                    .copied()
+                    .filter(|&idx| !self.emitted_comment_indices.contains(&idx))
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
     /// Emit comments that appear before a given line
+    /// Uses BTreeMap index for O(log n) lookup instead of O(n) iteration
     fn emit_comments_before(&mut self, line: usize, indent_level: usize) -> Result<()> {
         let indent_str = self.get_indent(indent_level).to_string();
 
-        let mut comments_to_emit = Vec::new();
-        for (idx, comment) in self.all_comments.iter().enumerate() {
-            if self.emitted_comment_indices.contains(&idx) {
-                continue;
-            }
+        // Use indexed lookup instead of iterating all comments
+        let indices = self.get_comment_indices_before(line);
 
-            if comment.location.end_line < line {
-                comments_to_emit.push((
+        // Build list of comments to emit with their data
+        let mut comments_to_emit: Vec<_> = indices
+            .into_iter()
+            .map(|idx| {
+                let comment = &self.all_comments[idx];
+                (
                     idx,
                     comment.text.clone(),
                     comment.location.start_line,
                     comment.location.end_line,
-                ));
-            }
-        }
+                )
+            })
+            .collect();
 
         // Sort by start_line to emit in order
         comments_to_emit.sort_by_key(|(_, _, start, _)| *start);
@@ -178,15 +235,19 @@ impl Emitter {
     }
 
     /// Check if there are any unemitted comments in the given line range
+    /// Uses BTreeMap index for O(log n) lookup instead of O(n) iteration
     fn has_comments_in_range(&self, start_line: usize, end_line: usize) -> bool {
-        self.all_comments.iter().enumerate().any(|(idx, comment)| {
-            !self.emitted_comment_indices.contains(&idx)
-                && comment.location.start_line >= start_line
-                && comment.location.end_line < end_line
-        })
+        self.comments_by_line
+            .range(start_line..end_line)
+            .flat_map(|(_, indices)| indices.iter())
+            .any(|&idx| {
+                !self.emitted_comment_indices.contains(&idx)
+                    && self.all_comments[idx].location.end_line < end_line
+            })
     }
 
     /// Emit comments that are within a given line range (exclusive of end_line)
+    /// Uses BTreeMap index for O(log n) lookup instead of O(n) iteration
     fn emit_comments_in_range(
         &mut self,
         start_line: usize,
@@ -195,21 +256,23 @@ impl Emitter {
     ) -> Result<()> {
         let indent_str = self.get_indent(indent_level).to_string();
 
-        let mut comments_to_emit = Vec::new();
-        for (idx, comment) in self.all_comments.iter().enumerate() {
-            if self.emitted_comment_indices.contains(&idx) {
-                continue;
-            }
+        // Use indexed lookup instead of iterating all comments
+        let indices = self.get_comment_indices_in_range(start_line, end_line);
 
-            if comment.location.start_line >= start_line && comment.location.end_line < end_line {
-                comments_to_emit.push((
+        // Build list of comments to emit, filtering by end_line
+        let mut comments_to_emit: Vec<_> = indices
+            .into_iter()
+            .filter(|&idx| self.all_comments[idx].location.end_line < end_line)
+            .map(|idx| {
+                let comment = &self.all_comments[idx];
+                (
                     idx,
                     comment.text.clone(),
                     comment.location.start_line,
                     comment.location.end_line,
-                ));
-            }
-        }
+                )
+            })
+            .collect();
 
         // Sort by start_line to emit in order
         comments_to_emit.sort_by_key(|(_, _, start, _)| *start);
@@ -234,6 +297,7 @@ impl Emitter {
     }
 
     /// Emit comments that are within a given line range, preserving blank lines from prev_line
+    /// Uses BTreeMap index for O(log n) lookup instead of O(n) iteration
     fn emit_comments_in_range_with_prev_line(
         &mut self,
         start_line: usize,
@@ -243,21 +307,23 @@ impl Emitter {
     ) -> Result<()> {
         let indent_str = self.get_indent(indent_level).to_string();
 
-        let mut comments_to_emit = Vec::new();
-        for (idx, comment) in self.all_comments.iter().enumerate() {
-            if self.emitted_comment_indices.contains(&idx) {
-                continue;
-            }
+        // Use indexed lookup instead of iterating all comments
+        let indices = self.get_comment_indices_in_range(start_line, end_line);
 
-            if comment.location.start_line >= start_line && comment.location.end_line < end_line {
-                comments_to_emit.push((
+        // Build list of comments to emit, filtering by end_line
+        let mut comments_to_emit: Vec<_> = indices
+            .into_iter()
+            .filter(|&idx| self.all_comments[idx].location.end_line < end_line)
+            .map(|idx| {
+                let comment = &self.all_comments[idx];
+                (
                     idx,
                     comment.text.clone(),
                     comment.location.start_line,
                     comment.location.end_line,
-                ));
-            }
-        }
+                )
+            })
+            .collect();
 
         // Sort by start_line to emit in order
         comments_to_emit.sort_by_key(|(_, _, start, _)| *start);
@@ -280,18 +346,16 @@ impl Emitter {
     }
 
     /// Emit comments that appear on the same line (trailing comments)
+    /// Uses BTreeMap index for O(log n) lookup instead of O(n) iteration
     fn emit_trailing_comments(&mut self, line: usize) -> Result<()> {
-        let mut indices_to_emit = Vec::new();
-        for (idx, comment) in self.all_comments.iter().enumerate() {
-            if self.emitted_comment_indices.contains(&idx) {
-                continue;
-            }
+        // Use indexed lookup for O(log n) access
+        let indices = self.get_comment_indices_on_line(line);
 
-            // Collect comments on the same line (trailing)
-            if comment.location.start_line == line {
-                indices_to_emit.push((idx, comment.text.clone()));
-            }
-        }
+        // Build list of comments to emit
+        let indices_to_emit: Vec<_> = indices
+            .into_iter()
+            .map(|idx| (idx, self.all_comments[idx].text.clone()))
+            .collect();
 
         // Now emit the collected comments
         for (idx, text) in indices_to_emit {
