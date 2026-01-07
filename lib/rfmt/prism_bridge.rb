@@ -56,7 +56,7 @@ module Rfmt
 
     # Serialize the Prism AST to JSON
     def self.serialize_ast(node)
-      JSON.generate(convert_node(node))
+      JSON.generate(convert_node(node), max_nesting: false)
     end
 
     # Serialize the Prism AST with comments to JSON
@@ -80,7 +80,7 @@ module Rfmt
       JSON.generate({
                       ast: convert_node(result.value),
                       comments: comments
-                    })
+                    }, max_nesting: false)
     end
 
     # Convert a Prism node to our internal representation
