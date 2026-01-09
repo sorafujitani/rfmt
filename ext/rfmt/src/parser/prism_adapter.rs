@@ -13,8 +13,8 @@ impl PrismAdapter {
         Self
     }
 
-    /// Parse JSON from Ruby's PrismBridge
-    fn parse_json(&self, json: &str) -> Result<(PrismNode, Vec<PrismComment>)> {
+    /// Parse JSON from Ruby's `PrismBridge`
+    fn parse_json(json: &str) -> Result<(PrismNode, Vec<PrismComment>)> {
         // Try to parse as new format with comments first
         if let Ok(wrapper) = serde_json::from_str::<PrismWrapper>(json) {
             return Ok((wrapper.ast, wrapper.comments));
@@ -26,8 +26,8 @@ impl PrismAdapter {
         Ok((node, Vec::new()))
     }
 
-    /// Convert PrismNode to internal Node representation
-    fn convert_node(&self, prism_node: &PrismNode) -> Result<Node> {
+    /// Convert `PrismNode` to internal `Node` representation
+    fn convert_node(prism_node: &PrismNode) -> Result<Node> {
         // Convert node type (always succeeds, returns Unknown for unsupported types)
         let node_type = NodeType::from_str(&prism_node.node_type);
 
@@ -42,18 +42,15 @@ impl PrismAdapter {
         );
 
         // Convert children recursively
-        let children: Result<Vec<Node>> = prism_node
-            .children
-            .iter()
-            .map(|child| self.convert_node(child))
-            .collect();
+        let children: Result<Vec<Node>> =
+            prism_node.children.iter().map(Self::convert_node).collect();
         let children = children?;
 
         // Convert comments
         let comments: Vec<Comment> = prism_node
             .comments
             .iter()
-            .map(|c| self.convert_comment(c))
+            .map(Self::convert_comment)
             .collect();
 
         // Convert formatting info
@@ -76,21 +73,8 @@ impl PrismAdapter {
         })
     }
 
-    /// Convert PrismComment to internal Comment
-    fn convert_comment(&self, comment: &PrismComment) -> Comment {
-        let comment_type = match comment.comment_type.as_str() {
-            "line" => CommentType::Line,
-            "block" => CommentType::Block,
-            _ => CommentType::Line, // default to line comment
-        };
-
-        let position = match comment.position.as_str() {
-            "leading" => CommentPosition::Leading,
-            "trailing" => CommentPosition::Trailing,
-            "inner" => CommentPosition::Inner,
-            _ => CommentPosition::Leading, // default to leading
-        };
-
+    /// Convert `PrismComment` to internal `Comment`
+    fn convert_comment(comment: &PrismComment) -> Comment {
         Comment {
             text: comment.text.clone(),
             location: Location::new(
@@ -101,21 +85,21 @@ impl PrismAdapter {
                 comment.location.start_offset,
                 comment.location.end_offset,
             ),
-            comment_type,
-            position,
+            comment_type: comment.comment_type.into(),
+            position: comment.position.into(),
         }
     }
 }
 
 impl RubyParser for PrismAdapter {
     fn parse(&self, json: &str) -> Result<Node> {
-        let (prism_ast, top_level_comments) = self.parse_json(json)?;
-        let mut node = self.convert_node(&prism_ast)?;
+        let (prism_ast, top_level_comments) = Self::parse_json(json)?;
+        let mut node = Self::convert_node(&prism_ast)?;
 
         // Attach top-level comments to the root node
         if !top_level_comments.is_empty() {
             node.comments
-                .extend(top_level_comments.iter().map(|c| self.convert_comment(c)));
+                .extend(top_level_comments.iter().map(Self::convert_comment));
         }
 
         Ok(node)
@@ -160,8 +144,46 @@ pub struct PrismLocation {
 pub struct PrismComment {
     pub text: String,
     pub location: PrismLocation,
-    pub comment_type: String,
-    pub position: String,
+    #[serde(rename = "type", default)]
+    pub comment_type: PrismCommentType,
+    #[serde(default)]
+    pub position: PrismCommentPosition,
+}
+
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PrismCommentType {
+    #[default]
+    Line,
+    Block,
+}
+
+impl From<PrismCommentType> for CommentType {
+    fn from(t: PrismCommentType) -> Self {
+        match t {
+            PrismCommentType::Line => CommentType::Line,
+            PrismCommentType::Block => CommentType::Block,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PrismCommentPosition {
+    #[default]
+    Leading,
+    Trailing,
+    Inner,
+}
+
+impl From<PrismCommentPosition> for CommentPosition {
+    fn from(p: PrismCommentPosition) -> Self {
+        match p {
+            PrismCommentPosition::Leading => CommentPosition::Leading,
+            PrismCommentPosition::Trailing => CommentPosition::Trailing,
+            PrismCommentPosition::Inner => CommentPosition::Inner,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
