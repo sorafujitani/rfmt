@@ -29,7 +29,7 @@ impl From<std::fmt::Error> for RfmtError {
 }
 
 impl RfmtError {
-    /// Convert RfmtError to Magnus Error for Ruby interop
+    /// Convert `RfmtError` to Magnus `Error` for Ruby interop
     pub fn to_magnus_error(&self, ruby: &Ruby) -> MagnusError {
         let exception_class = match self {
             RfmtError::PrismError(_) => "PrismError",
