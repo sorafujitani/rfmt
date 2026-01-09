@@ -54,7 +54,12 @@ impl Log for RfmtLogger {
             return;
         }
 
-        let mut output = self.output.lock().unwrap();
+        // Use unwrap_or_else to recover from poisoned mutex.
+        // Logging should never cause a panic, even if another thread panicked while holding the lock.
+        let mut output = self
+            .output
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
 
         writeln!(
             output,
@@ -67,7 +72,11 @@ impl Log for RfmtLogger {
     }
 
     fn flush(&self) {
-        let mut output = self.output.lock().unwrap();
+        // Recover from poisoned mutex - flushing should not panic
+        let mut output = self
+            .output
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         output.flush().ok();
     }
 }
