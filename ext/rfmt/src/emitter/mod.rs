@@ -62,13 +62,9 @@ impl Emitter {
 
         self.emit_node(ast, 0)?;
 
-        // Find the last emitted code line for proper blank line handling
         let last_code_line = Self::find_last_code_line(ast);
-
-        // Emit any remaining comments that weren't emitted
         self.emit_remaining_comments(last_code_line)?;
 
-        // Ensure file ends with a newline
         if !self.buffer.ends_with('\n') {
             self.buffer.push('\n');
         }
@@ -186,13 +182,10 @@ impl Emitter {
     /// Emit comments that appear before a given line
     /// Uses BTreeMap index for O(log n) lookup instead of O(n) iteration
     fn emit_comments_before(&mut self, line: usize, indent_level: usize) -> Result<()> {
-        // Ensure indent cache is ready before we start borrowing
         self.ensure_indent_cache(indent_level);
 
-        // Use indexed lookup instead of iterating all comments
         let indices = self.get_comment_indices_before(line);
 
-        // Build list of comments to emit with index and location only (no text clone)
         let mut comments_to_emit: Vec<_> = indices
             .into_iter()
             .map(|idx| {
@@ -201,7 +194,6 @@ impl Emitter {
             })
             .collect();
 
-        // Sort by start_line to emit in order
         comments_to_emit.sort_by_key(|(_, start, _)| *start);
 
         let comments_count = comments_to_emit.len();
@@ -210,7 +202,6 @@ impl Emitter {
         for (i, (idx, comment_start_line, comment_end_line)) in
             comments_to_emit.into_iter().enumerate()
         {
-            // Preserve blank lines between comments
             if let Some(prev_end) = last_comment_end_line {
                 let gap = comment_start_line.saturating_sub(prev_end);
                 for _ in 1..gap {
@@ -218,7 +209,6 @@ impl Emitter {
                 }
             }
 
-            // Access text by reference at write time (no clone needed)
             writeln!(
                 self.buffer,
                 "{}{}",
@@ -227,7 +217,6 @@ impl Emitter {
             self.emitted_comment_indices.insert(idx);
             last_comment_end_line = Some(comment_end_line);
 
-            // Add blank line after the LAST comment if there was a gap to the code
             if i == comments_count - 1 && line > comment_end_line + 1 {
                 self.buffer.push('\n');
             }
@@ -256,13 +245,10 @@ impl Emitter {
         end_line: usize,
         indent_level: usize,
     ) -> Result<()> {
-        // Ensure indent cache is ready before we start borrowing
         self.ensure_indent_cache(indent_level);
 
-        // Use indexed lookup instead of iterating all comments
         let indices = self.get_comment_indices_in_range(start_line, end_line);
 
-        // Build list of comments to emit with index and location only (no text clone)
         let mut comments_to_emit: Vec<_> = indices
             .into_iter()
             .filter(|&idx| self.all_comments[idx].location.end_line < end_line)
@@ -272,13 +258,11 @@ impl Emitter {
             })
             .collect();
 
-        // Sort by start_line to emit in order
         comments_to_emit.sort_by_key(|(_, start, _)| *start);
 
         let mut last_comment_end_line: Option<usize> = None;
 
         for (idx, comment_start_line, comment_end_line) in comments_to_emit {
-            // Preserve blank lines between comments
             if let Some(prev_end) = last_comment_end_line {
                 let gap = comment_start_line.saturating_sub(prev_end);
                 for _ in 1..gap {
@@ -286,7 +270,6 @@ impl Emitter {
                 }
             }
 
-            // Access text by reference at write time (no clone needed)
             writeln!(
                 self.buffer,
                 "{}{}",
@@ -308,13 +291,10 @@ impl Emitter {
         indent_level: usize,
         prev_line: usize,
     ) -> Result<()> {
-        // Ensure indent cache is ready before we start borrowing
         self.ensure_indent_cache(indent_level);
 
-        // Use indexed lookup instead of iterating all comments
         let indices = self.get_comment_indices_in_range(start_line, end_line);
 
-        // Build list of comments to emit with index and location only (no text clone)
         let mut comments_to_emit: Vec<_> = indices
             .into_iter()
             .filter(|&idx| self.all_comments[idx].location.end_line < end_line)
@@ -324,7 +304,6 @@ impl Emitter {
             })
             .collect();
 
-        // Sort by start_line to emit in order
         comments_to_emit.sort_by_key(|(_, start, _)| *start);
 
         let mut last_end_line: usize = prev_line;
@@ -336,7 +315,6 @@ impl Emitter {
                 self.buffer.push('\n');
             }
 
-            // Access text by reference at write time (no clone needed)
             writeln!(
                 self.buffer,
                 "{}{}",

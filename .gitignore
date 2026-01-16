@@ -31,3 +31,13 @@ lefthook-local.yml
 .DS_Store
 **/.DS_Store
 
+# Development artifacts and documentation archives
+deepwiki-ctx.skill
+build/
+docspriv/
+
+# Benchmark and test results
+**/benchmark/results.json
+**/benchmarks/*.json
+**/test_results/*.json
+
