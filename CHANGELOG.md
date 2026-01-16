@@ -1,5 +1,17 @@
 ## [Unreleased]
 
+## [1.3.3] - 2026-01-17
+
+### Fixed
+- Add native extension loader for Ruby 3.3+ compatibility (#65)
+  - Resolves LoadError on Ruby 3.3+ arm64-darwin systems
+  - Implements dynamic path resolution for version-specific directories
+
+### Changed
+- Remove unnecessary String clones in comment emission (performance optimization)
+- Remove debug logs and obvious comments from codebase
+- Update .gitignore with development artifacts
+
 ## [1.3.2] - 2026-01-09
 
 ### Added
