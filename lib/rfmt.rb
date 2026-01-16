@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 require_relative 'rfmt/version'
-require_relative 'rfmt/rfmt'
+require_relative 'rfmt/native_extension_loader'
 require_relative 'rfmt/prism_bridge'
+
+# Load native extension with version-aware loader
+Rfmt::NativeExtensionLoader.load_extension
 
 module Rfmt
   class Error < StandardError; end
