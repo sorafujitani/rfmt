@@ -102,14 +102,9 @@ module Rfmt
     # @param force [Boolean] Overwrite existing file if true
     # @return [Boolean] true if file was created, false if already exists
     def self.init(path = '.rfmt.yml', force: false)
-      if File.exist?(path) && !force
-        warn "Configuration file already exists: #{path}"
-        warn 'Use force: true to overwrite'
-        return false
-      end
+      return false if File.exist?(path) && !force
 
       File.write(path, DEFAULT_CONFIG)
-      puts "Created rfmt configuration file: #{path}"
       true
     end
 
