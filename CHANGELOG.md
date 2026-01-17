@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [1.4.1] - 2026-01-17
+
+### Fixed
+- Fixed comment positioning issue where standalone comments before `end` statements were incorrectly attached to previous code lines
+- Improved comment semantic preservation to maintain developer's original placement intent
+- Enhanced standalone comment detection logic to distinguish between inline and independent comments
+
 ## [1.4.0] - 2026-01-17
 
 ### Added
