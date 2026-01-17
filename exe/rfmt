@@ -1,6 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# Suppress gem warnings for performance (saves ~2 seconds)
+$VERBOSE = nil unless ENV['RFMT_VERBOSE']
+
 require 'rfmt/cli'
 
 # Known subcommands - if first arg is not one of these, prepend 'format'

@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Fast launcher for rfmt without gem warnings
+
+# Suppress all warnings
+$VERBOSE = nil
+
+# Direct load without rubygems overhead
+require_relative '../lib/rfmt/cli'
+
+Rfmt::CLI.start(ARGV)
