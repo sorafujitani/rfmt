@@ -46,33 +46,31 @@ Enforces code style rules:
 - Quote style standardization
 - Method definition formatting
 
-## Performance Benchmarks
+## Performance
 
-Execution time comparison on a Rails project (111 files, 3,241 lines):
+rfmt delivers consistent, fast formatting across projects of any size:
 
-| Test Type | Files | rfmt | RuboCop | Ratio |
-|-----------|-------|------|---------|-------|
-| Single File | 1 | 191ms | 1.38s | 7.2x |
-| Directory | 14 | 176ms | 1.68s | 9.6x |
-| Full Project (check) | 111 | 172ms | 4.36s | 25.4x |
+| Project Size | Files | Execution Time | Throughput |
+|-------------|-------|----------------|------------|
+| Small | 9 files | ~105ms | 85 files/sec |
+| Medium | 35 files | ~110ms | 315 files/sec |
+| Large | 151 files | ~100ms | 1,560 files/sec |
 
-**About this comparison:**
-- RuboCop times include startup overhead and loading all cops (linting rules)
-- RuboCop was run with default configuration (all cops enabled)
-- rfmt is a formatting-only tool with minimal overhead
-- Both tools were measured in check mode (no file modifications)
-- Results are averages from 10 runs per test
+**Key Performance Characteristics:**
 
-**Observations:**
-- rfmt execution time remains constant (172-191ms) regardless of file count
-- Low variance across runs (standard deviation: 8-23ms)
+- **Constant Time**: Execution time stays around 100ms regardless of project size
+- **Parallel Processing**: Automatic scaling with available CPU cores
+- **High Throughput**: Up to 1,500+ files per second on large projects
+- **Low Overhead**: Minimal startup time and memory usage
 
 **Test Environment:**
 - CPU: Apple Silicon (arm64)
-- Ruby: 3.4.5
-- rfmt: 0.3.0, RuboCop: 1.81.7
+- Ruby: 3.4.8
+- Average of 5 runs per test
 
-See [detailed benchmark report](docs/benchmark.md) for complete data.
+*Built with Rust for optimal performance and memory efficiency.*
+
+For detailed performance comparisons and benchmarks, see [Performance Benchmarks](docs/benchmark.md).
 
 ## Installation
 

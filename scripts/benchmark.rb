@@ -45,14 +45,31 @@ class SimpleFormatterBenchmark
   def validate_environment!
     abort "Error: Project not found at #{@rails_path}" unless Dir.exist?(@rails_path)
 
-    abort 'Error: rfmt not found' unless system('which rfmt > /dev/null 2>&1')
-
-    abort 'Error: rubocop not found' unless system('which rubocop > /dev/null 2>&1')
+    # Use the current development version of rfmt
+    @rfmt_cmd = File.expand_path('exe/rfmt', __dir__ + '/..')
+    @rubocop_cmd = 'bundle exec rubocop'
+    
+    abort "Error: rfmt not found at #{@rfmt_cmd}" unless File.exist?(@rfmt_cmd)
+    abort 'Error: rubocop not available' unless system("#{@rubocop_cmd} --version > /dev/null 2>&1")
 
     ruby_files = Dir.glob("#{@rails_path}/**/*.rb")
     abort 'Error: No Ruby files found' if ruby_files.empty?
 
-    puts "Found #{ruby_files.size} Ruby files\n\n"
+    puts "Found #{ruby_files.size} Ruby files"
+    
+    # Check if files need formatting
+    needs_formatting = check_files_need_formatting(ruby_files.first(5))
+    puts "Sample files need formatting: #{needs_formatting > 0}"
+    puts
+  end
+  
+  def check_files_need_formatting(files)
+    count = 0
+    files.each do |file|
+      result = system("#{@rfmt_cmd} check '#{file}' > /dev/null 2>&1")
+      count += 1 unless result
+    end
+    count
   end
 
   def collect_metadata
@@ -79,13 +96,17 @@ class SimpleFormatterBenchmark
   end
 
   def rfmt_version
-    @rfmt_version ||= `rfmt --version 2>&1`.strip.split("\n").first || 'unknown'
+    @rfmt_version ||= begin
+      # Get version from current development build
+      version_output = `#{@rfmt_cmd} version 2>/dev/null`.strip
+      version_output.empty? ? 'development' : version_output
+    end
   rescue StandardError
-    'unknown'
+    'development'
   end
 
   def rubocop_version
-    @rubocop_version ||= `rubocop --version`.strip.split("\n").first || 'unknown'
+    @rubocop_version ||= `#{@rubocop_cmd} --version 2>/dev/null`.strip.split("\n").first || 'unknown'
   rescue StandardError
     'unknown'
   end
@@ -129,7 +150,7 @@ class SimpleFormatterBenchmark
         FileUtils.cp(backup_file, test_file)
 
         time = Benchmark.realtime do
-          system("rfmt format #{test_file} > /dev/null 2>&1")
+          system("#{@rfmt_cmd} format '#{test_file}' > /dev/null 2>&1")
         end
         rfmt_times << time
         print '.'
@@ -143,7 +164,7 @@ class SimpleFormatterBenchmark
         FileUtils.cp(backup_file, test_file)
 
         time = Benchmark.realtime do
-          system("rubocop -A #{test_file} > /dev/null 2>&1")
+          system("#{@rubocop_cmd} -A '#{test_file}' > /dev/null 2>&1")
         end
         rubocop_times << time
         print '.'
@@ -208,7 +229,7 @@ class SimpleFormatterBenchmark
         end
 
         time = Benchmark.realtime do
-          system("rfmt format #{test_dir} > /dev/null 2>&1")
+          system("#{@rfmt_cmd} format '#{test_dir}' > /dev/null 2>&1")
         end
         rfmt_times << time
         print '.'
@@ -226,7 +247,7 @@ class SimpleFormatterBenchmark
         end
 
         time = Benchmark.realtime do
-          system("rubocop -A #{test_dir} > /dev/null 2>&1")
+          system("#{@rubocop_cmd} -A '#{test_dir}' > /dev/null 2>&1")
         end
         rubocop_times << time
         print '.'
@@ -266,7 +287,7 @@ class SimpleFormatterBenchmark
     rfmt_times = []
     BENCHMARK_RUNS.times do
       time = Benchmark.realtime do
-        system("rfmt check #{@rails_path} > /dev/null 2>&1")
+        system("#{@rfmt_cmd} check '#{@rails_path}' > /dev/null 2>&1")
       end
       rfmt_times << time
       print '.'
@@ -278,7 +299,7 @@ class SimpleFormatterBenchmark
     rubocop_times = []
     BENCHMARK_RUNS.times do
       time = Benchmark.realtime do
-        system("rubocop #{@rails_path} > /dev/null 2>&1")
+        system("#{@rubocop_cmd} '#{@rails_path}' > /dev/null 2>&1")
       end
       rubocop_times << time
       print '.'
