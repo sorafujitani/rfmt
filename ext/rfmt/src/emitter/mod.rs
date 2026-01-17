@@ -282,6 +282,112 @@ impl Emitter {
         Ok(())
     }
 
+    /// Emit comments that appear immediately before the end statement while preserving their position
+    /// This is crucial for maintaining semantic relationships between comments and the code they precede
+    fn emit_comments_before_end(
+        &mut self,
+        construct_start_line: usize,
+        construct_end_line: usize,
+        indent_level: usize,
+    ) -> Result<()> {
+        self.ensure_indent_cache(indent_level);
+
+        // Implement proper comment positioning logic
+        // Only emit standalone comments that appear on their own lines
+        // This prevents comments from being incorrectly attached to code statements
+        
+        // Find comments that are between the construct and the end line
+        // Only emit comments that haven't been emitted yet AND are on their own lines
+        let indices = self.get_comment_indices_in_range(construct_start_line + 1, construct_end_line);
+
+        let mut comments_to_emit: Vec<_> = indices
+            .into_iter()
+            .filter(|&idx| {
+                let comment = &self.all_comments[idx];
+                // Only emit if: not already emitted, before end line, and is standalone
+                !self.emitted_comment_indices.contains(&idx)
+                    && comment.location.end_line < construct_end_line
+                    && self.is_standalone_comment(comment)
+            })
+            .map(|idx| {
+                let comment = &self.all_comments[idx];
+                (idx, comment.location.start_line, comment.location.end_line)
+            })
+            .collect();
+
+        if comments_to_emit.is_empty() {
+            return Ok(());
+        }
+
+        comments_to_emit.sort_by_key(|(_, start, _)| *start);
+
+        // Ensure newline before first comment if buffer doesn't end with one
+        if !self.buffer.ends_with('\n') {
+            self.buffer.push('\n');
+        }
+
+        let mut last_emitted_line: Option<usize> = None;
+
+        // Emit comments while preserving their exact line positioning
+        for (idx, comment_start_line, comment_end_line) in comments_to_emit {
+            // Preserve blank lines between comments
+            if let Some(prev_line) = last_emitted_line {
+                let gap = comment_start_line.saturating_sub(prev_line);
+                for _ in 1..gap {
+                    self.buffer.push('\n');
+                }
+            }
+
+            writeln!(
+                self.buffer,
+                "{}{}",
+                &self.indent_cache[indent_level], &self.all_comments[idx].text
+            )?;
+            self.emitted_comment_indices.insert(idx);
+            last_emitted_line = Some(comment_end_line);
+        }
+
+        Ok(())
+    }
+    
+    /// Check if a comment should be treated as standalone
+    /// A standalone comment is one that should appear on its own line,
+    /// not attached to the end of a code statement
+    fn is_standalone_comment(&self, comment: &Comment) -> bool {
+        let comment_line = comment.location.start_line;
+        let comment_start_offset = comment.location.start_offset;
+        
+        // Get the source lines to analyze the comment's position
+        let lines: Vec<&str> = self.source.lines().collect();
+        
+        // Check if we have a valid line number (1-indexed to 0-indexed)
+        if comment_line == 0 || comment_line > lines.len() {
+            return false;
+        }
+        
+        let line = lines[comment_line - 1]; // Convert to 0-indexed
+        
+        // Find where the comment starts within the line
+        let comment_text = &comment.text;
+        
+        // Look for the comment marker (#) in the line
+        if let Some(hash_pos) = line.find('#') {
+            // Check if there's only whitespace before the comment
+            let before_comment = &line[..hash_pos];
+            let is_only_whitespace = before_comment.trim().is_empty();
+            
+            // Also verify this is actually our comment by checking the text matches
+            let line_comment_text = &line[hash_pos..];
+            let is_same_comment = line_comment_text.trim_end() == comment_text.trim_end();
+            
+            return is_only_whitespace && is_same_comment;
+        }
+        
+        // If we can't find the comment marker, assume it's standalone
+        // This is a fallback for edge cases
+        false
+    }
+
     /// Emit comments that are within a given line range, preserving blank lines from prev_line
     /// Uses BTreeMap index for O(log n) lookup instead of O(n) iteration
     fn emit_comments_in_range_with_prev_line(
@@ -464,9 +570,8 @@ impl Emitter {
             self.emit_node(child, indent_level + 1)?;
         }
 
-        // Emit comments that are inside the class body but not attached to any node
-        // These are comments between class_start_line and class_end_line
-        self.emit_comments_in_range(class_start_line + 1, class_end_line, indent_level + 1)?;
+        // Emit comments that appear before the end statement while preserving their position
+        self.emit_comments_before_end(class_start_line, class_end_line, indent_level + 1)?;
 
         // Add newline before end if there was body content or internal comments
         if (has_body_content || self.has_comments_in_range(class_start_line + 1, class_end_line))
@@ -512,8 +617,8 @@ impl Emitter {
             self.emit_node(child, indent_level + 1)?;
         }
 
-        // Emit comments that are inside the module body but not attached to any node
-        self.emit_comments_in_range(module_start_line + 1, module_end_line, indent_level + 1)?;
+        // Emit comments that appear before the end statement while preserving their position
+        self.emit_comments_before_end(module_start_line, module_end_line, indent_level + 1)?;
 
         // Add newline before end if there was body content or internal comments
         if (has_body_content || self.has_comments_in_range(module_start_line + 1, module_end_line))
@@ -572,6 +677,9 @@ impl Emitter {
             }
             self.emit_node(child, indent_level + 1)?;
         }
+
+        // Emit comments that appear before the end statement while preserving their position
+        self.emit_comments_before_end(node.location.start_line, node.location.end_line, indent_level + 1)?;
 
         // Add newline before end if there was body content
         if node
@@ -1457,8 +1565,8 @@ impl Emitter {
             }
         }
 
-        // Emit comments inside the singleton class body
-        self.emit_comments_in_range(class_start_line + 1, class_end_line, indent_level + 1)?;
+        // Emit comments that appear before the end statement while preserving their position
+        self.emit_comments_before_end(class_start_line, class_end_line, indent_level + 1)?;
 
         // Add newline before end if there was body content
         if (has_body_content || self.has_comments_in_range(class_start_line + 1, class_end_line))
