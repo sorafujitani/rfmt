@@ -54,7 +54,7 @@ module Rfmt
     option :check, type: :boolean, desc: "Check if files are formatted (don't write)"
     option :diff, type: :boolean, desc: 'Show diff of changes'
     option :diff_format, type: :string, default: 'unified', desc: 'Diff format: unified, side_by_side, or color'
-    option :parallel, type: :boolean, default: true, desc: 'Process files in parallel'
+    option :parallel, type: :boolean, desc: 'Use parallel processing (auto-disabled for <20 files)'
     option :jobs, type: :numeric, desc: 'Number of parallel jobs (default: CPU count)'
     option :cache, type: :boolean, default: true, desc: 'Use cache to skip unchanged files'
     option :cache_dir, type: :string, desc: 'Cache directory (default: ~/.cache/rfmt)'
@@ -93,7 +93,14 @@ module Rfmt
         say "Processing #{files.size} file(s)...", :blue
       end
 
-      results = if options[:parallel] && files.size > 1
+      use_parallel = should_use_parallel?(files)
+      
+      if options[:verbose] && files.size > 1
+        mode = use_parallel ? "parallel (#{options[:jobs] || 'auto'} jobs)" : "sequential"
+        say "Using #{mode} processing for #{files.size} files", :blue
+      end
+      
+      results = if use_parallel
                   format_files_parallel(files)
                 else
                   format_files_sequential(files)
@@ -139,6 +146,37 @@ module Rfmt
     end
 
     private
+
+    # Intelligently decide whether to use parallel processing
+    def should_use_parallel?(files)
+      return false if files.size <= 1
+      
+      # Check if parallel option was explicitly set via command line
+      # Thor sets options[:parallel] to true/false for --parallel/--no-parallel
+      # and nil when not specified
+      if !options[:parallel].nil?
+        return options[:parallel]
+      end
+      
+      # Auto decision based on workload characteristics
+      # Calculate total size for better decision
+      total_size = files.sum { |f| File.size(f) rescue 0 }
+      avg_size = total_size / files.size.to_f
+      
+      # Decision matrix:
+      # - Less than 20 files: sequential (overhead > benefit)
+      # - 20-50 files with small size (<10KB avg): sequential
+      # - 20-50 files with large size (>10KB avg): parallel
+      # - More than 50 files: always parallel
+      
+      if files.size < 20
+        false
+      elsif files.size < 50
+        avg_size > 10_000  # 10KB threshold
+      else
+        true
+      end
+    end
 
     def load_config
       if options[:config]
