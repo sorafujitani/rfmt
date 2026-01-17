@@ -1,5 +1,23 @@
 ## [Unreleased]
 
+## [1.4.0] - 2026-01-17
+
+### Added
+- New `rfmt_fast` executable for optimized performance
+- Automatic parallel processing detection logic  
+- Enhanced logging and summary display functionality
+- CLI option mapping for `-v/--version` commands
+
+### Fixed
+- Fixed `-v` flag incorrectly triggering format instead of showing version
+- Fixed `--diff` option dependency issues (added `diffy` and `diff-lcs` to gemspec)
+- CLI option conflicts between verbose and version flags
+
+### Changed
+- Updated performance benchmarks documentation
+- Code formatting improvements with Rubocop compliance
+- Dependencies alphabetically sorted in gemspec
+
 ## [1.3.4] - 2026-01-17
 
 ### Added
