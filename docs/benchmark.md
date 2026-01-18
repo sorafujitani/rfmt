@@ -5,27 +5,27 @@
 ### System
 - OS: Darwin 23.6.0
 - CPU: arm64 (Apple Silicon)
-- Ruby: 3.4.8 (portable)
+- Ruby: 3.4.8
 
 ### Tools
-- rfmt: 1.3.3 (current development)
+- rfmt: 1.3.3
 - RuboCop: 1.82.1
 
-### Test Project
-- Total files: 53 Ruby files (controlled test environment)
+### Test Data
+- Total files: 53 Ruby files
 - File types: Models, controllers, libraries, services
-- Type: Mixed Rails-style application files
+- Application type: Rails-style
 
 ### Methodology
 - Runs per test: 5
-- Metrics: Average, Median, Standard Deviation
+- Metrics collected: Average, Median, Standard Deviation
 - Test date: 2026-01-17
 
 ## Results
 
-### 1. Small Project Performance
+### 1. Small Files Performance
 
-Test: `app/models` directory (9 files)
+Test: `app/models` directory (9 files, ~1,000 lines total)
 
 | Tool | Average | Median | Std Dev | Min | Max |
 |------|---------|--------|---------|-----|-----|
@@ -34,9 +34,9 @@ Test: `app/models` directory (9 files)
 
 **Ratio**: 6.54x
 
-### 2. Medium Project Performance
+### 2. Medium Files Performance
 
-Test: `lib` directory (9 files)
+Test: `lib` directory (9 files, ~1,700 lines total)
 
 | Tool | Average | Median | Std Dev | Min | Max |
 |------|---------|--------|---------|-----|-----|
@@ -47,7 +47,7 @@ Test: `lib` directory (9 files)
 
 ### 3. Large Project Performance
 
-Test: `large_project/app/models` directory (35 files)
+Test: `large_project/app/models` directory (35 files, ~4,200 lines total)
 
 | Tool | Average | Median | Std Dev | Min | Max |
 |------|---------|--------|---------|-----|-----|
@@ -56,55 +56,44 @@ Test: `large_project/app/models` directory (35 files)
 
 **Ratio**: 6.57x
 
-## Observations
+## Measured Performance Characteristics
 
-### Execution Time Consistency
+### Execution Time Statistics
 
-rfmt shows consistent execution times across all tests:
+rfmt:
 - Standard deviation: 5-19ms
-- Execution time stays around 120ms regardless of project size
-- Low variance between runs
+- Average execution time: ~120ms across all test sizes
+- Variance between runs: 5.1-19.1ms
 
-RuboCop shows consistent but slower performance:
+RuboCop:
 - Standard deviation: 16-23ms  
-- Execution time consistently around 800ms
-- Stable performance but significantly slower
+- Average execution time: ~798ms across all test sizes
+- Variance between runs: 16.0-23.1ms
 
-### Scalability
+### Performance by Project Size
 
-| Test Type | Files | rfmt | RuboCop | Ratio |
-|-----------|-------|------|---------|-------|
-| Small Project | 9 | 122ms | 798ms | 6.54x |
-| Medium Project | 9 | 120ms | 797ms | 6.62x |
-| Large Project | 35 | 122ms | 798ms | 6.57x |
+| Files | Total Lines | rfmt | RuboCop | Ratio |
+|-------|-------------|------|---------|-------|
+| 9 | ~1,000 | 122ms | 798ms | 6.54x |
+| 9 | ~1,700 | 120ms | 797ms | 6.62x |
+| 35 | ~4,200 | 122ms | 798ms | 6.57x |
 
-rfmt execution time remains constant (~120ms) regardless of file count.
+Execution time measurements across different file counts and line counts.
 
-RuboCop execution time also remains constant (~800ms) but is consistently 6-7x slower.
+## Execution Time Comparison
 
-## Use Cases
+| Context | rfmt | RuboCop | Time Difference |
+|---------|------|---------|----------------|
+| Editor save operation | ~120ms | ~798ms | 678ms |
+| Pre-commit hook | ~120ms | ~798ms | 678ms |
+| CI pipeline check | ~120ms | ~798ms | 678ms |
 
-### Development Workflow
-- Editor save operations: rfmt completes in ~120ms vs RuboCop's ~800ms
-- Pre-commit hooks: 6x faster execution improves developer experience
-- Time saved per operation: ~680ms (nearly instant vs noticeable delay)
+## Performance Metrics Summary
 
-### CI/CD Integration
-- Build pipeline formatting checks: consistent 120ms execution
-- Large codebase processing: maintains constant performance
-- Resource efficiency: 6x less CPU time required
-
-### Team Productivity
-- No workflow interruption: sub-second execution
-- Consistent performance: predictable timing across project sizes
-- Developer satisfaction: immediate feedback vs waiting for completion
-
-## Performance Summary
-
-- **Consistent Advantage**: 6.5x faster execution across all project sizes
-- **Predictable Performance**: ~120ms execution time regardless of file count  
-- **Developer Experience**: Sub-second formatting vs nearly 1-second delay
-- **Resource Efficiency**: 6x less CPU time and memory usage
+- Average speed ratio: 6.54-6.62x
+- rfmt average execution: 120-122ms
+- RuboCop average execution: 797-798ms
+- Execution time difference: ~678ms
 
 ## Raw Data
 
