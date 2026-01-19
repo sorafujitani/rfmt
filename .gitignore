@@ -45,6 +45,8 @@ docspriv/
 .nix-gem-home/
 .nix-cargo-home/
 .nix-rustup-home/
+.nix-bin/
+.nix-wrappers/
 .dependencies-installed
 .direnv/
 
