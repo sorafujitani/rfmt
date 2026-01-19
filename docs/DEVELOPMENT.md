@@ -5,6 +5,7 @@ This guide covers testing, building, and releasing rfmt.
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
+  - [Nix Development Environment](#nix-development-environment)
 - [Building](#building)
 - [Testing](#testing)
 - [Development Workflow](#development-workflow)
@@ -52,7 +53,71 @@ cargo --version
   - Download and run rustup-init.exe from https://rustup.rs
   - Install Visual Studio C++ Build Tools
 
-### Setup
+### Nix Development Environment
+
+**Nix Flake (Recommended)** - Complete isolated development environment:
+
+```bash
+# Prerequisites: Nix with flakes enabled
+# Install Nix (if not already installed):
+# curl --proto '=https' --tlsv1.2 -sSf https://install.determinate.systems/nix | sh
+
+# Clone repository
+git clone https://github.com/yourusername/rfmt.git
+cd rfmt
+
+# Enter development environment
+nix develop --impure
+```
+
+**With direnv (Auto-loading)**:
+
+```bash
+# Install direnv (if not already installed)
+nix profile install nixpkgs#direnv
+
+# Setup direnv integration
+echo "use flake" > .envrc
+direnv allow
+
+# Environment will automatically load when entering the directory
+cd rfmt
+# 🚀 rfmt development environment loaded!
+```
+
+**What Nix Provides:**
+- ✅ Ruby 3.4.5 (matching mise.toml)
+- ✅ Rust 1.70+ with cargo, clippy, rustfmt
+- ✅ System dependencies (pkg-config, openssl, etc.)
+- ✅ Build tools (gcc, make, bundler)
+- ✅ Development utilities
+- ✅ Isolated environment (no conflicts with system packages)
+
+**Quick Commands:**
+```bash
+# After entering nix develop or direnv environment:
+bundle install              # Install Ruby dependencies
+bundle exec rake compile    # Compile Rust extension
+bundle exec rspec           # Run Ruby tests
+cargo test --manifest-path ext/rfmt/Cargo.toml  # Run Rust tests
+
+# Development aliases (available in direnv)
+rspec                       # bundle exec rspec
+rfmt-test                   # Run all tests
+rfmt-lint                   # Run all linters
+rfmt-format                 # Format all code
+```
+
+**Nix Apps (Development Scripts):**
+```bash
+# Setup script (installs direnv if needed)
+nix run .#setup
+
+# Test runner (full test suite)
+nix run .#test
+```
+
+### Manual Setup
 
 ```bash
 # Clone repository
@@ -546,6 +611,101 @@ file lib/rfmt/rfmt.bundle
 # Should say "not stripped" for debug, "stripped" for release
 ```
 
+### Nix Issues
+
+#### Problem: "nix: command not found"
+
+```bash
+# Check if Nix is installed
+ls -la /nix/var/nix/profiles/default/bin/nix
+
+# If Nix is installed but not in PATH, add it temporarily:
+export PATH="/nix/var/nix/profiles/default/bin:$PATH"
+
+# To make it permanent, add to your shell profile:
+echo 'export PATH="/nix/var/nix/profiles/default/bin:$PATH"' >> ~/.bashrc
+# or for zsh:
+echo 'export PATH="/nix/var/nix/profiles/default/bin:$PATH"' >> ~/.zshrc
+
+# Source the updated profile
+source ~/.bashrc  # or ~/.zshrc
+```
+
+#### Problem: "flake.nix is not tracked by Git"
+
+```bash
+# Nix flakes require files to be tracked by Git
+git add flake.nix .envrc
+git commit -m "Add Nix flake development environment"
+```
+
+#### Problem: First `nix develop` takes too long
+
+```bash
+# First run downloads and builds many packages, this is normal
+# Subsequent runs will use cached builds
+
+# To see progress:
+nix develop --impure --show-trace
+
+# For faster subsequent builds, consider using:
+nix develop --impure --offline  # Use only cached packages
+```
+
+#### Problem: direnv not auto-loading
+
+```bash
+# Make sure direnv is installed
+nix profile install nixpkgs#direnv
+
+# Hook direnv into your shell (add to ~/.bashrc or ~/.zshrc):
+eval "$(direnv hook bash)"  # for bash
+eval "$(direnv hook zsh)"   # for zsh
+
+# Allow direnv for the project
+cd rfmt
+direnv allow
+
+# Force reload
+direnv reload
+```
+
+#### Problem: Ruby gems fail to install in Nix environment
+
+```bash
+# Clear gem cache and reinstall
+rm -rf .nix-gem-home
+nix develop --impure --command bundle install
+
+# If native extension compilation fails:
+nix develop --impure --command bundle config build.eventmachine --with-cppflags=-I/nix/store/.../include
+```
+
+#### Problem: Rust compilation fails in Nix
+
+```bash
+# Check Rust toolchain
+nix develop --impure --command rustc --version
+nix develop --impure --command cargo --version
+
+# Clear Rust cache and rebuild
+rm -rf .nix-cargo-home
+nix develop --impure --command cargo clean --manifest-path ext/rfmt/Cargo.toml
+nix develop --impure --command bundle exec rake compile
+```
+
+#### Problem: "darwin.apple_sdk" errors on macOS
+
+This is typically resolved in our flake, but if you encounter issues:
+
+```bash
+# Check if you're using an outdated nixpkgs
+nix flake update
+
+# Force rebuild with updated dependencies
+nix develop --impure --rebuild
+```
+
 ## Development Tips
 
 ### Fast Iteration
@@ -668,6 +828,41 @@ jobs:
 
     - name: Run Rust tests
       run: cd ext/rfmt && cargo test
+```
+
+### Nix CI Workflow
+
+Example GitHub Actions workflow using Nix (`.github/workflows/nix-ci.yml`):
+
+```yaml
+name: Nix CI
+
+on: [push, pull_request]
+
+jobs:
+  nix-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Nix
+      uses: DeterminateSystems/nix-installer-action@main
+      with:
+        enable-flakes: true
+    
+    - name: Setup Nix Cache
+      uses: DeterminateSystems/magic-nix-cache-action@main
+    
+    - name: Check flake
+      run: nix flake check --no-build
+    
+    - name: Run tests in Nix environment
+      run: nix run .#test
+    
+    - name: Check formatting
+      run: |
+        nix develop --impure --command bundle exec rubocop --check
+        nix develop --impure --command cargo fmt --manifest-path ext/rfmt/Cargo.toml -- --check
 ```
 
 ## Additional Resources
