@@ -41,3 +41,10 @@ docspriv/
 **/benchmarks/*.json
 **/test_results/*.json
 
+# Nix development environment cache
+.nix-gem-home/
+.nix-cargo-home/
+.nix-rustup-home/
+.dependencies-installed
+.direnv/
+
