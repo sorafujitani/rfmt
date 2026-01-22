@@ -31,6 +31,15 @@ lefthook-local.yml
 .DS_Store
 **/.DS_Store
 
+# Nix development environment cache
+.nix-gem-home/
+.nix-cargo-home/
+.nix-rustup-home/
+.nix-bin/
+.nix-wrappers/
+.dependencies-installed
+.direnv/
+
 # Claude development tools - include specific files
 # (agents, commands, skills are shared with team)
 .claude/settings.json
