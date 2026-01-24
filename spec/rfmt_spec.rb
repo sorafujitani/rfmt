@@ -144,6 +144,25 @@ RSpec.describe Rfmt do
 
       expect(result).to include('def bar')
       expect(result).to include('42')
+    describe 'inline comments after blocks' do
+      it 'preserves inline comments after inline brace blocks' do
+        source = "b.each { p it } # c\n"
+        expect(Rfmt.format(source)).to eq("b.each { p it } # c\n")
+      end
+
+      it 'preserves inline comments after multiline brace blocks' do
+        source = <<~RUBY
+          b.each {
+            p it
+          } # c
+        RUBY
+        expect(Rfmt.format(source)).to include('} # c')
+      end
+
+      it 'preserves inline comments with map blocks' do
+        source = "[1, 2].map { |x| x * 2 } # double\n"
+        expect(Rfmt.format(source)).to eq("[1, 2].map { |x| x * 2 } # double\n")
+      end
     end
   end
 

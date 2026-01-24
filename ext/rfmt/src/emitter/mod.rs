@@ -1201,14 +1201,27 @@ impl Emitter {
         let mut last_stmt_end_line = block_start_line;
 
         for child in &block_node.children {
-            if matches!(child.node_type, NodeType::StatementsNode) {
-                self.emit_statements(child, indent_level + 1)?;
-                // Track the last statement's end line for blank line preservation
-                if let Some(last_child) = child.children.last() {
-                    last_stmt_end_line = last_child.location.end_line;
+            match &child.node_type {
+                NodeType::StatementsNode => {
+                    self.emit_statements(child, indent_level + 1)?;
+                    // Track the last statement's end line for blank line preservation
+                    if let Some(last_child) = child.children.last() {
+                        last_stmt_end_line = last_child.location.end_line;
+                    }
+                    self.buffer.push('\n');
+                    break;
                 }
-                self.buffer.push('\n');
-                break;
+                NodeType::BeginNode => {
+                    // Block with rescue/ensure/else - delegate to emit_begin
+                    // which handles implicit begin (no "begin" keyword)
+                    self.emit_begin(child, indent_level + 1)?;
+                    self.buffer.push('\n');
+                    last_stmt_end_line = child.location.end_line;
+                    break;
+                }
+                _ => {
+                    // Skip parameter nodes
+                }
             }
         }
 
@@ -1244,6 +1257,7 @@ impl Emitter {
     fn emit_brace_block(&mut self, block_node: &Node, indent_level: usize) -> Result<()> {
         // Determine if block should be inline or multiline
         let is_multiline = block_node.location.start_line != block_node.location.end_line;
+        let block_end_line = block_node.location.end_line;
 
         if is_multiline {
             // Multiline brace block
@@ -1262,6 +1276,7 @@ impl Emitter {
 
             self.emit_indent(indent_level)?;
             write!(self.buffer, "}}")?;
+            self.emit_trailing_comments(block_end_line)?;
         } else {
             // Inline brace block - extract from source to preserve spacing
             write!(self.buffer, " ")?;
@@ -1271,6 +1286,7 @@ impl Emitter {
             {
                 write!(self.buffer, "{}", text)?;
             }
+            self.emit_trailing_comments(block_end_line)?;
         }
 
         Ok(())
