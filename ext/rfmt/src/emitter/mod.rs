@@ -1236,6 +1236,7 @@ impl Emitter {
     fn emit_brace_block(&mut self, block_node: &Node, indent_level: usize) -> Result<()> {
         // Determine if block should be inline or multiline
         let is_multiline = block_node.location.start_line != block_node.location.end_line;
+        let block_end_line = block_node.location.end_line;
 
         if is_multiline {
             // Multiline brace block
@@ -1254,6 +1255,7 @@ impl Emitter {
 
             self.emit_indent(indent_level)?;
             write!(self.buffer, "}}")?;
+            self.emit_trailing_comments(block_end_line)?;
         } else {
             // Inline brace block - extract from source to preserve spacing
             write!(self.buffer, " ")?;
@@ -1263,6 +1265,7 @@ impl Emitter {
             {
                 write!(self.buffer, "{}", text)?;
             }
+            self.emit_trailing_comments(block_end_line)?;
         }
 
         Ok(())
