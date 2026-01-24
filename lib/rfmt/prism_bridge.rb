@@ -176,6 +176,7 @@ module Rfmt
                      [
                        node.statements,
                        node.rescue_clause,
+                       node.else_clause,
                        node.ensure_clause
                      ].compact
                    when Prism::EnsureNode
