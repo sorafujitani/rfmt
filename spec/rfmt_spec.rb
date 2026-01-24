@@ -144,6 +144,8 @@ RSpec.describe Rfmt do
 
       expect(result).to include('def bar')
       expect(result).to include('42')
+    end
+
     describe 'inline comments after blocks' do
       it 'preserves inline comments after inline brace blocks' do
         source = "b.each { p it } # c\n"
