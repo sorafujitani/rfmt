@@ -10,7 +10,7 @@ use policy::SecurityPolicy;
 
 use config::Config;
 use emitter::Emitter;
-use magnus::{define_module, function, prelude::*, Error, Ruby};
+use magnus::{function, prelude::*, Error, Ruby};
 use parser::{PrismAdapter, RubyParser};
 
 fn format_ruby_code(ruby: &Ruby, source: String, json: String) -> Result<String, Error> {
@@ -45,10 +45,10 @@ fn rust_version() -> String {
 }
 
 #[magnus::init]
-fn init(_ruby: &Ruby) -> Result<(), Error> {
+fn init(ruby: &Ruby) -> Result<(), Error> {
     logging::RfmtLogger::init();
 
-    let module = define_module("Rfmt")?;
+    let module = ruby.define_module("Rfmt")?;
 
     module.define_singleton_method("format_code", function!(format_ruby_code, 2))?;
     module.define_singleton_method("parse_to_json", function!(parse_to_json, 1))?;

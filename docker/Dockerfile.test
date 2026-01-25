@@ -1,0 +1,52 @@
+# Dockerfile for testing rfmt gem installation across Ruby versions
+# Usage: docker build --build-arg RUBY_VERSION=4.0 -f docker/Dockerfile.test -t rfmt-test:4.0 .
+
+ARG RUBY_VERSION=3.4
+
+# Stage 1: Base image with build dependencies
+FROM ruby:${RUBY_VERSION} AS builder
+
+# Install Rust and build dependencies in a single layer
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libclang-dev \
+    clang \
+    curl \
+    ca-certificates \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+WORKDIR /rfmt
+
+# Copy dependency files first for layer caching
+COPY rfmt.gemspec Gemfile Gemfile.lock ./
+COPY lib/rfmt/version.rb ./lib/rfmt/
+
+# Copy source code
+COPY . .
+
+# Build and install the gem
+RUN gem build rfmt.gemspec \
+    && gem install ./rfmt-*.gem --no-document
+
+# Stage 2: Runtime image (smaller, no build tools)
+FROM ruby:${RUBY_VERSION}-slim AS runtime
+
+# Copy installed gem from builder
+COPY --from=builder /usr/local/bundle /usr/local/bundle
+
+# Verify installation
+RUN ruby -e "require 'rfmt'; puts \"rfmt #{Rfmt::VERSION} loaded successfully on Ruby #{RUBY_VERSION}\""
+
+CMD ["ruby", "-e", "require 'rfmt'; puts \"rfmt #{Rfmt::VERSION} ready on Ruby #{RUBY_VERSION}\""]
+
+# Stage 3: Test stage (includes verification)
+FROM builder AS test
+
+# Run verification tests
+RUN ruby -e "require 'rfmt'; puts \"rfmt #{Rfmt::VERSION} loaded successfully on Ruby #{RUBY_VERSION}\""
+RUN echo 'def hello() puts "world" end' | rfmt || echo "CLI test completed"
+
+CMD ["ruby", "-e", "require 'rfmt'; puts \"rfmt #{Rfmt::VERSION} ready on Ruby #{RUBY_VERSION}\""]

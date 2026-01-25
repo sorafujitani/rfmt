@@ -1,0 +1,76 @@
+# Docker ignore file for rfmt gem installation testing
+# This file excludes unnecessary files from the Docker build context
+
+# Nix development environment cache (very large)
+.nix-gem-home/
+.nix-cargo-home/
+.nix-rustup-home/
+.nix-bin/
+.nix-wrappers/
+.dependencies-installed
+.direnv/
+
+# Rust build artifacts
+target/
+ext/*/target/
+
+# Git
+.git/
+.gitignore
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+**/.DS_Store
+
+# Development tools
+.lefthook/
+lefthook-local.yml
+.rspec_status
+.rake_tasks~
+
+# Documentation and build artifacts
+coverage/
+doc/
+_yardoc/
+pkg/
+spec/reports/
+tmp/
+build/
+docspriv/
+
+# Test results
+**/benchmark/results.json
+**/benchmarks/*.json
+**/test_results/*.json
+
+# Claude development tools
+.claude/
+
+# Ruby version manager files
+.ruby-version
+
+# Other development files
+.serena/
+.ruby-lsp/
+.ruby-lsp.bak/
+
+# Docker files (avoid recursive context)
+docker/
+!docker/Dockerfile.test
+
+# Scripts (not needed in container)
+scripts/
+
+# Keep these (explicitly)
+!Gemfile
+!Gemfile.lock
+!rfmt.gemspec
+!Rakefile
+!lib/
+!ext/
+!bin/
+!spec/

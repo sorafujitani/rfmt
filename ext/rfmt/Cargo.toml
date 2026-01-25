@@ -12,8 +12,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # Ruby FFI
-magnus = { version = "0.6.2" }
-rb-sys = "0.9.117"
+magnus = { version = "0.8.2" }
+rb-sys = "0.9.124"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
