@@ -1,0 +1,21 @@
+# Docker Compose for testing rfmt across multiple Ruby versions
+# Usage:
+#   docker compose -f docker/docker-compose.test.yml build
+#   docker compose -f docker/docker-compose.test.yml up
+
+services:
+  test-ruby-3.4:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+      args:
+        RUBY_VERSION: "3.4"
+    image: rfmt-test:ruby-3.4
+
+  test-ruby-4.0:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+      args:
+        RUBY_VERSION: "4.0"
+    image: rfmt-test:ruby-4.0
