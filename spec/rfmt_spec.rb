@@ -181,8 +181,9 @@ RSpec.describe Rfmt do
         RUBY
         result = Rfmt.format(source)
         expect(result).to include("Hello \#{name}")
-       end
+      end
     end
+
     describe 'inline then style preservation (Issue #75)' do
       describe 'case...in with then' do
         it 'preserves inline then style in pattern matching' do
