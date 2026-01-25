@@ -146,6 +146,44 @@ RSpec.describe Rfmt do
       expect(result).to include('42')
     end
 
+    describe 'heredoc preservation (Issue #74)' do
+      it 'preserves squiggly heredoc content and closing identifier' do
+        source = <<~RUBY
+          csv = <<~CSV
+            a,b,c
+            d,e,f
+          CSV
+          puts csv
+        RUBY
+        result = Rfmt.format(source)
+        expect(result).to include('a,b,c')
+        expect(result).to include('d,e,f')
+        expect(result).to match(/^CSV$/m)
+        expect(Prism.parse(result).errors).to be_empty
+      end
+
+      it 'preserves indented heredoc' do
+        source = <<~RUBY
+          text = <<-TEXT
+            Hello World
+          TEXT
+        RUBY
+        result = Rfmt.format(source)
+        expect(result).to include('Hello World')
+        expect(result).to include('TEXT')
+      end
+
+      it 'preserves heredoc with interpolation' do
+        source = <<~'RUBY'
+          msg = <<~MSG
+            Hello #{name}
+          MSG
+        RUBY
+        result = Rfmt.format(source)
+        expect(result).to include("Hello \#{name}")
+      end
+    end
+
     describe 'inline then style preservation (Issue #75)' do
       describe 'case...in with then' do
         it 'preserves inline then style in pattern matching' do

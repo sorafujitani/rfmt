@@ -108,13 +108,42 @@ module Rfmt
     # Extract location information from node
     def self.extract_location(node)
       loc = node.location
+
+      # For heredoc nodes, the location only covers the opening tag (<<~CSV)
+      # We need to find the maximum end_offset including closing_loc
+      end_offset = loc.end_offset
+      end_line = loc.end_line
+      end_column = loc.end_column
+
+      # Check this node's closing_loc
+      if node.respond_to?(:closing_loc) && node.closing_loc
+        closing = node.closing_loc
+        if closing.end_offset > end_offset
+          end_offset = closing.end_offset
+          end_line = closing.end_line
+          end_column = closing.end_column
+        end
+      end
+
+      # Check child nodes for heredoc (e.g., LocalVariableWriteNode containing StringNode)
+      node.child_nodes.compact.each do |child|
+        next unless child.respond_to?(:closing_loc) && child.closing_loc
+
+        closing = child.closing_loc
+        next unless closing.end_offset > end_offset
+
+        end_offset = closing.end_offset
+        end_line = closing.end_line
+        end_column = closing.end_column
+      end
+
       {
         start_line: loc.start_line,
         start_column: loc.start_column,
-        end_line: loc.end_line,
-        end_column: loc.end_column,
+        end_line: end_line,
+        end_column: end_column,
         start_offset: loc.start_offset,
-        end_offset: loc.end_offset
+        end_offset: end_offset
       }
     end
 
