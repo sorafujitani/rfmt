@@ -146,6 +146,56 @@ RSpec.describe Rfmt do
       expect(result).to include('42')
     end
 
+    describe 'inline then style preservation (Issue #75)' do
+      describe 'case...in with then' do
+        it 'preserves inline then style in pattern matching' do
+          source = <<~RUBY
+            case x
+              in ..0 then ['negative or zero']
+              in 1.. then ['positive']
+            end
+          RUBY
+          result = Rfmt.format(source)
+          expect(result).to include('then')
+          expect(Prism.parse(result).errors).to be_empty
+        end
+
+        it 'keeps multiline style when original has no then' do
+          source = <<~RUBY
+            case x
+            in ..0
+              ['negative']
+            end
+          RUBY
+          result = Rfmt.format(source)
+          expect(result).not_to include('then')
+        end
+      end
+
+      describe 'case...when with then' do
+        it 'preserves inline when then style' do
+          source = "case x; when 1 then 'one'; when 2 then 'two'; end\n"
+          result = Rfmt.format(source)
+          expect(result).to include('when 1 then')
+          expect(result).to include('when 2 then')
+        end
+      end
+
+      describe 'if/unless with then' do
+        it 'preserves inline if then style' do
+          source = "if true then 1 end\n"
+          result = Rfmt.format(source)
+          expect(result).to include('if true then 1 end')
+        end
+
+        it 'preserves inline unless then style' do
+          source = "unless false then 1 end\n"
+          result = Rfmt.format(source)
+          expect(result).to include('unless false then 1 end')
+        end
+      end
+    end
+
     describe 'inline comments after blocks' do
       it 'preserves inline comments after inline brace blocks' do
         source = "b.each { p it } # c\n"

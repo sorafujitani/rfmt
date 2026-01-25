@@ -352,6 +352,31 @@ impl Emitter {
         false
     }
 
+    /// Check if the node spans only a single line
+    fn is_single_line(&self, node: &Node) -> bool {
+        node.location.start_line == node.location.end_line
+    }
+
+    /// Extract and write source text for a node
+    fn write_source_text(&mut self, node: &Node) -> Result<()> {
+        let start = node.location.start_offset;
+        let end = node.location.end_offset;
+        if let Some(text) = self.source.get(start..end) {
+            write!(self.buffer, "{}", text)?;
+        }
+        Ok(())
+    }
+
+    /// Extract and write trimmed source text for a node
+    fn write_source_text_trimmed(&mut self, node: &Node) -> Result<()> {
+        let start = node.location.start_offset;
+        let end = node.location.end_offset;
+        if let Some(text) = self.source.get(start..end) {
+            write!(self.buffer, "{}", text.trim())?;
+        }
+        Ok(())
+    }
+
     /// Emit comments that are within a given line range, preserving blank lines from prev_line
     /// Uses BTreeMap index for O(log n) lookup instead of O(n) iteration
     fn emit_comments_in_range_with_prev_line(
@@ -907,25 +932,30 @@ impl Emitter {
 
         // Emit conditions with comma separator
         for (i, cond) in conditions.iter().enumerate() {
-            let start = cond.location.start_offset;
-            let end = cond.location.end_offset;
-            if let Some(text) = self.source.get(start..end) {
-                write!(self.buffer, "{}", text)?;
-            }
+            self.write_source_text(cond)?;
             if i < conditions.len() - 1 {
                 write!(self.buffer, ", ")?;
             }
         }
 
-        self.buffer.push('\n');
-
-        // Emit statements body
-        if let Some(statements) = node
+        let statements = node
             .children
             .iter()
-            .find(|c| matches!(c.node_type, NodeType::StatementsNode))
-        {
-            self.emit_statements(statements, indent_level + 1)?;
+            .find(|c| matches!(c.node_type, NodeType::StatementsNode));
+
+        if self.is_single_line(node) {
+            // Inline style: when X then Y
+            if let Some(statements) = statements {
+                write!(self.buffer, " then ")?;
+                self.write_source_text(statements)?;
+            }
+        } else {
+            // Multi-line style: when X\n  Y
+            self.buffer.push('\n');
+
+            if let Some(statements) = statements {
+                self.emit_statements(statements, indent_level + 1)?;
+            }
         }
 
         Ok(())
@@ -959,14 +989,7 @@ impl Emitter {
             // Emit statement
             if let Some(statements) = node.children.get(1) {
                 if matches!(statements.node_type, NodeType::StatementsNode) {
-                    // Extract the statement text (without extra indentation)
-                    if !self.source.is_empty() {
-                        let start = statements.location.start_offset;
-                        let end = statements.location.end_offset;
-                        if let Some(text) = self.source.get(start..end) {
-                            write!(self.buffer, "{}", text.trim())?;
-                        }
-                    }
+                    self.write_source_text_trimmed(statements)?;
                 }
             }
 
@@ -974,13 +997,7 @@ impl Emitter {
 
             // Emit condition
             if let Some(predicate) = node.children.first() {
-                if !self.source.is_empty() {
-                    let start = predicate.location.start_offset;
-                    let end = predicate.location.end_offset;
-                    if let Some(text) = self.source.get(start..end) {
-                        write!(self.buffer, "{}", text)?;
-                    }
-                }
+                self.write_source_text(predicate)?;
             }
 
             return Ok(());
@@ -999,26 +1016,14 @@ impl Emitter {
 
             // Emit condition
             if let Some(predicate) = node.children.first() {
-                if !self.source.is_empty() {
-                    let start = predicate.location.start_offset;
-                    let end = predicate.location.end_offset;
-                    if let Some(text) = self.source.get(start..end) {
-                        write!(self.buffer, "{}", text)?;
-                    }
-                }
+                self.write_source_text(predicate)?;
             }
 
             write!(self.buffer, " ? ")?;
 
             // Emit then expression
             if let Some(statements) = node.children.get(1) {
-                if !self.source.is_empty() {
-                    let start = statements.location.start_offset;
-                    let end = statements.location.end_offset;
-                    if let Some(text) = self.source.get(start..end) {
-                        write!(self.buffer, "{}", text.trim())?;
-                    }
-                }
+                self.write_source_text_trimmed(statements)?;
             }
 
             write!(self.buffer, " : ")?;
@@ -1026,16 +1031,37 @@ impl Emitter {
             // Emit else expression
             if let Some(else_node) = node.children.get(2) {
                 if let Some(else_statements) = else_node.children.first() {
-                    if !self.source.is_empty() {
-                        let start = else_statements.location.start_offset;
-                        let end = else_statements.location.end_offset;
-                        if let Some(text) = self.source.get(start..end) {
-                            write!(self.buffer, "{}", text.trim())?;
-                        }
-                    }
+                    self.write_source_text_trimmed(else_statements)?;
                 }
             }
 
+            return Ok(());
+        }
+
+        // Check for inline then style: "if true then 1 end"
+        // Single line, not postfix, not ternary, no else clause
+        let is_inline_then =
+            !is_elsif && self.is_single_line(node) && node.children.get(2).is_none();
+
+        if is_inline_then {
+            self.emit_comments_before(node.location.start_line, indent_level)?;
+            self.emit_indent(indent_level)?;
+            write!(self.buffer, "{} ", keyword)?;
+
+            // Emit condition
+            if let Some(predicate) = node.children.first() {
+                self.write_source_text(predicate)?;
+            }
+
+            write!(self.buffer, " then ")?;
+
+            // Emit statement
+            if let Some(statements) = node.children.get(1) {
+                self.write_source_text_trimmed(statements)?;
+            }
+
+            write!(self.buffer, " end")?;
+            self.emit_trailing_comments(node.location.end_line)?;
             return Ok(());
         }
 
@@ -1054,14 +1080,7 @@ impl Emitter {
 
         // Emit predicate (condition) - first child
         if let Some(predicate) = node.children.first() {
-            // Extract predicate from source
-            if !self.source.is_empty() {
-                let start = predicate.location.start_offset;
-                let end = predicate.location.end_offset;
-                if let Some(text) = self.source.get(start..end) {
-                    write!(self.buffer, "{}", text)?;
-                }
-            }
+            self.write_source_text(predicate)?;
         }
 
         // Emit trailing comment on same line as if/unless/elsif
@@ -1595,7 +1614,6 @@ impl Emitter {
             match &child.node_type {
                 NodeType::InNode => {
                     self.emit_in(child, indent_level)?;
-                    self.buffer.push('\n');
                 }
                 NodeType::ElseNode => {
                     self.emit_indent(indent_level)?;
@@ -1631,19 +1649,25 @@ impl Emitter {
 
         // First child is the pattern
         if let Some(pattern) = node.children.first() {
-            let start = pattern.location.start_offset;
-            let end = pattern.location.end_offset;
-            if let Some(text) = self.source.get(start..end) {
-                write!(self.buffer, "{}", text)?;
-            }
+            self.write_source_text(pattern)?;
         }
 
-        self.buffer.push('\n');
+        if self.is_single_line(node) {
+            // Inline style: in X then Y
+            if let Some(statements) = node.children.get(1) {
+                write!(self.buffer, " then ")?;
+                self.write_source_text(statements)?;
+            }
+            self.buffer.push('\n');
+        } else {
+            // Multi-line style: in X\n  Y
+            self.buffer.push('\n');
 
-        // Second child is the statements body
-        if let Some(statements) = node.children.get(1) {
-            if matches!(statements.node_type, NodeType::StatementsNode) {
-                self.emit_statements(statements, indent_level + 1)?;
+            // Second child is the statements body
+            if let Some(statements) = node.children.get(1) {
+                if matches!(statements.node_type, NodeType::StatementsNode) {
+                    self.emit_statements(statements, indent_level + 1)?;
+                }
             }
         }
 
