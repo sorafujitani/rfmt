@@ -71,7 +71,9 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: '3.4'
-        bundler-cache: true
+
+    - name: Clean vendor directory
+      run: rm -rf vendor/bundle
 
     - uses: oxidize-rb/actions/cross-gem@v1
       with:
