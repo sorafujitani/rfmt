@@ -253,6 +253,33 @@ RSpec.describe Rfmt do
         source = "[1, 2].map { |x| x * 2 } # double\n"
         expect(Rfmt.format(source)).to eq("[1, 2].map { |x| x * 2 } # double\n")
       end
+
+      it 'does not duplicate inline comments on method chain with block' do
+        source = <<~RUBY
+          some_method # comment
+            .method_with_block { do_something }
+        RUBY
+
+        result = Rfmt.format(source)
+
+        # The comment should appear exactly once, not be duplicated
+        expect(result.scan('# comment').count).to eq(1)
+        expect(result).to eq(source)
+      end
+
+      it 'does not duplicate inline comments on method chain with do-end block' do
+        source = <<~RUBY
+          some_method # comment
+            .method_with_block do
+              do_something
+            end
+        RUBY
+
+        result = Rfmt.format(source)
+
+        # The comment should appear exactly once
+        expect(result.scan('# comment').count).to eq(1)
+      end
     end
   end
 

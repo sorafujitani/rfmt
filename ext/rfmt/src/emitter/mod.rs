@@ -1196,6 +1196,16 @@ impl Emitter {
             if let Some(text) = self.source.get(start..end) {
                 // Trim trailing whitespace but preserve the content
                 write!(self.buffer, "{}", text.trim_end())?;
+
+                // Mark comments within the extracted range as emitted
+                for (idx, comment) in self.all_comments.iter().enumerate() {
+                    if !self.emitted_comment_indices.contains(&idx)
+                        && comment.location.start_offset >= start
+                        && comment.location.end_offset <= end
+                    {
+                        self.emitted_comment_indices.insert(idx);
+                    }
+                }
             }
         }
 
