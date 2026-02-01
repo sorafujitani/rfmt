@@ -184,6 +184,51 @@ RSpec.describe Rfmt do
       end
     end
 
+    describe 'heredoc in method call arguments (Issue #86)' do
+      it 'preserves multiple heredocs as method arguments' do
+        source = <<~RUBY
+          puts(<<~HEREDOC, <<~HEREDOC2)
+            This is a heredoc.
+          HEREDOC
+            This is another heredoc.
+          HEREDOC2
+        RUBY
+        result = Rfmt.format(source)
+
+        expect(result).to include('This is a heredoc.')
+        expect(result).to include('This is another heredoc.')
+        expect(result).to match(/^HEREDOC$/m)
+        expect(result).to match(/^HEREDOC2$/m)
+        expect(Prism.parse(result).errors).to be_empty
+      end
+
+      it 'preserves single heredoc as method argument' do
+        source = <<~RUBY
+          puts(<<~HEREDOC)
+            Single heredoc content.
+          HEREDOC
+        RUBY
+        result = Rfmt.format(source)
+
+        expect(result).to include('Single heredoc content.')
+        expect(result).to match(/^HEREDOC$/m)
+        expect(Prism.parse(result).errors).to be_empty
+      end
+
+      it 'preserves heredoc with method chain' do
+        source = <<~RUBY
+          foo.bar(<<~SQL)
+            SELECT * FROM users
+          SQL
+        RUBY
+        result = Rfmt.format(source)
+
+        expect(result).to include('SELECT * FROM users')
+        expect(result).to match(/^SQL$/m)
+        expect(Prism.parse(result).errors).to be_empty
+      end
+    end
+
     describe 'inline then style preservation (Issue #75)' do
       describe 'case...in with then' do
         it 'preserves inline then style in pattern matching' do

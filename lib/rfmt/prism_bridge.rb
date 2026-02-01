@@ -125,16 +125,14 @@ module Rfmt
         end
       end
 
-      # Check child nodes for heredoc (e.g., LocalVariableWriteNode containing StringNode)
-      node.child_nodes.compact.each do |child|
-        next unless child.respond_to?(:closing_loc) && child.closing_loc
-
-        closing = child.closing_loc
-        next unless closing.end_offset > end_offset
-
-        end_offset = closing.end_offset
-        end_line = closing.end_line
-        end_column = closing.end_column
+      # Recursively check all descendant nodes for heredoc closing_loc
+      # Issue #74: handled direct children (e.g., LocalVariableWriteNode -> StringNode)
+      # Issue #86: handles deeper nesting (e.g., CallNode -> ArgumentsNode -> StringNode)
+      max_closing = find_max_closing_loc_recursive(node)
+      if max_closing && max_closing[:end_offset] > end_offset
+        end_offset = max_closing[:end_offset]
+        end_line = max_closing[:end_line]
+        end_column = max_closing[:end_column]
       end
 
       {
@@ -145,6 +143,32 @@ module Rfmt
         start_offset: loc.start_offset,
         end_offset: end_offset
       }
+    end
+
+    # Recursively find the maximum closing_loc among all descendant nodes
+    # Returns nil if no closing_loc found, otherwise { end_offset:, end_line:, end_column: }
+    def self.find_max_closing_loc_recursive(node, depth: 0)
+      return nil if depth > 10
+
+      max_closing = nil
+
+      node.child_nodes.compact.each do |child|
+        if child.respond_to?(:closing_loc) && child.closing_loc
+          closing = child.closing_loc
+          if max_closing.nil? || closing.end_offset > max_closing[:end_offset]
+            max_closing = {
+              end_offset: closing.end_offset,
+              end_line: closing.end_line,
+              end_column: closing.end_column
+            }
+          end
+        end
+
+        child_max = find_max_closing_loc_recursive(child, depth: depth + 1)
+        max_closing = child_max if child_max && (max_closing.nil? || child_max[:end_offset] > max_closing[:end_offset])
+      end
+
+      max_closing
     end
 
     # Extract child nodes
