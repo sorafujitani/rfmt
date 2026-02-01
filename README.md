@@ -23,6 +23,7 @@ A Ruby code formatter written in Rust
 ## What is rfmt?
 
 [RubyGems reference](https://rubygems.org/gems/rfmt)
+[DeepWiki rfmt](https://deepwiki.com/fs0414/rfmt)
 
 **rfmt** is a Ruby code formatter that enforces consistent style across your codebase. Key characteristics:
 
