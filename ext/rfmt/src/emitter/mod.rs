@@ -1000,6 +1000,7 @@ impl Emitter {
                 self.write_source_text(predicate)?;
             }
 
+            self.emit_trailing_comments(node.location.end_line)?;
             return Ok(());
         }
 

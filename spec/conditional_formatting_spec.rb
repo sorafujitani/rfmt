@@ -76,6 +76,38 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
     expect(result).to eq(expected)
   end
 
+  describe 'postfix if/unless with inline comments (Issue #87)' do
+    it 'preserves inline comment after postfix if' do
+      source = "some_method if condition # comment\n"
+      result = Rfmt.format(source)
+      expect(result).to eq("some_method if condition # comment\n")
+    end
+
+    it 'preserves inline comment after postfix unless' do
+      source = "some_method unless condition # comment\n"
+      result = Rfmt.format(source)
+      expect(result).to eq("some_method unless condition # comment\n")
+    end
+
+    it 'preserves tool directive comment (steep:ignore) after postfix if' do
+      source = "some_method if condition # steep:ignore\n"
+      result = Rfmt.format(source)
+      expect(result).to eq("some_method if condition # steep:ignore\n")
+    end
+
+    it 'preserves postfix if without comment (regression)' do
+      source = "some_method if condition\n"
+      result = Rfmt.format(source)
+      expect(result).to eq("some_method if condition\n")
+    end
+
+    it 'preserves postfix unless without comment (regression)' do
+      source = "some_method unless condition\n"
+      result = Rfmt.format(source)
+      expect(result).to eq("some_method unless condition\n")
+    end
+  end
+
   it 'formats conditionals in class/method context' do
     source = <<~RUBY
       class Validator
