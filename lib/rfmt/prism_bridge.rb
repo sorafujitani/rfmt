@@ -165,9 +165,7 @@ module Rfmt
         end
 
         child_max = find_max_closing_loc_recursive(child, depth: depth + 1)
-        if child_max && (max_closing.nil? || child_max[:end_offset] > max_closing[:end_offset])
-          max_closing = child_max
-        end
+        max_closing = child_max if child_max && (max_closing.nil? || child_max[:end_offset] > max_closing[:end_offset])
       end
 
       max_closing
