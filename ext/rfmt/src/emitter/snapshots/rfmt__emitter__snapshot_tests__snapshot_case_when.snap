@@ -1,0 +1,13 @@
+---
+source: ext/rfmt/src/emitter/mod.rs
+assertion_line: 1950
+expression: result
+---
+case x
+when 1
+  :one
+when  
+   :tw
+else
+    :oth
+end

@@ -1,0 +1,8 @@
+---
+source: ext/rfmt/src/emitter/mod.rs
+assertion_line: 1828
+expression: result
+---
+if x > 0
+  puts "positive"
+end

@@ -1,0 +1,8 @@
+---
+source: ext/rfmt/src/emitter/mod.rs
+assertion_line: 1740
+expression: result
+---
+def hello
+  42
+end

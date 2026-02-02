@@ -1,0 +1,8 @@
+---
+source: ext/rfmt/src/emitter/mod.rs
+assertion_line: 1777
+expression: result
+---
+def greet(name)
+  puts name
+end

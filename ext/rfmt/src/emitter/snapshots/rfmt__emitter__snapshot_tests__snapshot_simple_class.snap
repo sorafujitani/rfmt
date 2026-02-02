@@ -1,0 +1,7 @@
+---
+source: ext/rfmt/src/emitter/mod.rs
+assertion_line: 1649
+expression: result
+---
+class Foo
+end

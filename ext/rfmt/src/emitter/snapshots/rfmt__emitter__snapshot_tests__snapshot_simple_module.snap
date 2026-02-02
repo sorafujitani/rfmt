@@ -1,0 +1,7 @@
+---
+source: ext/rfmt/src/emitter/mod.rs
+assertion_line: 1699
+expression: result
+---
+module MyModule
+end

@@ -1711,3 +1711,397 @@ impl Default for Emitter {
         Self::new(Config::default())
     }
 }
+
+#[cfg(test)]
+mod snapshot_tests {
+    use super::*;
+    use crate::parser::{PrismAdapter, RubyParser};
+
+    /// Helper function to format Ruby code from source and JSON AST
+    fn format_with_ast(source: &str, json_ast: &str) -> String {
+        let parser = PrismAdapter::new();
+        let ast = parser.parse(json_ast).expect("Failed to parse AST");
+        let config = Config::default();
+        let mut emitter = Emitter::with_source(config, source.to_string());
+        emitter.emit(&ast).expect("Failed to emit")
+    }
+
+    // =========================================================================
+    // Basic Class Formatting
+    // =========================================================================
+
+    #[test]
+    fn snapshot_simple_class() {
+        let source = "class Foo\nend";
+        let json_ast = r#"{
+            "node_type": "program_node",
+            "location": {"start_line": 1, "start_column": 0, "end_line": 2, "end_column": 3, "start_offset": 0, "end_offset": 13},
+            "children": [{
+                "node_type": "class_node",
+                "location": {"start_line": 1, "start_column": 0, "end_line": 2, "end_column": 3, "start_offset": 0, "end_offset": 13},
+                "children": [],
+                "metadata": {"name": "Foo"},
+                "comments": [],
+                "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": true, "original_formatting": null}
+            }],
+            "metadata": {},
+            "comments": [],
+            "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+        }"#;
+
+        let result = format_with_ast(source, json_ast);
+        insta::assert_snapshot!(result);
+    }
+
+    #[test]
+    fn snapshot_class_with_superclass() {
+        let source = "class Child < Parent\nend";
+        let json_ast = r#"{
+            "node_type": "program_node",
+            "location": {"start_line": 1, "start_column": 0, "end_line": 2, "end_column": 3, "start_offset": 0, "end_offset": 24},
+            "children": [{
+                "node_type": "class_node",
+                "location": {"start_line": 1, "start_column": 0, "end_line": 2, "end_column": 3, "start_offset": 0, "end_offset": 24},
+                "children": [],
+                "metadata": {"name": "Child", "superclass": "Parent"},
+                "comments": [],
+                "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": true, "original_formatting": null}
+            }],
+            "metadata": {},
+            "comments": [],
+            "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+        }"#;
+
+        let result = format_with_ast(source, json_ast);
+        insta::assert_snapshot!(result);
+    }
+
+    // =========================================================================
+    // Module Formatting
+    // =========================================================================
+
+    #[test]
+    fn snapshot_simple_module() {
+        let source = "module MyModule\nend";
+        let json_ast = r#"{
+            "node_type": "program_node",
+            "location": {"start_line": 1, "start_column": 0, "end_line": 2, "end_column": 3, "start_offset": 0, "end_offset": 19},
+            "children": [{
+                "node_type": "module_node",
+                "location": {"start_line": 1, "start_column": 0, "end_line": 2, "end_column": 3, "start_offset": 0, "end_offset": 19},
+                "children": [],
+                "metadata": {"name": "MyModule"},
+                "comments": [],
+                "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": true, "original_formatting": null}
+            }],
+            "metadata": {},
+            "comments": [],
+            "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+        }"#;
+
+        let result = format_with_ast(source, json_ast);
+        insta::assert_snapshot!(result);
+    }
+
+    // =========================================================================
+    // Method Formatting
+    // =========================================================================
+
+    #[test]
+    fn snapshot_simple_method() {
+        let source = "def hello\n  42\nend";
+        let json_ast = r#"{
+            "node_type": "program_node",
+            "location": {"start_line": 1, "start_column": 0, "end_line": 3, "end_column": 3, "start_offset": 0, "end_offset": 18},
+            "children": [{
+                "node_type": "def_node",
+                "location": {"start_line": 1, "start_column": 0, "end_line": 3, "end_column": 3, "start_offset": 0, "end_offset": 18},
+                "children": [{
+                    "node_type": "statements_node",
+                    "location": {"start_line": 2, "start_column": 2, "end_line": 2, "end_column": 4, "start_offset": 12, "end_offset": 14},
+                    "children": [{
+                        "node_type": "integer_node",
+                        "location": {"start_line": 2, "start_column": 2, "end_line": 2, "end_column": 4, "start_offset": 12, "end_offset": 14},
+                        "children": [],
+                        "metadata": {},
+                        "comments": [],
+                        "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                    }],
+                    "metadata": {},
+                    "comments": [],
+                    "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                }],
+                "metadata": {"name": "hello"},
+                "comments": [],
+                "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": true, "original_formatting": null}
+            }],
+            "metadata": {},
+            "comments": [],
+            "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+        }"#;
+
+        let result = format_with_ast(source, json_ast);
+        insta::assert_snapshot!(result);
+    }
+
+    #[test]
+    fn snapshot_method_with_params() {
+        let source = "def greet(name)\n  puts name\nend";
+        let json_ast = r#"{
+            "node_type": "program_node",
+            "location": {"start_line": 1, "start_column": 0, "end_line": 3, "end_column": 3, "start_offset": 0, "end_offset": 31},
+            "children": [{
+                "node_type": "def_node",
+                "location": {"start_line": 1, "start_column": 0, "end_line": 3, "end_column": 3, "start_offset": 0, "end_offset": 31},
+                "children": [{
+                    "node_type": "statements_node",
+                    "location": {"start_line": 2, "start_column": 2, "end_line": 2, "end_column": 11, "start_offset": 18, "end_offset": 27},
+                    "children": [{
+                        "node_type": "call_node",
+                        "location": {"start_line": 2, "start_column": 2, "end_line": 2, "end_column": 11, "start_offset": 18, "end_offset": 27},
+                        "children": [],
+                        "metadata": {},
+                        "comments": [],
+                        "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                    }],
+                    "metadata": {},
+                    "comments": [],
+                    "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                }],
+                "metadata": {"name": "greet", "parameters_text": "name", "has_parens": "true"},
+                "comments": [],
+                "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": true, "original_formatting": null}
+            }],
+            "metadata": {},
+            "comments": [],
+            "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+        }"#;
+
+        let result = format_with_ast(source, json_ast);
+        insta::assert_snapshot!(result);
+    }
+
+    // =========================================================================
+    // Conditional Formatting
+    // =========================================================================
+
+    #[test]
+    fn snapshot_if_statement() {
+        let source = "if x > 0\n  puts \"positive\"\nend";
+        let json_ast = r#"{
+            "node_type": "program_node",
+            "location": {"start_line": 1, "start_column": 0, "end_line": 3, "end_column": 3, "start_offset": 0, "end_offset": 30},
+            "children": [{
+                "node_type": "if_node",
+                "location": {"start_line": 1, "start_column": 0, "end_line": 3, "end_column": 3, "start_offset": 0, "end_offset": 30},
+                "children": [
+                    {
+                        "node_type": "call_node",
+                        "location": {"start_line": 1, "start_column": 3, "end_line": 1, "end_column": 8, "start_offset": 3, "end_offset": 8},
+                        "children": [],
+                        "metadata": {},
+                        "comments": [],
+                        "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                    },
+                    {
+                        "node_type": "statements_node",
+                        "location": {"start_line": 2, "start_column": 2, "end_line": 2, "end_column": 17, "start_offset": 11, "end_offset": 26},
+                        "children": [{
+                            "node_type": "call_node",
+                            "location": {"start_line": 2, "start_column": 2, "end_line": 2, "end_column": 17, "start_offset": 11, "end_offset": 26},
+                            "children": [],
+                            "metadata": {},
+                            "comments": [],
+                            "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                        }],
+                        "metadata": {},
+                        "comments": [],
+                        "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                    }
+                ],
+                "metadata": {},
+                "comments": [],
+                "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": true, "original_formatting": null}
+            }],
+            "metadata": {},
+            "comments": [],
+            "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+        }"#;
+
+        let result = format_with_ast(source, json_ast);
+        insta::assert_snapshot!(result);
+    }
+
+    // =========================================================================
+    // Case/When Formatting
+    // =========================================================================
+
+    #[test]
+    fn snapshot_case_when() {
+        let source = "case x\nwhen 1\n  :one\nwhen 2\n  :two\nelse\n  :other\nend";
+        let json_ast = r#"{
+            "node_type": "program_node",
+            "location": {"start_line": 1, "start_column": 0, "end_line": 8, "end_column": 3, "start_offset": 0, "end_offset": 52},
+            "children": [{
+                "node_type": "case_node",
+                "location": {"start_line": 1, "start_column": 0, "end_line": 8, "end_column": 3, "start_offset": 0, "end_offset": 52},
+                "children": [
+                    {
+                        "node_type": "local_variable_read_node",
+                        "location": {"start_line": 1, "start_column": 5, "end_line": 1, "end_column": 6, "start_offset": 5, "end_offset": 6},
+                        "children": [],
+                        "metadata": {},
+                        "comments": [],
+                        "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                    },
+                    {
+                        "node_type": "when_node",
+                        "location": {"start_line": 2, "start_column": 0, "end_line": 3, "end_column": 5, "start_offset": 7, "end_offset": 19},
+                        "children": [
+                            {
+                                "node_type": "integer_node",
+                                "location": {"start_line": 2, "start_column": 5, "end_line": 2, "end_column": 6, "start_offset": 12, "end_offset": 13},
+                                "children": [],
+                                "metadata": {},
+                                "comments": [],
+                                "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                            },
+                            {
+                                "node_type": "statements_node",
+                                "location": {"start_line": 3, "start_column": 2, "end_line": 3, "end_column": 6, "start_offset": 16, "end_offset": 20},
+                                "children": [{
+                                    "node_type": "symbol_node",
+                                    "location": {"start_line": 3, "start_column": 2, "end_line": 3, "end_column": 6, "start_offset": 16, "end_offset": 20},
+                                    "children": [],
+                                    "metadata": {},
+                                    "comments": [],
+                                    "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                                }],
+                                "metadata": {},
+                                "comments": [],
+                                "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                            }
+                        ],
+                        "metadata": {},
+                        "comments": [],
+                        "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": true, "original_formatting": null}
+                    },
+                    {
+                        "node_type": "when_node",
+                        "location": {"start_line": 4, "start_column": 0, "end_line": 5, "end_column": 5, "start_offset": 20, "end_offset": 32},
+                        "children": [
+                            {
+                                "node_type": "integer_node",
+                                "location": {"start_line": 4, "start_column": 5, "end_line": 4, "end_column": 6, "start_offset": 25, "end_offset": 26},
+                                "children": [],
+                                "metadata": {},
+                                "comments": [],
+                                "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                            },
+                            {
+                                "node_type": "statements_node",
+                                "location": {"start_line": 5, "start_column": 2, "end_line": 5, "end_column": 6, "start_offset": 29, "end_offset": 33},
+                                "children": [{
+                                    "node_type": "symbol_node",
+                                    "location": {"start_line": 5, "start_column": 2, "end_line": 5, "end_column": 6, "start_offset": 29, "end_offset": 33},
+                                    "children": [],
+                                    "metadata": {},
+                                    "comments": [],
+                                    "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                                }],
+                                "metadata": {},
+                                "comments": [],
+                                "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                            }
+                        ],
+                        "metadata": {},
+                        "comments": [],
+                        "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": true, "original_formatting": null}
+                    },
+                    {
+                        "node_type": "else_node",
+                        "location": {"start_line": 6, "start_column": 0, "end_line": 7, "end_column": 8, "start_offset": 33, "end_offset": 48},
+                        "children": [{
+                            "node_type": "statements_node",
+                            "location": {"start_line": 7, "start_column": 2, "end_line": 7, "end_column": 8, "start_offset": 40, "end_offset": 46},
+                            "children": [{
+                                "node_type": "symbol_node",
+                                "location": {"start_line": 7, "start_column": 2, "end_line": 7, "end_column": 8, "start_offset": 40, "end_offset": 46},
+                                "children": [],
+                                "metadata": {},
+                                "comments": [],
+                                "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                            }],
+                            "metadata": {},
+                            "comments": [],
+                            "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                        }],
+                        "metadata": {},
+                        "comments": [],
+                        "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": true, "original_formatting": null}
+                    }
+                ],
+                "metadata": {},
+                "comments": [],
+                "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": true, "original_formatting": null}
+            }],
+            "metadata": {},
+            "comments": [],
+            "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+        }"#;
+
+        let result = format_with_ast(source, json_ast);
+        insta::assert_snapshot!(result);
+    }
+
+    // =========================================================================
+    // Loop Formatting
+    // =========================================================================
+
+    #[test]
+    fn snapshot_while_loop() {
+        let source = "while x > 0\n  x -= 1\nend";
+        let json_ast = r#"{
+            "node_type": "program_node",
+            "location": {"start_line": 1, "start_column": 0, "end_line": 3, "end_column": 3, "start_offset": 0, "end_offset": 24},
+            "children": [{
+                "node_type": "while_node",
+                "location": {"start_line": 1, "start_column": 0, "end_line": 3, "end_column": 3, "start_offset": 0, "end_offset": 24},
+                "children": [
+                    {
+                        "node_type": "call_node",
+                        "location": {"start_line": 1, "start_column": 6, "end_line": 1, "end_column": 11, "start_offset": 6, "end_offset": 11},
+                        "children": [],
+                        "metadata": {},
+                        "comments": [],
+                        "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                    },
+                    {
+                        "node_type": "statements_node",
+                        "location": {"start_line": 2, "start_column": 2, "end_line": 2, "end_column": 8, "start_offset": 14, "end_offset": 20},
+                        "children": [{
+                            "node_type": "local_variable_operator_write_node",
+                            "location": {"start_line": 2, "start_column": 2, "end_line": 2, "end_column": 8, "start_offset": 14, "end_offset": 20},
+                            "children": [],
+                            "metadata": {},
+                            "comments": [],
+                            "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                        }],
+                        "metadata": {},
+                        "comments": [],
+                        "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+                    }
+                ],
+                "metadata": {},
+                "comments": [],
+                "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": true, "original_formatting": null}
+            }],
+            "metadata": {},
+            "comments": [],
+            "formatting": {"indent_level": 0, "needs_blank_line_before": false, "needs_blank_line_after": false, "preserve_newlines": false, "multiline": false, "original_formatting": null}
+        }"#;
+
+        let result = format_with_ast(source, json_ast);
+        insta::assert_snapshot!(result);
+    }
+}

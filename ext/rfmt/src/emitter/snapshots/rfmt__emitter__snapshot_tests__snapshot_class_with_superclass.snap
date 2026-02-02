@@ -1,0 +1,7 @@
+---
+source: ext/rfmt/src/emitter/mod.rs
+assertion_line: 1672
+expression: result
+---
+class Child < Parent
+end
