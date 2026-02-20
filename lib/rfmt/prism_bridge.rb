@@ -465,6 +465,8 @@ module Rfmt
         if (value = extract_literal_value(node))
           metadata['value'] = value
         end
+      when Prism::LocalVariableWriteNode, Prism::InstanceVariableWriteNode
+        metadata['name'] = node.name.to_s
       when Prism::IfNode, Prism::UnlessNode
         # Detect ternary operator: if_keyword_loc is nil for ternary
         metadata['is_ternary'] = node.if_keyword_loc.nil?.to_s if node.respond_to?(:if_keyword_loc)
