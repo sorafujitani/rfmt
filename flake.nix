@@ -41,7 +41,6 @@
             libyaml
             gnumake
             git
-            bundler
           ]
           ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
             pkgs.darwin.libiconv
