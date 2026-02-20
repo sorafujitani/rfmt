@@ -24,7 +24,7 @@
 
         rubyVersion = pkgs.ruby_3_4;
 
-        # Core deps for compile and test
+        # Core deps for compile, test, and lint
         coreBuildInputs =
           with pkgs;
           [
@@ -32,6 +32,8 @@
             rubyVersion.devEnv
             rustc
             cargo
+            clippy
+            rustfmt
             pkg-config
             openssl
             zlib
@@ -45,10 +47,8 @@
             pkgs.darwin.libiconv
           ];
 
-        # Extra deps for linting, CI, and maintenance
+        # Extra deps for CI and maintenance
         extraBuildInputs = with pkgs; [
-          clippy
-          rustfmt
           gh
           bundix
           sqlite
@@ -152,11 +152,9 @@
             export BUNDLE_SILENCE_DEPRECATIONS=1
 
             # Lazy tool wrappers (loaded from nix store on first use)
-            clippy()  { nix shell nixpkgs#clippy  -c cargo-clippy "$@"; }
-            rustfmt() { nix shell nixpkgs#rustfmt -c rustfmt "$@"; }
-            gh()      { nix shell nixpkgs#gh      -c gh "$@"; }
-            bundix()  { nix shell nixpkgs#bundix  -c bundix "$@"; }
-            export -f clippy rustfmt gh bundix 2>/dev/null || true
+            gh()     { nix shell nixpkgs#gh     -c gh "$@"; }
+            bundix() { nix shell nixpkgs#bundix -c bundix "$@"; }
+            export -f gh bundix 2>/dev/null || true
           '';
         };
 
