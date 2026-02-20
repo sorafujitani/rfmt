@@ -24,15 +24,14 @@
 
         rubyVersion = pkgs.ruby_3_4;
 
-        buildInputs =
+        # Core deps for compile and test
+        coreBuildInputs =
           with pkgs;
           [
             rubyVersion
             rubyVersion.devEnv
             rustc
             cargo
-            clippy
-            rustfmt
             pkg-config
             openssl
             zlib
@@ -40,14 +39,26 @@
             libyaml
             gnumake
             git
-            gh
-            bundix
             bundler
-            sqlite
           ]
           ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
             pkgs.darwin.libiconv
           ];
+
+        # Extra deps for linting, CI, and maintenance
+        extraBuildInputs = with pkgs; [
+          clippy
+          rustfmt
+          gh
+          bundix
+          sqlite
+        ];
+
+        buildInputs = coreBuildInputs ++ extraBuildInputs;
+
+        cargoDeps = pkgs.rustPlatform.importCargoLock {
+          lockFile = ./Cargo.lock;
+        };
 
         shellEnv = {
           RUBY_VERSION = rubyVersion.version;
@@ -55,8 +66,8 @@
           GEM_PATH = "$PWD/.nix-gem-home:${rubyVersion}/lib/ruby/gems/${rubyVersion.version}";
           CARGO_HOME = "$PWD/.nix-cargo-home";
           PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig:${pkgs.libffi.dev}/lib/pkgconfig:${pkgs.libyaml}/lib/pkgconfig";
-          LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
-          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
+          LIBRARY_PATH = pkgs.lib.makeLibraryPath coreBuildInputs;
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath coreBuildInputs;
           RUBY_CC_VERSION = rubyVersion.version;
         };
 
@@ -83,6 +94,16 @@
             configurePhase = ''
               export GEM_HOME=$out/lib/ruby/gems/${ruby.version}
               export GEM_PATH=$GEM_HOME:${ruby}/lib/ruby/gems/${ruby.version}
+
+              # Vendor cargo deps from Nix store
+              mkdir -p .cargo
+              cat > .cargo/config.toml << CARGO_EOF
+              [source.crates-io]
+              replace-with = "vendored-sources"
+              [source.vendored-sources]
+              directory = "${cargoDeps}"
+              CARGO_EOF
+
               gem install bundler --no-document
               bundle config --local path vendor/bundle
               bundle install
@@ -117,6 +138,29 @@
       in
       {
         devShells.default = pkgs.mkShell {
+          buildInputs = coreBuildInputs;
+
+          NIX_CFLAGS_COMPILE = pkgs.lib.optionalString pkgs.stdenv.isDarwin "-I${pkgs.darwin.libiconv}/include";
+          NIX_LDFLAGS = pkgs.lib.optionalString pkgs.stdenv.isDarwin "-L${pkgs.darwin.libiconv}/lib -liconv";
+
+          shellHook = ''
+            mkdir -p .nix-gem-home .nix-cargo-home 2>/dev/null
+            ${pkgs.lib.concatStringsSep "\n" (
+              pkgs.lib.mapAttrsToList (name: value: "export ${name}=\"${value}\"") shellEnv
+            )}
+            export PATH="$PWD/.nix-gem-home/bin:$PWD/.nix-cargo-home/bin:$PATH"
+            export BUNDLE_SILENCE_DEPRECATIONS=1
+
+            # Lazy tool wrappers (loaded from nix store on first use)
+            clippy()  { nix shell nixpkgs#clippy  -c cargo-clippy "$@"; }
+            rustfmt() { nix shell nixpkgs#rustfmt -c rustfmt "$@"; }
+            gh()      { nix shell nixpkgs#gh      -c gh "$@"; }
+            bundix()  { nix shell nixpkgs#bundix  -c bundix "$@"; }
+            export -f clippy rustfmt gh bundix 2>/dev/null || true
+          '';
+        };
+
+        devShells.full = pkgs.mkShell {
           inherit buildInputs;
 
           NIX_CFLAGS_COMPILE = pkgs.lib.optionalString pkgs.stdenv.isDarwin "-I${pkgs.darwin.libiconv}/include";
@@ -128,16 +172,6 @@
               pkgs.lib.mapAttrsToList (name: value: "export ${name}=\"${value}\"") shellEnv
             )}
             export PATH="$PWD/.nix-gem-home/bin:$PWD/.nix-cargo-home/bin:$PATH"
-            if [ -n "$BASH_VERSION" ]; then
-              export PS1="(nix:rfmt) \[\033[1;34m\]\W\[\033[0m\] $ "
-            elif [ -n "$ZSH_VERSION" ]; then
-              export PROMPT="(nix:rfmt) %F{blue}%1~%f $ "
-            else
-              export PS1="(nix:rfmt) \W $ "
-            fi
-            if [[ $- == *i* ]]; then
-              echo "🚀 rfmt dev env ready | Ruby ${rubyVersion.version} | $(rustc --version 2>/dev/null | cut -d' ' -f1-2 || echo "Rust loading...")"
-            fi
           '';
         };
 
@@ -154,35 +188,35 @@
           setup = flake-utils.lib.mkApp {
             drv = pkgs.writeShellScript "rfmt-setup" ''
               set -e
-              echo "🔧 Setting up rfmt development environment..."
+              echo "Setting up rfmt development environment..."
               if ! command -v nix &> /dev/null; then
-                echo "❌ Nix is not installed. Please install Nix first."
+                echo "Error: Nix is not installed. Please install Nix first."
                 exit 1
               fi
               if ! command -v direnv &> /dev/null; then
-                echo "⚠️  direnv not found. Installing..."
+                echo "Warning: direnv not found. Installing..."
                 nix profile install nixpkgs#direnv
               fi
-              echo "✅ Creating .envrc file..."
+              echo "Creating .envrc file..."
               echo "use flake" > .envrc
               direnv allow
-              echo "✅ Setup complete! Run 'direnv reload' or enter the directory again."
+              echo "Setup complete. Run 'direnv reload' or enter the directory again."
             '';
           };
 
           test = flake-utils.lib.mkApp {
             drv = pkgs.writeShellScript "rfmt-test" ''
               set -e
-              echo "🧪 Running rfmt tests..."
-              echo "📦 Installing dependencies..."
+              echo "Running rfmt tests..."
+              echo "Installing dependencies..."
               bundle install
-              echo "🔨 Compiling extension..."
+              echo "Compiling extension..."
               bundle exec rake compile
-              echo "🧪 Running Ruby tests..."
+              echo "Running Ruby tests..."
               bundle exec rspec
-              echo "🦀 Running Rust tests..."
+              echo "Running Rust tests..."
               cargo test --manifest-path ext/rfmt/Cargo.toml
-              echo "✅ All tests passed!"
+              echo "All tests passed."
             '';
           };
         };
