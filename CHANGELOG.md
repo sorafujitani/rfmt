@@ -1,5 +1,20 @@
 ## [Unreleased]
 
+## [1.5.1] - 2026-02-21
+
+### Fixed
+- Fix inline modifier `if`/`unless` formatting (#87)
+- Fix heredoc command incorrectly removed (#90, #86)
+- Fix method chain command dependency handling (#89, #85)
+
+### Added
+- Heredoc comment deletion support
+- Place block loop emission support
+
+### Changed
+- Update README.md
+- Code formatting improvements (RuboCop compliance)
+
 ## [1.5.0] - 2026-01-25
 
 ### Added
