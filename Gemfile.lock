@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rfmt (1.5.1)
+    rfmt (1.5.2)
       diff-lcs (~> 1.5)
       diffy (~> 3.4)
       rb_sys (~> 0.9.120)

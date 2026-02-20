@@ -1,5 +1,17 @@
 ## [Unreleased]
 
+## [1.5.2] - 2026-02-21
+
+### Added
+- Instance variable write node emission support (#92)
+
+### Changed
+- Nix dev environment optimization (build caching, direnv support, devShell splitting)
+- Code formatting improvements (clippy, rustfmt)
+
+### Fixed
+- Fix Nix bundler version conflict (remove pkgs.bundler, use Ruby built-in)
+
 ## [1.5.1] - 2026-02-21
 
 ### Fixed
