@@ -368,7 +368,7 @@ mod tests {
 
         let node = result.unwrap();
         assert_eq!(node.node_type, NodeType::ClassNode);
-        assert_eq!(node.formatting.multiline, true);
+        assert!(node.formatting.multiline);
         assert!(node.is_multiline());
         assert_eq!(node.line_count(), 3);
     }

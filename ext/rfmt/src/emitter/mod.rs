@@ -463,6 +463,9 @@ impl Emitter {
             NodeType::SingletonClassNode => self.emit_singleton_class(node, indent_level)?,
             NodeType::CaseMatchNode => self.emit_case_match(node, indent_level)?,
             NodeType::InNode => self.emit_in(node, indent_level)?,
+            NodeType::LocalVariableWriteNode | NodeType::InstanceVariableWriteNode => {
+                self.emit_variable_write(node, indent_level)?
+            }
             _ => self.emit_generic(node, indent_level)?,
         }
         Ok(())
@@ -1377,6 +1380,48 @@ impl Emitter {
                 self.emit_trailing_comments(node.location.end_line)?;
             }
         }
+        Ok(())
+    }
+
+    /// Emit variable write node (LocalVariableWriteNode, InstanceVariableWriteNode)
+    /// Handles `x = value` and `@x = value` patterns
+    fn emit_variable_write(&mut self, node: &Node, indent_level: usize) -> Result<()> {
+        self.emit_comments_before(node.location.start_line, indent_level)?;
+
+        let name = node.metadata.get("name").map(|s| s.as_str()).unwrap_or("_");
+
+        // Get value node (first child)
+        let value = match node.children.first() {
+            Some(v) => v,
+            None => {
+                // No value: fallback to source extraction
+                return self.emit_generic(node, indent_level);
+            }
+        };
+
+        let is_block_value = matches!(
+            value.node_type,
+            NodeType::IfNode
+                | NodeType::UnlessNode
+                | NodeType::CaseNode
+                | NodeType::CaseMatchNode
+                | NodeType::BeginNode
+                | NodeType::WhileNode
+                | NodeType::UntilNode
+                | NodeType::ForNode
+        );
+
+        self.emit_indent(indent_level)?;
+        if is_block_value {
+            writeln!(self.buffer, "{} =", name)?;
+            self.emit_node(value, indent_level + 1)?;
+        } else {
+            write!(self.buffer, "{} = ", name)?;
+            self.write_source_text_trimmed(value)?;
+        }
+
+        self.emit_trailing_comments(node.location.end_line)?;
+
         Ok(())
     }
 
