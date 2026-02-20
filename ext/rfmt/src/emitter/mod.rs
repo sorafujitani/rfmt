@@ -1388,11 +1388,7 @@ impl Emitter {
     fn emit_variable_write(&mut self, node: &Node, indent_level: usize) -> Result<()> {
         self.emit_comments_before(node.location.start_line, indent_level)?;
 
-        let name = node
-            .metadata
-            .get("name")
-            .map(|s| s.as_str())
-            .unwrap_or("_");
+        let name = node.metadata.get("name").map(|s| s.as_str()).unwrap_or("_");
 
         // Get value node (first child)
         let value = match node.children.first() {
