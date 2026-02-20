@@ -55,6 +55,18 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
     expect(result.strip).to eq('puts "yes" if x > 0')
   end
 
+  it 'preserves inline comments on postfix if' do
+    source = "some_method if condition # steep:ignore\n"
+    result = Rfmt.format(source)
+    expect(result).to eq("some_method if condition # steep:ignore\n")
+  end
+
+  it 'preserves inline comments on postfix unless' do
+    source = "some_method unless condition # steep:ignore\n"
+    result = Rfmt.format(source)
+    expect(result).to eq("some_method unless condition # steep:ignore\n")
+  end
+
   it 'formats nested conditionals with proper indentation' do
     source = <<~RUBY
       if a > 0
