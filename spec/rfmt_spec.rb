@@ -328,6 +328,67 @@ RSpec.describe Rfmt do
     end
   end
 
+  describe 'method chain indented style' do
+    it 'reformats aligned method chain to indented style' do
+      source = <<~RUBY
+        @current_user.article_likes.includes(:article)
+                                   .order(created_at: :desc)
+                                   .page(params[:page])
+      RUBY
+      expected = <<~RUBY
+        @current_user.article_likes.includes(:article)
+          .order(created_at: :desc)
+          .page(params[:page])
+      RUBY
+      expect(Rfmt.format(source)).to eq(expected)
+    end
+
+    it 'reformats safe navigation chain (&.) to indented style' do
+      source = <<~RUBY
+        user&.profile
+             &.avatar
+             &.url
+      RUBY
+      expected = <<~RUBY
+        user&.profile
+          &.avatar
+          &.url
+      RUBY
+      expect(Rfmt.format(source)).to eq(expected)
+    end
+
+    it 'preserves single-line method chain as-is' do
+      source = "foo.bar.baz\n"
+      expect(Rfmt.format(source)).to eq(source)
+    end
+
+    it 'reformats method chain in variable assignment' do
+      source = <<~RUBY
+        @article_likes = @current_user.article_likes.includes(:article)
+                                                     .order(created_at: :desc)
+                                                     .page(params[:page]).per(params[:per_page])
+      RUBY
+      expected = <<~RUBY
+        @article_likes = @current_user.article_likes.includes(:article)
+          .order(created_at: :desc)
+          .page(params[:page]).per(params[:per_page])
+      RUBY
+      expect(Rfmt.format(source)).to eq(expected)
+    end
+
+    it 'reformats method chain with block' do
+      source = <<~RUBY
+        items.select { |x| x.valid? }
+             .map { |x| x.name }
+      RUBY
+      expected = <<~RUBY
+        items.select { |x| x.valid? }
+          .map { |x| x.name }
+      RUBY
+      expect(Rfmt.format(source)).to eq(expected)
+    end
+  end
+
   describe '.version_info' do
     it 'returns version information' do
       version = Rfmt.version_info

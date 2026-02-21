@@ -6,6 +6,10 @@
     flake-utils.url = "github:numtide/flake-utils";
     flake-utils.inputs.systems.follows = "systems";
     systems.url = "github:nix-systems/default";
+    dev-common.url = "github:sorafujitani/shared-flake-nix";
+    dev-common.inputs.nixpkgs.follows = "nixpkgs";
+    dev-common.inputs.flake-utils.follows = "flake-utils";
+    dev-common.inputs.systems.follows = "systems";
   };
 
   outputs =
@@ -14,6 +18,7 @@
       nixpkgs,
       flake-utils,
       systems,
+      dev-common,
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -136,12 +141,10 @@
 
       in
       {
-        devShells.default = pkgs.mkShell {
+        devShells.default = dev-common.lib.mkDevShell {
+          inherit pkgs;
+          name = "rfmt";
           buildInputs = coreBuildInputs;
-
-          NIX_CFLAGS_COMPILE = pkgs.lib.optionalString pkgs.stdenv.isDarwin "-I${pkgs.darwin.libiconv}/include";
-          NIX_LDFLAGS = pkgs.lib.optionalString pkgs.stdenv.isDarwin "-L${pkgs.darwin.libiconv}/lib -liconv";
-
           shellHook = ''
             mkdir -p .nix-gem-home .nix-cargo-home 2>/dev/null
             ${pkgs.lib.concatStringsSep "\n" (
@@ -157,12 +160,10 @@
           '';
         };
 
-        devShells.full = pkgs.mkShell {
+        devShells.full = dev-common.lib.mkDevShell {
+          inherit pkgs;
+          name = "rfmt-full";
           inherit buildInputs;
-
-          NIX_CFLAGS_COMPILE = pkgs.lib.optionalString pkgs.stdenv.isDarwin "-I${pkgs.darwin.libiconv}/include";
-          NIX_LDFLAGS = pkgs.lib.optionalString pkgs.stdenv.isDarwin "-L${pkgs.darwin.libiconv}/lib -liconv";
-
           shellHook = ''
             mkdir -p .nix-gem-home .nix-cargo-home 2>/dev/null
             ${pkgs.lib.concatStringsSep "\n" (

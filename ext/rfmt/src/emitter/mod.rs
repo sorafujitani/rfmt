@@ -1148,7 +1148,29 @@ impl Emitter {
             .unwrap_or(false);
 
         if !has_block {
-            // No block - use generic emission (extracts from source)
+            // Multiline call chain - reformat with indented style
+            if node.location.start_line != node.location.end_line && !self.source.is_empty() {
+                let start = node.location.start_offset;
+                let end = node.location.end_offset;
+                if let Some(text) = self.source.get(start..end).map(|s| s.to_string()) {
+                    let reformatted = self.reformat_chain_lines(&text, indent_level);
+                    self.emit_indent(indent_level)?;
+                    write!(self.buffer, "{}", reformatted)?;
+
+                    for (idx, comment) in self.all_comments.iter().enumerate() {
+                        if !self.emitted_comment_indices.contains(&idx)
+                            && comment.location.start_line >= node.location.start_line
+                            && comment.location.end_line < node.location.end_line
+                        {
+                            self.emitted_comment_indices.insert(idx);
+                        }
+                    }
+
+                    self.emit_trailing_comments(node.location.end_line)?;
+                    return Ok(());
+                }
+            }
+            // Single-line call - use generic emission (extracts from source)
             return self.emit_generic_without_comments(node, indent_level);
         }
 
@@ -1198,15 +1220,23 @@ impl Emitter {
             let start = call_node.location.start_offset;
             let end = block_node.location.start_offset;
 
-            if let Some(text) = self.source.get(start..end) {
-                // Trim trailing whitespace but preserve the content
-                write!(self.buffer, "{}", text.trim_end())?;
+            if let Some(text) = self.source.get(start..end).map(|s| s.to_string()) {
+                // Reformat multiline chains with indented style
+                let is_multiline = call_node.location.start_line != block_node.location.start_line;
+                if is_multiline {
+                    let reformatted = self.reformat_chain_lines(&text, indent_level);
+                    write!(self.buffer, "{}", reformatted)?;
+                } else {
+                    write!(self.buffer, "{}", text.trim_end())?;
+                }
 
                 // Mark comments within the extracted range as emitted
+                let start_offset = call_node.location.start_offset;
+                let end_offset = block_node.location.start_offset;
                 for (idx, comment) in self.all_comments.iter().enumerate() {
                     if !self.emitted_comment_indices.contains(&idx)
-                        && comment.location.start_offset >= start
-                        && comment.location.end_offset <= end
+                        && comment.location.start_offset >= start_offset
+                        && comment.location.end_offset <= end_offset
                     {
                         self.emitted_comment_indices.insert(idx);
                     }
@@ -1417,7 +1447,20 @@ impl Emitter {
             self.emit_node(value, indent_level + 1)?;
         } else {
             write!(self.buffer, "{} = ", name)?;
-            self.write_source_text_trimmed(value)?;
+
+            let is_multiline_call = matches!(value.node_type, NodeType::CallNode)
+                && value.location.start_line != value.location.end_line;
+
+            if is_multiline_call && !self.source.is_empty() {
+                let start = value.location.start_offset;
+                let end = value.location.end_offset;
+                if let Some(text) = self.source.get(start..end).map(|s| s.to_string()) {
+                    let reformatted = self.reformat_chain_lines(&text, indent_level);
+                    write!(self.buffer, "{}", reformatted.trim_start())?;
+                }
+            } else {
+                self.write_source_text_trimmed(value)?;
+            }
         }
 
         self.emit_trailing_comments(node.location.end_line)?;
@@ -1475,6 +1518,47 @@ impl Emitter {
         self.ensure_indent_cache(level);
         write!(self.buffer, "{}", &self.indent_cache[level])?;
         Ok(())
+    }
+
+    /// Reformat multiline method chain text with indented style.
+    /// The first line is kept as-is (trimmed at end).
+    /// Subsequent lines starting with `.` or `&.` are re-indented to (indent_level + 1).
+    ///
+    /// Example (indent_level=1, indent_width=2):
+    ///   Input:  "foo.bar\n                  .baz\n                  .qux"
+    ///   Output: "foo.bar\n    .baz\n    .qux"
+    fn reformat_chain_lines(&mut self, text: &str, indent_level: usize) -> String {
+        let lines: Vec<&str> = text.lines().collect();
+        if lines.len() <= 1 {
+            return text.to_string();
+        }
+
+        // Only reformat if there are actual chain continuation lines (. or &.)
+        let has_chain = lines[1..].iter().any(|l| {
+            let t = l.trim_start();
+            t.starts_with('.') || t.starts_with("&.")
+        });
+        if !has_chain {
+            return text.to_string();
+        }
+
+        self.ensure_indent_cache(indent_level + 1);
+        let chain_indent = self.indent_cache[indent_level + 1].clone();
+
+        let mut result = String::from(lines[0].trim_end());
+        for line in &lines[1..] {
+            result.push('\n');
+            let trimmed = line.trim();
+            if trimmed.starts_with('.') || trimmed.starts_with("&.") {
+                result.push_str(&chain_indent);
+                result.push_str(trimmed);
+            } else {
+                // Non-chain continuation (e.g., heredoc content): preserve as-is
+                result.push_str(line);
+            }
+        }
+
+        result
     }
 
     /// Emit while/until loop
