@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [1.5.3] - 2026-02-22
+
+### Changed
+- Update package dependencies
+
 ## [1.5.2] - 2026-02-21
 
 ### Added
