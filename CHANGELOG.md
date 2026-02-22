@@ -1,5 +1,18 @@
 ## [Unreleased]
 
+## [1.5.4] - 2026-02-22
+
+### Added
+- **Editor Integration Documentation**: Comprehensive setup guides for VSCode, Neovim, Helix, Emacs, and Zed
+  - VSCode: Format on Save configuration with Ruby LSP, settings reference table, project-specific setup
+  - Zed: Full configuration with `initialization_options` and `format_on_save`
+  - All editors work seamlessly through the Ruby LSP addon system — no editor-specific plugins required
+- README: Updated Editor Integration section with VSCode quick start (replacing "Coming Soon")
+
+### Changed
+- Removed Sublime Text section from editor documentation (replaced by Zed)
+- README: Neovim integration updated from CLI-based to Ruby LSP-based approach
+
 ## [1.5.3] - 2026-02-22
 
 ### Changed
