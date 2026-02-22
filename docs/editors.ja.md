@@ -13,22 +13,50 @@ rfmtは[Ruby LSP](https://shopify.github.io/ruby-lsp/)を通じてエディタ�
 
 ## VSCode
 
-### インストール
+### 前提条件
 
-1. [Ruby LSP拡張](https://marketplace.visualstudio.com/items?itemName=Shopify.ruby-lsp)をインストール
+- [Ruby LSP拡張](https://marketplace.visualstudio.com/items?itemName=Shopify.ruby-lsp)がインストールされていること
+- rfmt gemがインストールされていること
 
-2. `settings.json`に追加:
-   ```json
-   {
-     "rubyLsp.formatter": "rfmt"
-   }
-   ```
+### 基本設定
 
-### 保存時フォーマット
+`settings.json`（ユーザー設定またはワークスペース設定）に以下を追加:
 
-保存時フォーマットを有効にする:
 ```json
 {
+  "rubyLsp.formatter": "rfmt"
+}
+```
+
+### Format on Save（保存時自動フォーマット）
+
+保存時に自動でフォーマットを実行するには、以下の設定を追加:
+
+```json
+{
+  "rubyLsp.formatter": "rfmt",
+  "editor.formatOnSave": true,
+  "[ruby]": {
+    "editor.defaultFormatter": "Shopify.ruby-lsp"
+  }
+}
+```
+
+### 設定項目の説明
+
+| 設定 | 説明 |
+|------|------|
+| `rubyLsp.formatter` | Ruby LSPで使用するフォーマッターを指定 |
+| `editor.formatOnSave` | 保存時に自動フォーマットを有効化 |
+| `editor.defaultFormatter` | Rubyファイルのデフォルトフォーマッターを指定 |
+
+### プロジェクト固有の設定
+
+プロジェクトごとに設定する場合は、`.vscode/settings.json`に記述:
+
+```json
+{
+  "rubyLsp.formatter": "rfmt",
   "editor.formatOnSave": true,
   "[ruby]": {
     "editor.defaultFormatter": "Shopify.ruby-lsp"
@@ -99,6 +127,43 @@ formatter: rfmt
 formatter: rfmt
 ```
 
+## Zed
+
+### 設定
+
+`settings.json`（グローバルまたはプロジェクト固有の`.zed/settings.json`）に追加:
+
+```json
+{
+  "lsp": {
+    "ruby-lsp": {
+      "initialization_options": {
+        "formatter": "rfmt"
+      }
+    }
+  }
+}
+```
+
+### 保存時フォーマット
+
+```json
+{
+  "languages": {
+    "Ruby": {
+      "format_on_save": "on"
+    }
+  },
+  "lsp": {
+    "ruby-lsp": {
+      "initialization_options": {
+        "formatter": "rfmt"
+      }
+    }
+  }
+}
+```
+
 ## トラブルシューティング
 
 ### アドオンが検出されない
@@ -123,6 +188,13 @@ formatter: rfmt
    ```bash
    rfmt format test.rb
    ```
+
+### VSCodeでフォーマットが実行されない
+
+1. Ruby LSP拡張が有効になっているか確認
+2. rfmt gemがインストールされているか確認: `gem list rfmt`
+3. VSCodeの出力パネルで「Ruby LSP」を選択しログを確認
+4. コマンドパレットから「Ruby LSP: Restart」を実行
 
 ## 設定
 

@@ -361,30 +361,34 @@ end
 
 ## Editor Integration
 
+rfmt integrates with editors through [Ruby LSP](https://shopify.github.io/ruby-lsp/). For detailed setup instructions, see [Editor Integration Guide](docs/editors.md).
+
+### VSCode (Quick Start)
+
+1. Install [Ruby LSP extension](https://marketplace.visualstudio.com/items?itemName=Shopify.ruby-lsp)
+2. Add to your `settings.json`:
+
+```json
+{
+  "rubyLsp.formatter": "rfmt",
+  "editor.formatOnSave": true,
+  "[ruby]": {
+    "editor.defaultFormatter": "Shopify.ruby-lsp"
+  }
+}
+```
+
 ### Neovim
 
-Format Ruby files on save using autocmd:
-
 ```lua
--- ~/.config/nvim/init.lua
-
-vim.api.nvim_create_autocmd("BufWritePre", {
-  pattern = { "*.rb", "*.rake", "Gemfile", "Rakefile" },
-  callback = function()
-    local filepath = vim.fn.expand("%:p")
-    local result = vim.fn.system({ "rfmt", filepath })
-    if vim.v.shell_error == 0 then
-      vim.cmd("edit!")
-    end
-  end,
+require("lspconfig").ruby_lsp.setup({
+  init_options = {
+    formatter = "rfmt"
+  }
 })
 ```
 
-### Coming Soon
-
-- **VS Code** - Extension in development
-- **RubyMine** - Plugin in development
-- **Zed** - Extension in development
+See [Editor Integration Guide](docs/editors.md) for Helix, Emacs, Sublime Text, and more.
 
 ## Development
 
