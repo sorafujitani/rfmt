@@ -10,8 +10,8 @@ use std::collections::HashMap;
 use super::rule::{BoxedRule, FormatRule};
 use super::rules::{
     BeginRule, BlockRule, CallRule, CaseMatchRule, CaseRule, ClassRule, DefRule, EnsureRule,
-    FallbackRule, ForRule, IfRule, InRule, LambdaRule, ModuleRule, RescueRule, UnlessRule,
-    UntilRule, WhenRule, WhileRule,
+    FallbackRule, ForRule, IfRule, InRule, LambdaRule, ModuleRule, RescueRule, StatementsRule,
+    UnlessRule, UntilRule, WhenRule, WhileRule,
 };
 
 /// Key type for the registry, derived from NodeType.
@@ -100,6 +100,7 @@ impl RuleRegistry {
 
     pub fn default_registry() -> Self {
         Self::new()
+            .add(NodeType::StatementsNode, StatementsRule)
             .add(NodeType::ClassNode, ClassRule)
             .add(NodeType::ModuleNode, ModuleRule)
             .add(NodeType::DefNode, DefRule)

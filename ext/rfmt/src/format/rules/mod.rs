@@ -13,6 +13,7 @@ mod fallback;
 mod if_unless;
 mod loops;
 mod module;
+mod statements;
 
 pub use begin::{BeginRule, EnsureRule, RescueRule};
 pub use call::{BlockRule, CallRule, LambdaRule};
@@ -23,3 +24,4 @@ pub use fallback::FallbackRule;
 pub use if_unless::{IfRule, UnlessRule};
 pub use loops::{ForRule, UntilRule, WhileRule};
 pub use module::ModuleRule;
+pub use statements::StatementsRule;
