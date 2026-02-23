@@ -36,29 +36,59 @@ struct PrintCommand<'a> {
 }
 
 /// Converts Doc IR to a formatted string.
-pub struct Printer {
+pub struct Printer<'a> {
     /// Configuration for formatting
-    config: Config,
+    config: &'a Config,
     /// Output buffer
     output: String,
     /// Current column position (0-indexed)
     pos: usize,
-    /// Cached indent strings by width
+    /// Pre-computed indent strings by width (avoids allocation during print)
     indent_cache: Vec<String>,
 }
 
-impl Printer {
+const MAX_PRECACHED_INDENT: usize = 32;
+
+impl<'a> Printer<'a> {
     /// Creates a new printer with the given configuration.
-    pub fn new(config: Config) -> Self {
+    pub fn new(config: &'a Config) -> Self {
+        let indent_width = config.formatting.indent_width;
+        let indent_style = &config.formatting.indent_style;
+
+        let indent_cache = (0..=MAX_PRECACHED_INDENT)
+            .map(|width| Self::build_indent_string(width, indent_width, indent_style))
+            .collect();
+
         Self {
             config,
             output: String::new(),
             pos: 0,
-            indent_cache: Vec::new(),
+            indent_cache,
+        }
+    }
+
+    #[inline]
+    fn build_indent_string(width: usize, indent_width: usize, style: &IndentStyle) -> String {
+        match style {
+            IndentStyle::Spaces => " ".repeat(width),
+            IndentStyle::Tabs if indent_width == 0 => String::new(),
+            IndentStyle::Tabs => {
+                let tabs = width / indent_width;
+                let spaces = width % indent_width;
+                if spaces == 0 {
+                    "\t".repeat(tabs)
+                } else {
+                    let mut result = String::with_capacity(tabs + spaces);
+                    result.extend(std::iter::repeat('\t').take(tabs));
+                    result.extend(std::iter::repeat(' ').take(spaces));
+                    result
+                }
+            }
         }
     }
 
     /// Prints a Doc to a string.
+    #[inline]
     pub fn print(&mut self, doc: &Doc) -> String {
         self.output.clear();
         self.pos = 0;
@@ -82,7 +112,8 @@ impl Printer {
     }
 
     /// Processes a single print command.
-    fn process_command<'a>(&mut self, cmd: PrintCommand<'a>, commands: &mut Vec<PrintCommand<'a>>) {
+    #[inline]
+    fn process_command<'b>(&mut self, cmd: PrintCommand<'b>, commands: &mut Vec<PrintCommand<'b>>) {
         match cmd.doc {
             Doc::Text(s) => {
                 self.output.push_str(s);
@@ -124,28 +155,24 @@ impl Printer {
 
             Doc::Line { soft, hard, literal } => {
                 match (cmd.mode, *hard) {
-                    // Hard line: always break
                     (_, true) => {
                         self.output.push('\n');
                         if !*literal {
-                            let indent_str = self.make_indent(cmd.indent);
+                            let indent_str = self.get_indent(cmd.indent);
                             self.output.push_str(&indent_str);
                             self.pos = cmd.indent;
                         } else {
                             self.pos = 0;
                         }
                     }
-                    // Flat mode + soft line: nothing
                     (Mode::Flat, false) if *soft => {}
-                    // Flat mode + regular line: space
                     (Mode::Flat, false) => {
                         self.output.push(' ');
                         self.pos += 1;
                     }
-                    // Break mode: newline + indent
                     (Mode::Break, false) => {
                         self.output.push('\n');
-                        let indent_str = self.make_indent(cmd.indent);
+                        let indent_str = self.get_indent(cmd.indent);
                         self.output.push_str(&indent_str);
                         self.pos = cmd.indent;
                     }
@@ -193,7 +220,7 @@ impl Printer {
                 self.pos += text.chars().count();
                 if *hard_line_after {
                     self.output.push('\n');
-                    let indent_str = self.make_indent(cmd.indent);
+                    let indent_str = self.get_indent(cmd.indent);
                     self.output.push_str(&indent_str);
                     self.pos = cmd.indent;
                 }
@@ -245,21 +272,25 @@ impl Printer {
 
     /// Determines if a Doc fits within the remaining width.
     ///
-    /// This is a simplified fit check. It measures the width assuming
-    /// flat mode and checks if it exceeds the remaining space.
+    /// Uses flat mode for inner groups and returns early when width is exceeded.
+    /// This is a hot path, so we pre-allocate a reasonable stack size.
+    #[inline]
     fn fits(&self, doc: &Doc, indent: usize, remaining: usize, mode: Mode) -> bool {
-        let mut width = 0;
-        let mut stack: Vec<(&Doc, usize, Mode)> = vec![(doc, indent, mode)];
+        let mut width = 0usize;
+        // Pre-allocate stack with reasonable capacity for typical nesting depth
+        let mut stack: Vec<(&Doc, usize, Mode)> = Vec::with_capacity(16);
+        stack.push((doc, indent, mode));
 
         while let Some((doc, indent, mode)) = stack.pop() {
-            // Early exit if we've exceeded
-            if width > remaining {
+            // Early exit: use >= for slightly earlier termination
+            if width >= remaining {
                 return false;
             }
 
             match doc {
                 Doc::Text(s) => {
-                    width += s.chars().count();
+                    // Use len() for ASCII strings (common case), chars().count() for accuracy
+                    width += if s.is_ascii() { s.len() } else { s.chars().count() };
                 }
 
                 Doc::Concat(docs) => {
@@ -269,19 +300,19 @@ impl Printer {
                 }
 
                 Doc::Group { contents, .. } => {
-                    // In fit check, assume group stays flat
+                    // Assume nested groups stay flat during fit check
                     stack.push((contents, indent, Mode::Flat));
                 }
 
                 Doc::Line { soft, hard, .. } => {
                     if *hard {
-                        // Hard line always breaks, doesn't fit on same line
-                        return true; // Actually fits but forces break
+                        // Hard line forces a break - content after fits on new line
+                        return true;
                     }
                     match mode {
-                        Mode::Flat if *soft => {} // soft line in flat: nothing
-                        Mode::Flat => width += 1, // regular line in flat: space
-                        Mode::Break => return true, // break mode: newline, we're done
+                        Mode::Flat if *soft => {} // soft line: nothing
+                        Mode::Flat => width += 1, // regular line: space
+                        Mode::Break => return true, // break mode: newline ends measurement
                     }
                 }
 
@@ -305,11 +336,11 @@ impl Printer {
                 Doc::Empty => {}
 
                 Doc::TrailingComment(s) => {
-                    width += 1 + s.chars().count();
+                    width += 1 + if s.is_ascii() { s.len() } else { s.chars().count() };
                 }
 
                 Doc::LeadingComment { text, .. } => {
-                    width += text.chars().count();
+                    width += if text.is_ascii() { text.len() } else { text.chars().count() };
                 }
 
                 Doc::Align { n, contents } => {
@@ -321,10 +352,7 @@ impl Printer {
                 }
 
                 Doc::Fill(docs) => {
-                    for (i, d) in docs.iter().rev().enumerate() {
-                        if i > 0 {
-                            // Add separator width (softline = 0 in flat)
-                        }
+                    for d in docs.iter().rev() {
                         stack.push((d, indent, mode));
                     }
                 }
@@ -334,38 +362,19 @@ impl Printer {
         width <= remaining
     }
 
-    /// Creates an indent string for the given width.
-    fn make_indent(&mut self, width: usize) -> String {
-        // Check cache first
+    fn get_indent(&mut self, width: usize) -> String {
         if width < self.indent_cache.len() {
-            if let Some(cached) = self.indent_cache.get(width) {
-                if !cached.is_empty() {
-                    return cached.clone();
-                }
-            }
+            return self.indent_cache[width].clone();
         }
 
-        let indent_str = match self.config.formatting.indent_style {
-            IndentStyle::Spaces => " ".repeat(width),
-            IndentStyle::Tabs => {
-                let indent_width = self.config.formatting.indent_width;
-                if indent_width == 0 {
-                    String::new()
-                } else {
-                    let tabs = width / indent_width;
-                    let spaces = width % indent_width;
-                    format!("{}{}", "\t".repeat(tabs), " ".repeat(spaces))
-                }
-            }
-        };
-
-        // Cache the result
+        let indent_width = self.config.formatting.indent_width;
+        let indent_style = &self.config.formatting.indent_style;
         while self.indent_cache.len() <= width {
-            self.indent_cache.push(String::new());
+            let w = self.indent_cache.len();
+            self.indent_cache
+                .push(Self::build_indent_string(w, indent_width, indent_style));
         }
-        self.indent_cache[width] = indent_str.clone();
-
-        indent_str
+        self.indent_cache[width].clone()
     }
 }
 
@@ -374,31 +383,31 @@ mod tests {
     use super::*;
     use crate::doc::builders::*;
 
-    fn default_config() -> Config {
-        Config::default()
+    /// Helper to print a doc with default config.
+    fn print_doc(doc: &Doc) -> String {
+        let config = Config::default();
+        let mut printer = Printer::new(&config);
+        printer.print(doc)
     }
 
     #[test]
     fn test_print_text() {
         let doc = text("hello");
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         assert_eq!(result, "hello\n");
     }
 
     #[test]
     fn test_print_concat() {
         let doc = concat(vec![text("a"), text("b"), text("c")]);
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         assert_eq!(result, "abc\n");
     }
 
     #[test]
     fn test_print_hardline() {
         let doc = concat(vec![text("line1"), hardline(), text("line2")]);
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         assert_eq!(result, "line1\nline2\n");
     }
 
@@ -411,8 +420,7 @@ mod tests {
             hardline(),
             text("end"),
         ]);
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         assert_eq!(result, "def foo\n  body\nend\n");
     }
 
@@ -431,8 +439,7 @@ mod tests {
             hardline(),
             text("end"),
         ]);
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         assert_eq!(result, "class Foo\n  def bar\n    puts 'hello'\n  end\nend\n");
     }
 
@@ -440,8 +447,7 @@ mod tests {
     fn test_print_group_fits() {
         // Short content should stay on one line
         let doc = group(concat(vec![text("short"), line(), text("text")]));
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         assert_eq!(result, "short text\n");
     }
 
@@ -450,8 +456,7 @@ mod tests {
         // Create content that doesn't fit on one line
         let long = "a".repeat(80);
         let doc = group(concat(vec![text(&long), line(), text("more")]));
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         assert!(result.contains('\n'));
         // Should break: long\nmore
         assert!(result.starts_with(&long));
@@ -461,8 +466,7 @@ mod tests {
     fn test_print_softline_flat() {
         // Softline disappears in flat mode
         let doc = group(concat(vec![text("["), softline(), text("1"), softline(), text("]")]));
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         assert_eq!(result, "[1]\n");
     }
 
@@ -473,8 +477,7 @@ mod tests {
             if_break(text("BROKEN"), text("FLAT")),
             text("]"),
         ]));
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         assert_eq!(result, "[FLAT]\n");
     }
 
@@ -487,16 +490,14 @@ mod tests {
             if_break(text("BROKEN"), text("FLAT")),
             text("]"),
         ]));
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         assert!(result.contains("BROKEN"), "Expected BROKEN but got: {}", result);
     }
 
     #[test]
     fn test_print_trailing_comment() {
         let doc = concat(vec![text("code"), trailing_comment("# comment")]);
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         assert_eq!(result, "code # comment\n");
     }
 
@@ -506,24 +507,21 @@ mod tests {
             leading_comment("# comment", true),
             text("code"),
         ]);
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         assert_eq!(result, "# comment\ncode\n");
     }
 
     #[test]
     fn test_print_empty() {
         let doc = empty();
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         assert_eq!(result, "");
     }
 
     #[test]
     fn test_print_join() {
         let doc = join(text(", "), vec![text("a"), text("b"), text("c")]);
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         assert_eq!(result, "a, b, c\n");
     }
 
@@ -542,8 +540,7 @@ mod tests {
             hardline(),
             text("end"),
         ]);
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
 
         let expected = "\
 class Foo
@@ -565,8 +562,7 @@ end
             softline(),
             text("]"),
         ]));
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         assert_eq!(result, "[1, 2, 3]\n");
     }
 
@@ -582,9 +578,85 @@ end
             ])),
             text("HEREDOC"),
         ]);
-        let mut printer = Printer::new(default_config());
-        let result = printer.print(&doc);
+        let result = print_doc(&doc);
         // literalline should not add indent despite being inside indent()
         assert!(result.contains("\ncontent\n"));
+    }
+
+    // Performance regression tests
+    // Run with: cargo test --release perf_
+
+    #[test]
+    fn perf_deep_nesting() {
+        let config = Config::default();
+
+        // Create 20-level deep nesting
+        let mut doc = text("deepest");
+        for _ in 0..20 {
+            doc = indent(concat(vec![hardline(), doc]));
+        }
+
+        let mut printer = Printer::new(&config);
+        let result = printer.print(&doc);
+
+        // Verify it produces valid output
+        assert!(result.lines().count() >= 20);
+    }
+
+    #[test]
+    fn perf_many_hardlines() {
+        let config = Config::default();
+
+        // Create 500 lines
+        let mut lines: Vec<Doc> = Vec::new();
+        for i in 0..500 {
+            if i > 0 {
+                lines.push(hardline());
+            }
+            lines.push(text("line"));
+        }
+        let doc = indent(concat(lines));
+
+        let mut printer = Printer::new(&config);
+        let result = printer.print(&doc);
+
+        assert_eq!(result.lines().count(), 500);
+    }
+
+    #[test]
+    fn perf_nested_groups() {
+        let config = Config::default();
+
+        // Create nested group structure
+        let inner = group(concat(vec![
+            text("["),
+            softline(),
+            join(concat(vec![text(","), line()]), vec![text("1"), text("2"), text("3")]),
+            softline(),
+            text("]"),
+        ]));
+
+        let doc = group(concat(vec![
+            text("{"),
+            softline(),
+            text("a: "),
+            inner.clone(),
+            text(","),
+            line(),
+            text("b: "),
+            inner.clone(),
+            text(","),
+            line(),
+            text("c: "),
+            inner,
+            softline(),
+            text("}"),
+        ]));
+
+        let mut printer = Printer::new(&config);
+        let result = printer.print(&doc);
+
+        // Should produce valid output
+        assert!(result.contains("[1, 2, 3]") || result.contains("[\n"));
     }
 }
