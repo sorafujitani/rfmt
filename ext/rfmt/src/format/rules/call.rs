@@ -64,6 +64,9 @@ impl FormatRule for LambdaRule {
             docs.push(text(source_text));
         }
 
+        // Mark internal comments as emitted
+        mark_comments_in_range_emitted(ctx, node.location.start_line, node.location.end_line);
+
         // Trailing comment
         let trailing = format_trailing_comment(ctx, node.location.end_line);
         if !trailing.is_empty() {
@@ -100,6 +103,9 @@ fn format_call(
             docs.push(text(source_text));
         }
 
+        // Mark comments in this range as emitted (they're in source extraction)
+        mark_comments_in_range_emitted(ctx, node.location.start_line, node.location.end_line);
+
         // Trailing comment
         let trailing = format_trailing_comment(ctx, node.location.end_line);
         if !trailing.is_empty() {
@@ -121,6 +127,10 @@ fn format_call(
     {
         docs.push(text(call_text.trim_end()));
     }
+
+    // Mark comments in the call part (before block) as emitted
+    // This includes trailing comments that are part of the extracted source
+    mark_comments_in_range_emitted(ctx, node.location.start_line, block_node.location.start_line);
 
     // Format the block
     match block_style {
@@ -271,6 +281,9 @@ fn format_inline_brace_block(
         docs.push(text(source_text));
     }
 
+    // Mark internal comments as emitted
+    mark_comments_in_range_emitted(ctx, block_node.location.start_line, block_node.location.end_line);
+
     // Trailing comment
     let trailing = format_trailing_comment(ctx, block_node.location.end_line);
     if !trailing.is_empty() {
@@ -278,6 +291,14 @@ fn format_inline_brace_block(
     }
 
     Ok(concat(docs))
+}
+
+/// Mark comments in a line range as emitted
+///
+/// Used when source extraction includes comments that should not be emitted again.
+fn mark_comments_in_range_emitted(ctx: &mut FormatContext, start_line: usize, end_line: usize) {
+    let indices: Vec<usize> = ctx.get_comment_indices_in_range(start_line, end_line).collect();
+    ctx.mark_comments_emitted(indices);
 }
 
 /// Extract block parameters (|x, y|) from block node
