@@ -1,7 +1,6 @@
 mod ast;
 pub mod config;
 pub mod doc;
-mod emitter;
 mod error;
 pub mod format;
 mod logging;
