@@ -268,20 +268,23 @@ impl<'a> FormatContext<'a> {
     }
 
     /// Gets comment indices within a given line range [start_line, end_line).
+    ///
+    /// Returns an empty iterator if start_line >= end_line.
+    /// This is consistent with `get_comments_in_range` and `has_comments_in_range`.
     pub fn get_comment_indices_in_range(
         &self,
         start_line: usize,
         end_line: usize,
     ) -> impl Iterator<Item = usize> + '_ {
-        // Handle invalid range (can happen with single-line nodes)
-        let range_start = start_line.min(end_line);
-        let range_end = start_line.max(end_line);
+        // Return empty iterator for invalid range (consistent with get_comments_in_range)
+        let valid_range = start_line < end_line;
 
         self.comments_by_line
-            .range(range_start..range_end)
+            .range(start_line..end_line.max(start_line))
             .flat_map(|(_, indices)| indices.iter().copied())
             .filter(move |&idx| {
-                !self.emitted_comment_indices.contains(&idx)
+                valid_range
+                    && !self.emitted_comment_indices.contains(&idx)
                     && self.all_comments[idx].location.end_line < end_line
             })
     }

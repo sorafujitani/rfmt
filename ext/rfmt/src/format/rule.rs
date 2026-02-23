@@ -314,6 +314,77 @@ pub fn format_statements(
     Ok(concat(docs))
 }
 
+/// Reformats multiline method chain text with indented style.
+///
+/// Converts aligned method chains to indented style:
+/// - First line is kept as-is (trimmed at end)
+/// - Subsequent lines starting with `.` or `&.` are re-indented with one level of indentation
+///
+/// Returns `Cow::Borrowed` when no transformation is needed to avoid allocation.
+///
+/// # Arguments
+/// * `source_text` - The source text containing a method chain
+/// * `indent_width` - The number of spaces for one level of indentation
+///
+/// # Example
+/// ```text
+/// Input (indent_width=2):  "foo.bar\n                  .baz"
+/// Output:                  "foo.bar\n  .baz"
+/// ```
+pub fn reformat_chain_lines(source_text: &str, indent_width: usize) -> std::borrow::Cow<'_, str> {
+    use std::borrow::Cow;
+
+    let lines: Vec<&str> = source_text.lines().collect();
+    if lines.len() <= 1 {
+        return Cow::Borrowed(source_text);
+    }
+
+    // Check if there are actual chain continuation lines (. or &.)
+    let has_chain = lines[1..].iter().any(|l| {
+        let t = l.trim_start();
+        t.starts_with('.') || t.starts_with("&.")
+    });
+
+    if !has_chain {
+        return Cow::Borrowed(source_text);
+    }
+
+    // Build the indented chain with pre-allocated capacity
+    let chain_indent = " ".repeat(indent_width);
+    let mut result = String::with_capacity(source_text.len());
+    result.push_str(lines[0].trim_end());
+
+    for line in &lines[1..] {
+        result.push('\n');
+        let trimmed = line.trim();
+        if trimmed.starts_with('.') || trimmed.starts_with("&.") {
+            result.push_str(&chain_indent);
+            result.push_str(trimmed);
+        } else {
+            // Non-chain continuation (e.g., heredoc content): preserve as-is
+            result.push_str(line);
+        }
+    }
+
+    Cow::Owned(result)
+}
+
+/// Marks comments within a line range as emitted.
+///
+/// This is used when source text is extracted directly, as any comments
+/// within the extracted range are included in the output.
+///
+/// # Arguments
+/// * `ctx` - The formatting context
+/// * `start_line` - The start line of the range
+/// * `end_line` - The end line of the range
+pub fn mark_comments_in_range_emitted(ctx: &mut FormatContext, start_line: usize, end_line: usize) {
+    let indices: Vec<usize> = ctx
+        .get_comment_indices_in_range(start_line, end_line)
+        .collect();
+    ctx.mark_comments_emitted(indices);
+}
+
 /// Checks if a node is a structural node (part of definition syntax, not body).
 ///
 /// Structural nodes are parts of class/module/method definitions that should
@@ -452,5 +523,33 @@ mod tests {
 
         let doc = format_child(&node, &mut ctx, &registry).unwrap();
         assert!(!matches!(doc, Doc::Empty));
+    }
+
+    #[test]
+    fn test_reformat_chain_lines_single_line() {
+        let input = "foo.bar.baz";
+        let result = reformat_chain_lines(input, 2);
+        assert_eq!(result, "foo.bar.baz");
+    }
+
+    #[test]
+    fn test_reformat_chain_lines_multiline_chain() {
+        let input = "foo.bar\n                  .baz\n                  .qux";
+        let result = reformat_chain_lines(input, 2);
+        assert_eq!(result, "foo.bar\n  .baz\n  .qux");
+    }
+
+    #[test]
+    fn test_reformat_chain_lines_safe_navigation() {
+        let input = "foo&.bar\n                  &.baz";
+        let result = reformat_chain_lines(input, 2);
+        assert_eq!(result, "foo&.bar\n  &.baz");
+    }
+
+    #[test]
+    fn test_reformat_chain_lines_no_chain() {
+        let input = "foo(\n  arg1,\n  arg2\n)";
+        let result = reformat_chain_lines(input, 2);
+        assert_eq!(result, input);
     }
 }

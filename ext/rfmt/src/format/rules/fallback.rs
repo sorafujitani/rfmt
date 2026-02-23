@@ -9,7 +9,10 @@ use crate::doc::{concat, text, Doc};
 use crate::error::Result;
 use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
-use crate::format::rule::{format_leading_comments, format_trailing_comment, FormatRule};
+use crate::format::rule::{
+    format_leading_comments, format_trailing_comment, mark_comments_in_range_emitted,
+    reformat_chain_lines, FormatRule,
+};
 
 /// Fallback rule that extracts source text directly.
 ///
@@ -41,7 +44,7 @@ impl FormatRule for FallbackRule {
 
             // Mark any comments within this node's range as emitted
             // (they are included in the source extraction)
-            mark_internal_comments_emitted(ctx, node);
+            mark_comments_in_range_emitted(ctx, node.location.start_line, node.location.end_line);
         }
 
         // Add trailing comment
@@ -52,60 +55,6 @@ impl FormatRule for FallbackRule {
 
         Ok(concat(docs))
     }
-}
-
-/// Reformat multiline method chain text with indented style.
-///
-/// Converts aligned method chains to indented style:
-/// - First line is kept as-is (trimmed at end)
-/// - Subsequent lines starting with `.` or `&.` are re-indented with one level of indentation
-fn reformat_chain_lines(source_text: &str, indent_width: usize) -> String {
-    let lines: Vec<&str> = source_text.lines().collect();
-    if lines.len() <= 1 {
-        return source_text.to_string();
-    }
-
-    // Check if there are actual chain continuation lines (. or &.)
-    let has_chain = lines[1..].iter().any(|l| {
-        let t = l.trim_start();
-        t.starts_with('.') || t.starts_with("&.")
-    });
-
-    if !has_chain {
-        return source_text.to_string();
-    }
-
-    // Build the indented chain
-    let chain_indent = " ".repeat(indent_width);
-    let mut result = String::from(lines[0].trim_end());
-
-    for line in &lines[1..] {
-        result.push('\n');
-        let trimmed = line.trim();
-        if trimmed.starts_with('.') || trimmed.starts_with("&.") {
-            result.push_str(&chain_indent);
-            result.push_str(trimmed);
-        } else {
-            // Non-chain continuation (e.g., heredoc content): preserve as-is
-            result.push_str(line);
-        }
-    }
-
-    result
-}
-
-/// Marks comments within a node's line range as emitted.
-///
-/// This is used when source text is extracted directly, as any comments
-/// within the extracted range are included in the output.
-fn mark_internal_comments_emitted(ctx: &mut FormatContext, node: &Node) {
-    // Collect indices first to avoid borrow conflict
-    let indices: Vec<usize> = ctx
-        .get_comment_indices_in_range(node.location.start_line, node.location.end_line)
-        .collect();
-
-    // Mark as emitted in batch
-    ctx.mark_comments_emitted(indices);
 }
 
 #[cfg(test)]
