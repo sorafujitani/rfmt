@@ -57,11 +57,7 @@ fn format_variable_write(
     }
 
     // 2. Get variable name from metadata
-    let name = node
-        .metadata
-        .get("name")
-        .map(|s| s.as_str())
-        .unwrap_or("_");
+    let name = node.metadata.get("name").map(|s| s.as_str()).unwrap_or("_");
 
     // 3. Get value node (first child)
     let value = match node.children.first() {

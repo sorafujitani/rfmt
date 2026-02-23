@@ -59,7 +59,9 @@ impl From<&NodeType> for NodeTypeKey {
             NodeType::BlockNode => Self::from_static("block_node"),
             NodeType::LambdaNode => Self::from_static("lambda_node"),
             NodeType::LocalVariableWriteNode => Self::from_static("local_variable_write_node"),
-            NodeType::InstanceVariableWriteNode => Self::from_static("instance_variable_write_node"),
+            NodeType::InstanceVariableWriteNode => {
+                Self::from_static("instance_variable_write_node")
+            }
             NodeType::Unknown(s) => Self::from_owned(s.clone()),
             // Default for unhandled types
             _ => Self::from_static("unknown"),
@@ -125,7 +127,10 @@ impl RuleRegistry {
             .add(NodeType::UntilNode, UntilRule)
             .add(NodeType::ForNode, ForRule)
             .add(NodeType::LocalVariableWriteNode, LocalVariableWriteRule)
-            .add(NodeType::InstanceVariableWriteNode, InstanceVariableWriteRule)
+            .add(
+                NodeType::InstanceVariableWriteNode,
+                InstanceVariableWriteRule,
+            )
     }
 }
 
