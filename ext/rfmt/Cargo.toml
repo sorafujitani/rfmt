@@ -57,3 +57,6 @@ tempfile = "3.8"
 [features]
 default = ["cli"]
 cli = ["clap"]
+
+# Note: Benchmarks are included as part of the test suite due to Ruby FFI linking constraints.
+# Run performance tests with: cargo test --release perf_

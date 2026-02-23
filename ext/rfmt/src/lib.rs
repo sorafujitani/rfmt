@@ -1,7 +1,8 @@
 mod ast;
-mod config;
-mod emitter;
+pub mod config;
+pub mod doc;
 mod error;
+pub mod format;
 mod logging;
 mod parser;
 mod policy;
@@ -9,7 +10,7 @@ mod policy;
 use policy::SecurityPolicy;
 
 use config::Config;
-use emitter::Emitter;
+use format::Formatter;
 use magnus::{function, prelude::*, Error, Ruby};
 use parser::{PrismAdapter, RubyParser};
 
@@ -24,9 +25,11 @@ fn format_ruby_code(ruby: &Ruby, source: String, json: String) -> Result<String,
     let ast = parser.parse(&json).map_err(|e| e.to_magnus_error(ruby))?;
 
     let config = Config::discover().map_err(|e| e.to_magnus_error(ruby))?;
-    let mut emitter = Emitter::with_source(config, source);
+    let formatter = Formatter::new(config);
 
-    let formatted = emitter.emit(&ast).map_err(|e| e.to_magnus_error(ruby))?;
+    let formatted = formatter
+        .format(&source, &ast)
+        .map_err(|e| e.to_magnus_error(ruby))?;
 
     Ok(formatted)
 }
