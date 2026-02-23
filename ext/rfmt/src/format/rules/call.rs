@@ -98,9 +98,10 @@ fn format_call(
         .unwrap_or(false);
 
     if !has_block {
-        // Simple call - use source extraction
+        // Simple call - use source extraction with chain reformatting
         if let Some(source_text) = ctx.extract_source(node) {
-            docs.push(text(source_text));
+            let reformatted = reformat_chain_lines(source_text, ctx.config().formatting.indent_width);
+            docs.push(text(reformatted));
         }
 
         // Mark comments in this range as emitted (they're in source extraction)
@@ -119,13 +120,14 @@ fn format_call(
     let block_node = node.children.last().unwrap();
     let block_style = detect_block_style(block_node, ctx);
 
-    // Emit the call part (receiver.method(args)) from source
+    // Emit the call part (receiver.method(args)) from source with chain reformatting
     let call_end_offset = block_node.location.start_offset;
     if let Some(call_text) = ctx
         .source()
         .get(node.location.start_offset..call_end_offset)
     {
-        docs.push(text(call_text.trim_end()));
+        let reformatted = reformat_chain_lines(call_text.trim_end(), ctx.config().formatting.indent_width);
+        docs.push(text(reformatted));
     }
 
     // Mark comments in the call part (before block) as emitted
@@ -299,6 +301,50 @@ fn format_inline_brace_block(
 fn mark_comments_in_range_emitted(ctx: &mut FormatContext, start_line: usize, end_line: usize) {
     let indices: Vec<usize> = ctx.get_comment_indices_in_range(start_line, end_line).collect();
     ctx.mark_comments_emitted(indices);
+}
+
+/// Reformat multiline method chain text with indented style.
+///
+/// Converts aligned method chains to indented style:
+/// - First line is kept as-is (trimmed at end)
+/// - Subsequent lines starting with `.` or `&.` are re-indented with one level of indentation
+///
+/// Example (indent_width=2):
+///   Input:  "foo.bar\n                  .baz"
+///   Output: "foo.bar\n  .baz"
+fn reformat_chain_lines(source_text: &str, indent_width: usize) -> String {
+    let lines: Vec<&str> = source_text.lines().collect();
+    if lines.len() <= 1 {
+        return source_text.to_string();
+    }
+
+    // Check if there are actual chain continuation lines (. or &.)
+    let has_chain = lines[1..].iter().any(|l| {
+        let t = l.trim_start();
+        t.starts_with('.') || t.starts_with("&.")
+    });
+
+    if !has_chain {
+        return source_text.to_string();
+    }
+
+    // Build the indented chain
+    let chain_indent = " ".repeat(indent_width);
+    let mut result = String::from(lines[0].trim_end());
+
+    for line in &lines[1..] {
+        result.push('\n');
+        let trimmed = line.trim();
+        if trimmed.starts_with('.') || trimmed.starts_with("&.") {
+            result.push_str(&chain_indent);
+            result.push_str(trimmed);
+        } else {
+            // Non-chain continuation (e.g., heredoc content): preserve as-is
+            result.push_str(line);
+        }
+    }
+
+    result
 }
 
 /// Extract block parameters (|x, y|) from block node
