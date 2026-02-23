@@ -28,9 +28,10 @@ impl FormatRule for FallbackRule {
             docs.push(leading);
         }
 
-        // Extract source text
+        // Extract source text with chain reformatting
         if let Some(source_text) = ctx.extract_source(node) {
-            docs.push(text(source_text));
+            let reformatted = reformat_chain_lines(source_text, ctx.config().formatting.indent_width);
+            docs.push(text(reformatted));
 
             // Mark any comments within this node's range as emitted
             // (they are included in the source extraction)
@@ -45,6 +46,46 @@ impl FormatRule for FallbackRule {
 
         Ok(concat(docs))
     }
+}
+
+/// Reformat multiline method chain text with indented style.
+///
+/// Converts aligned method chains to indented style:
+/// - First line is kept as-is (trimmed at end)
+/// - Subsequent lines starting with `.` or `&.` are re-indented with one level of indentation
+fn reformat_chain_lines(source_text: &str, indent_width: usize) -> String {
+    let lines: Vec<&str> = source_text.lines().collect();
+    if lines.len() <= 1 {
+        return source_text.to_string();
+    }
+
+    // Check if there are actual chain continuation lines (. or &.)
+    let has_chain = lines[1..].iter().any(|l| {
+        let t = l.trim_start();
+        t.starts_with('.') || t.starts_with("&.")
+    });
+
+    if !has_chain {
+        return source_text.to_string();
+    }
+
+    // Build the indented chain
+    let chain_indent = " ".repeat(indent_width);
+    let mut result = String::from(lines[0].trim_end());
+
+    for line in &lines[1..] {
+        result.push('\n');
+        let trimmed = line.trim();
+        if trimmed.starts_with('.') || trimmed.starts_with("&.") {
+            result.push_str(&chain_indent);
+            result.push_str(trimmed);
+        } else {
+            // Non-chain continuation (e.g., heredoc content): preserve as-is
+            result.push_str(line);
+        }
+    }
+
+    result
 }
 
 /// Marks comments within a node's line range as emitted.

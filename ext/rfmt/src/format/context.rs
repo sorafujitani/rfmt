@@ -273,8 +273,12 @@ impl<'a> FormatContext<'a> {
         start_line: usize,
         end_line: usize,
     ) -> impl Iterator<Item = usize> + '_ {
+        // Handle invalid range (can happen with single-line nodes)
+        let range_start = start_line.min(end_line);
+        let range_end = start_line.max(end_line);
+
         self.comments_by_line
-            .range(start_line..end_line)
+            .range(range_start..range_end)
             .flat_map(|(_, indices)| indices.iter().copied())
             .filter(move |&idx| {
                 !self.emitted_comment_indices.contains(&idx)
