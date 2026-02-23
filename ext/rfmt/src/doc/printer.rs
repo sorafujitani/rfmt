@@ -79,8 +79,8 @@ impl<'a> Printer<'a> {
                     "\t".repeat(tabs)
                 } else {
                     let mut result = String::with_capacity(tabs + spaces);
-                    result.extend(std::iter::repeat('\t').take(tabs));
-                    result.extend(std::iter::repeat(' ').take(spaces));
+                    result.extend(std::iter::repeat_n('\t', tabs));
+                    result.extend(std::iter::repeat_n(' ', spaces));
                     result
                 }
             }
