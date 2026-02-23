@@ -10,6 +10,8 @@ module RubyLsp
       # @return [String, nil] Formatted text or nil on error
       def run_formatting(_uri, document)
         source = document.source
+        return "\n" if source.empty?
+
         ::Rfmt.format(source)
       rescue ::Rfmt::Error
         nil
