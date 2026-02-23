@@ -27,7 +27,9 @@ fn format_ruby_code(ruby: &Ruby, source: String, json: String) -> Result<String,
     let config = Config::discover().map_err(|e| e.to_magnus_error(ruby))?;
     let formatter = Formatter::new(config);
 
-    let formatted = formatter.format(&source, &ast).map_err(|e| e.to_magnus_error(ruby))?;
+    let formatted = formatter
+        .format(&source, &ast)
+        .map_err(|e| e.to_magnus_error(ruby))?;
 
     Ok(formatted)
 }

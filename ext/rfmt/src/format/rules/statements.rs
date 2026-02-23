@@ -44,7 +44,14 @@ mod tests {
     fn make_call_node(source: &str, line: usize, start_offset: usize) -> Node {
         Node {
             node_type: NodeType::CallNode,
-            location: Location::new(line, 0, line, source.len(), start_offset, start_offset + source.len()),
+            location: Location::new(
+                line,
+                0,
+                line,
+                source.len(),
+                start_offset,
+                start_offset + source.len(),
+            ),
             children: Vec::new(),
             metadata: HashMap::new(),
             comments: Vec::new(),

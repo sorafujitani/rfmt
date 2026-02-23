@@ -32,11 +32,7 @@ pub trait FormatRule: Send + Sync {
 /// Formats a child node by dispatching to the appropriate rule.
 ///
 /// This is the primary way to recursively format child nodes within rules.
-pub fn format_child(
-    child: &Node,
-    ctx: &mut FormatContext,
-    registry: &RuleRegistry,
-) -> Result<Doc> {
+pub fn format_child(child: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) -> Result<Doc> {
     let rule = registry.get_rule(&child.node_type);
     rule.format(child, ctx, registry)
 }

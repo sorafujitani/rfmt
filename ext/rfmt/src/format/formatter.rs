@@ -161,7 +161,13 @@ mod tests {
         }
     }
 
-    fn make_class_node(name: &str, start_line: usize, end_line: usize, start_offset: usize, end_offset: usize) -> Node {
+    fn make_class_node(
+        name: &str,
+        start_line: usize,
+        end_line: usize,
+        start_offset: usize,
+        end_offset: usize,
+    ) -> Node {
         let mut metadata = HashMap::new();
         metadata.insert("name".to_string(), name.to_string());
 

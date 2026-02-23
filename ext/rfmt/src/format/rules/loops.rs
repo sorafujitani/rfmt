@@ -68,11 +68,7 @@ fn format_while_until(
 }
 
 /// Formats postfix while/until
-fn format_postfix_while_until(
-    node: &Node,
-    ctx: &mut FormatContext,
-    keyword: &str,
-) -> Result<Doc> {
+fn format_postfix_while_until(node: &Node, ctx: &mut FormatContext, keyword: &str) -> Result<Doc> {
     let mut docs: Vec<Doc> = Vec::with_capacity(6);
 
     // Leading comments
@@ -149,11 +145,7 @@ fn format_normal_while_until(
 }
 
 /// Formats for loop
-fn format_for(
-    node: &Node,
-    ctx: &mut FormatContext,
-    registry: &RuleRegistry,
-) -> Result<Doc> {
+fn format_for(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) -> Result<Doc> {
     let mut docs: Vec<Doc> = Vec::with_capacity(10);
 
     // Leading comments
@@ -230,11 +222,7 @@ mod tests {
         }
     }
 
-    fn make_for_node(
-        children: Vec<Node>,
-        start_line: usize,
-        end_line: usize,
-    ) -> Node {
+    fn make_for_node(children: Vec<Node>, start_line: usize, end_line: usize) -> Node {
         Node {
             node_type: NodeType::ForNode,
             location: Location::new(start_line, 0, end_line, 3, 0, 50),

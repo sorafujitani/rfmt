@@ -53,10 +53,7 @@ fn build_def_header(node: &Node) -> Vec<Doc> {
 
     // Get parameters from metadata
     if let Some(params_text) = node.metadata.get("parameters_text") {
-        let has_parens = node
-            .metadata
-            .get("has_parens")
-            .is_some_and(|v| v == "true");
+        let has_parens = node.metadata.get("has_parens").is_some_and(|v| v == "true");
 
         if has_parens {
             parts.push(text("("));

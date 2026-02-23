@@ -50,11 +50,7 @@ impl FormatRule for InRule {
 }
 
 /// Formats case expression
-fn format_case(
-    node: &Node,
-    ctx: &mut FormatContext,
-    registry: &RuleRegistry,
-) -> Result<Doc> {
+fn format_case(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) -> Result<Doc> {
     let mut docs: Vec<Doc> = Vec::with_capacity(8);
 
     // Leading comments
@@ -120,11 +116,7 @@ fn format_case(
 }
 
 /// Formats when clause
-fn format_when(
-    node: &Node,
-    ctx: &mut FormatContext,
-    registry: &RuleRegistry,
-) -> Result<Doc> {
+fn format_when(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) -> Result<Doc> {
     let mut docs: Vec<Doc> = Vec::with_capacity(6);
 
     // Leading comments
@@ -179,11 +171,7 @@ fn format_when(
 }
 
 /// Formats case match expression (Ruby 3.0+ pattern matching)
-fn format_case_match(
-    node: &Node,
-    ctx: &mut FormatContext,
-    registry: &RuleRegistry,
-) -> Result<Doc> {
+fn format_case_match(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) -> Result<Doc> {
     let mut docs: Vec<Doc> = Vec::with_capacity(8);
 
     // Leading comments
@@ -246,11 +234,7 @@ fn format_case_match(
 }
 
 /// Formats in clause (pattern matching)
-fn format_in(
-    node: &Node,
-    ctx: &mut FormatContext,
-    registry: &RuleRegistry,
-) -> Result<Doc> {
+fn format_in(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) -> Result<Doc> {
     let mut docs: Vec<Doc> = Vec::with_capacity(6);
 
     // Leading comments

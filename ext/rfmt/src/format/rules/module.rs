@@ -55,7 +55,12 @@ mod tests {
     use crate::doc::Printer;
     use std::collections::HashMap;
 
-    fn make_module_node(name: &str, children: Vec<Node>, start_line: usize, end_line: usize) -> Node {
+    fn make_module_node(
+        name: &str,
+        children: Vec<Node>,
+        start_line: usize,
+        end_line: usize,
+    ) -> Node {
         let mut metadata = HashMap::new();
         metadata.insert("name".to_string(), name.to_string());
 

@@ -48,7 +48,12 @@ impl FormatRule for BlockRule {
 }
 
 impl FormatRule for LambdaRule {
-    fn format(&self, node: &Node, ctx: &mut FormatContext, _registry: &RuleRegistry) -> Result<Doc> {
+    fn format(
+        &self,
+        node: &Node,
+        ctx: &mut FormatContext,
+        _registry: &RuleRegistry,
+    ) -> Result<Doc> {
         // Lambda syntax is complex (-> vs lambda, {} vs do-end)
         // Use source extraction to preserve original style
         let mut docs: Vec<Doc> = Vec::with_capacity(3);
@@ -78,11 +83,7 @@ impl FormatRule for LambdaRule {
 }
 
 /// Formats method call
-fn format_call(
-    node: &Node,
-    ctx: &mut FormatContext,
-    registry: &RuleRegistry,
-) -> Result<Doc> {
+fn format_call(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) -> Result<Doc> {
     // Leading comments
     let mut docs: Vec<Doc> = Vec::with_capacity(4);
     let leading = format_leading_comments(ctx, node.location.start_line);
@@ -100,7 +101,8 @@ fn format_call(
     if !has_block {
         // Simple call - use source extraction with chain reformatting
         if let Some(source_text) = ctx.extract_source(node) {
-            let reformatted = reformat_chain_lines(source_text, ctx.config().formatting.indent_width);
+            let reformatted =
+                reformat_chain_lines(source_text, ctx.config().formatting.indent_width);
             docs.push(text(reformatted));
         }
 
@@ -126,13 +128,18 @@ fn format_call(
         .source()
         .get(node.location.start_offset..call_end_offset)
     {
-        let reformatted = reformat_chain_lines(call_text.trim_end(), ctx.config().formatting.indent_width);
+        let reformatted =
+            reformat_chain_lines(call_text.trim_end(), ctx.config().formatting.indent_width);
         docs.push(text(reformatted));
     }
 
     // Mark comments in the call part (before block) as emitted
     // This includes trailing comments that are part of the extracted source
-    mark_comments_in_range_emitted(ctx, node.location.start_line, block_node.location.start_line);
+    mark_comments_in_range_emitted(
+        ctx,
+        node.location.start_line,
+        block_node.location.start_line,
+    );
 
     // Format the block
     match block_style {
@@ -270,10 +277,7 @@ fn format_multiline_brace_block(
 }
 
 /// Formats inline brace block
-fn format_inline_brace_block(
-    block_node: &Node,
-    ctx: &mut FormatContext,
-) -> Result<Doc> {
+fn format_inline_brace_block(block_node: &Node, ctx: &mut FormatContext) -> Result<Doc> {
     let mut docs: Vec<Doc> = Vec::with_capacity(3);
 
     docs.push(text(" "));
@@ -284,7 +288,11 @@ fn format_inline_brace_block(
     }
 
     // Mark internal comments as emitted
-    mark_comments_in_range_emitted(ctx, block_node.location.start_line, block_node.location.end_line);
+    mark_comments_in_range_emitted(
+        ctx,
+        block_node.location.start_line,
+        block_node.location.end_line,
+    );
 
     // Trailing comment
     let trailing = format_trailing_comment(ctx, block_node.location.end_line);
@@ -299,7 +307,9 @@ fn format_inline_brace_block(
 ///
 /// Used when source extraction includes comments that should not be emitted again.
 fn mark_comments_in_range_emitted(ctx: &mut FormatContext, start_line: usize, end_line: usize) {
-    let indices: Vec<usize> = ctx.get_comment_indices_in_range(start_line, end_line).collect();
+    let indices: Vec<usize> = ctx
+        .get_comment_indices_in_range(start_line, end_line)
+        .collect();
     ctx.mark_comments_emitted(indices);
 }
 
@@ -354,9 +364,8 @@ fn extract_block_parameters(block_node: &Node, ctx: &FormatContext) -> Option<St
         return None;
     }
 
-    let block_source = source.get(
-        block_node.location.start_offset..block_node.location.end_offset,
-    )?;
+    let block_source =
+        source.get(block_node.location.start_offset..block_node.location.end_offset)?;
 
     // Only look at the first line of the block for parameters
     let first_line = block_source.lines().next()?;

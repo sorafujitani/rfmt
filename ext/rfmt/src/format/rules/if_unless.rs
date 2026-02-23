@@ -328,11 +328,7 @@ mod tests {
         }
     }
 
-    fn make_predicate_node(
-        start_offset: usize,
-        end_offset: usize,
-        start_line: usize,
-    ) -> Node {
+    fn make_predicate_node(start_offset: usize, end_offset: usize, start_line: usize) -> Node {
         Node {
             node_type: NodeType::CallNode,
             location: Location::new(start_line, 0, start_line, 0, start_offset, end_offset),

@@ -19,7 +19,12 @@ use crate::format::rule::{format_leading_comments, format_trailing_comment, Form
 pub struct FallbackRule;
 
 impl FormatRule for FallbackRule {
-    fn format(&self, node: &Node, ctx: &mut FormatContext, _registry: &RuleRegistry) -> Result<Doc> {
+    fn format(
+        &self,
+        node: &Node,
+        ctx: &mut FormatContext,
+        _registry: &RuleRegistry,
+    ) -> Result<Doc> {
         let mut docs: Vec<Doc> = Vec::with_capacity(3);
 
         // Add leading comments
@@ -30,7 +35,8 @@ impl FormatRule for FallbackRule {
 
         // Extract source text with chain reformatting
         if let Some(source_text) = ctx.extract_source(node) {
-            let reformatted = reformat_chain_lines(source_text, ctx.config().formatting.indent_width);
+            let reformatted =
+                reformat_chain_lines(source_text, ctx.config().formatting.indent_width);
             docs.push(text(reformatted));
 
             // Mark any comments within this node's range as emitted

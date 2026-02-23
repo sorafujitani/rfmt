@@ -137,11 +137,7 @@ impl<'a> Printer<'a> {
                 ..
             } => {
                 // Determine if the group fits on the remaining line
-                let remaining = self
-                    .config
-                    .formatting
-                    .line_length
-                    .saturating_sub(self.pos);
+                let remaining = self.config.formatting.line_length.saturating_sub(self.pos);
                 let fits = !*break_parent && self.fits(contents, cmd.indent, remaining, cmd.mode);
 
                 let mode = if fits { Mode::Flat } else { Mode::Break };
@@ -153,31 +149,33 @@ impl<'a> Printer<'a> {
                 });
             }
 
-            Doc::Line { soft, hard, literal } => {
-                match (cmd.mode, *hard) {
-                    (_, true) => {
-                        self.output.push('\n');
-                        if !*literal {
-                            let indent_str = self.get_indent(cmd.indent);
-                            self.output.push_str(&indent_str);
-                            self.pos = cmd.indent;
-                        } else {
-                            self.pos = 0;
-                        }
-                    }
-                    (Mode::Flat, false) if *soft => {}
-                    (Mode::Flat, false) => {
-                        self.output.push(' ');
-                        self.pos += 1;
-                    }
-                    (Mode::Break, false) => {
-                        self.output.push('\n');
+            Doc::Line {
+                soft,
+                hard,
+                literal,
+            } => match (cmd.mode, *hard) {
+                (_, true) => {
+                    self.output.push('\n');
+                    if !*literal {
                         let indent_str = self.get_indent(cmd.indent);
                         self.output.push_str(&indent_str);
                         self.pos = cmd.indent;
+                    } else {
+                        self.pos = 0;
                     }
                 }
-            }
+                (Mode::Flat, false) if *soft => {}
+                (Mode::Flat, false) => {
+                    self.output.push(' ');
+                    self.pos += 1;
+                }
+                (Mode::Break, false) => {
+                    self.output.push('\n');
+                    let indent_str = self.get_indent(cmd.indent);
+                    self.output.push_str(&indent_str);
+                    self.pos = cmd.indent;
+                }
+            },
 
             Doc::Indent(contents) => {
                 let new_indent = cmd.indent + self.config.formatting.indent_width;
@@ -290,7 +288,11 @@ impl<'a> Printer<'a> {
             match doc {
                 Doc::Text(s) => {
                     // Use len() for ASCII strings (common case), chars().count() for accuracy
-                    width += if s.is_ascii() { s.len() } else { s.chars().count() };
+                    width += if s.is_ascii() {
+                        s.len()
+                    } else {
+                        s.chars().count()
+                    };
                 }
 
                 Doc::Concat(docs) => {
@@ -310,8 +312,8 @@ impl<'a> Printer<'a> {
                         return true;
                     }
                     match mode {
-                        Mode::Flat if *soft => {} // soft line: nothing
-                        Mode::Flat => width += 1, // regular line: space
+                        Mode::Flat if *soft => {}   // soft line: nothing
+                        Mode::Flat => width += 1,   // regular line: space
                         Mode::Break => return true, // break mode: newline ends measurement
                     }
                 }
@@ -336,11 +338,19 @@ impl<'a> Printer<'a> {
                 Doc::Empty => {}
 
                 Doc::TrailingComment(s) => {
-                    width += 1 + if s.is_ascii() { s.len() } else { s.chars().count() };
+                    width += 1 + if s.is_ascii() {
+                        s.len()
+                    } else {
+                        s.chars().count()
+                    };
                 }
 
                 Doc::LeadingComment { text, .. } => {
-                    width += if text.is_ascii() { text.len() } else { text.chars().count() };
+                    width += if text.is_ascii() {
+                        text.len()
+                    } else {
+                        text.chars().count()
+                    };
                 }
 
                 Doc::Align { n, contents } => {
@@ -440,7 +450,10 @@ mod tests {
             text("end"),
         ]);
         let result = print_doc(&doc);
-        assert_eq!(result, "class Foo\n  def bar\n    puts 'hello'\n  end\nend\n");
+        assert_eq!(
+            result,
+            "class Foo\n  def bar\n    puts 'hello'\n  end\nend\n"
+        );
     }
 
     #[test]
@@ -465,7 +478,13 @@ mod tests {
     #[test]
     fn test_print_softline_flat() {
         // Softline disappears in flat mode
-        let doc = group(concat(vec![text("["), softline(), text("1"), softline(), text("]")]));
+        let doc = group(concat(vec![
+            text("["),
+            softline(),
+            text("1"),
+            softline(),
+            text("]"),
+        ]));
         let result = print_doc(&doc);
         assert_eq!(result, "[1]\n");
     }
@@ -491,7 +510,11 @@ mod tests {
             text("]"),
         ]));
         let result = print_doc(&doc);
-        assert!(result.contains("BROKEN"), "Expected BROKEN but got: {}", result);
+        assert!(
+            result.contains("BROKEN"),
+            "Expected BROKEN but got: {}",
+            result
+        );
     }
 
     #[test]
@@ -503,10 +526,7 @@ mod tests {
 
     #[test]
     fn test_print_leading_comment() {
-        let doc = concat(vec![
-            leading_comment("# comment", true),
-            text("code"),
-        ]);
+        let doc = concat(vec![leading_comment("# comment", true), text("code")]);
         let result = print_doc(&doc);
         assert_eq!(result, "# comment\ncode\n");
     }
@@ -558,7 +578,10 @@ end
         let doc = group(concat(vec![
             text("["),
             softline(),
-            join(concat(vec![text(","), line()]), vec![text("1"), text("2"), text("3")]),
+            join(
+                concat(vec![text(","), line()]),
+                vec![text("1"), text("2"), text("3")],
+            ),
             softline(),
             text("]"),
         ]));
@@ -571,11 +594,7 @@ end
         // Literal line should not add indentation
         let doc = concat(vec![
             text("<<~HEREDOC"),
-            indent(concat(vec![
-                literalline(),
-                text("content"),
-                literalline(),
-            ])),
+            indent(concat(vec![literalline(), text("content"), literalline()])),
             text("HEREDOC"),
         ]);
         let result = print_doc(&doc);
@@ -631,7 +650,10 @@ end
         let inner = group(concat(vec![
             text("["),
             softline(),
-            join(concat(vec![text(","), line()]), vec![text("1"), text("2"), text("3")]),
+            join(
+                concat(vec![text(","), line()]),
+                vec![text("1"), text("2"), text("3")],
+            ),
             softline(),
             text("]"),
         ]));

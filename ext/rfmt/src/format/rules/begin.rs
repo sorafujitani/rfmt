@@ -41,11 +41,7 @@ impl FormatRule for EnsureRule {
 }
 
 /// Formats begin block
-fn format_begin(
-    node: &Node,
-    ctx: &mut FormatContext,
-    registry: &RuleRegistry,
-) -> Result<Doc> {
+fn format_begin(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) -> Result<Doc> {
     // Check if this is an explicit begin block by looking at source
     let is_explicit_begin = ctx
         .extract_source(node)
