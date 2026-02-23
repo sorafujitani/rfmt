@@ -10,8 +10,9 @@ use std::collections::HashMap;
 use super::rule::{BoxedRule, FormatRule};
 use super::rules::{
     BeginRule, BlockRule, CallRule, CaseMatchRule, CaseRule, ClassRule, DefRule, EnsureRule,
-    FallbackRule, ForRule, IfRule, InRule, LambdaRule, ModuleRule, RescueRule, StatementsRule,
-    UnlessRule, UntilRule, WhenRule, WhileRule,
+    FallbackRule, ForRule, IfRule, InRule, InstanceVariableWriteRule, LambdaRule,
+    LocalVariableWriteRule, ModuleRule, RescueRule, SingletonClassRule, StatementsRule, UnlessRule,
+    UntilRule, WhenRule, WhileRule,
 };
 
 /// Key type for the registry, derived from NodeType.
@@ -40,6 +41,7 @@ impl From<&NodeType> for NodeTypeKey {
             NodeType::StatementsNode => Self::from_static("statements_node"),
             NodeType::ClassNode => Self::from_static("class_node"),
             NodeType::ModuleNode => Self::from_static("module_node"),
+            NodeType::SingletonClassNode => Self::from_static("singleton_class_node"),
             NodeType::DefNode => Self::from_static("def_node"),
             NodeType::CallNode => Self::from_static("call_node"),
             NodeType::IfNode => Self::from_static("if_node"),
@@ -56,6 +58,8 @@ impl From<&NodeType> for NodeTypeKey {
             NodeType::ForNode => Self::from_static("for_node"),
             NodeType::BlockNode => Self::from_static("block_node"),
             NodeType::LambdaNode => Self::from_static("lambda_node"),
+            NodeType::LocalVariableWriteNode => Self::from_static("local_variable_write_node"),
+            NodeType::InstanceVariableWriteNode => Self::from_static("instance_variable_write_node"),
             NodeType::Unknown(s) => Self::from_owned(s.clone()),
             // Default for unhandled types
             _ => Self::from_static("unknown"),
@@ -103,6 +107,7 @@ impl RuleRegistry {
             .add(NodeType::StatementsNode, StatementsRule)
             .add(NodeType::ClassNode, ClassRule)
             .add(NodeType::ModuleNode, ModuleRule)
+            .add(NodeType::SingletonClassNode, SingletonClassRule)
             .add(NodeType::DefNode, DefRule)
             .add(NodeType::IfNode, IfRule)
             .add(NodeType::UnlessNode, UnlessRule)
@@ -119,6 +124,8 @@ impl RuleRegistry {
             .add(NodeType::WhileNode, WhileRule)
             .add(NodeType::UntilNode, UntilRule)
             .add(NodeType::ForNode, ForRule)
+            .add(NodeType::LocalVariableWriteNode, LocalVariableWriteRule)
+            .add(NodeType::InstanceVariableWriteNode, InstanceVariableWriteRule)
     }
 }
 
