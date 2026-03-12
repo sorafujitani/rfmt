@@ -1,26 +1,26 @@
 # rfmt - Ruby Formatter
 
-## プロジェクト概要
-RubyコードフォーマッターでRust拡張を使用
+## Project Overview
+A Ruby code formatter powered by a Rust native extension.
 
-## 開発コマンド
+## Development Commands
 ```bash
-# テスト実行
+# Run tests
 bundle exec rspec
 
-# フォーマッター実行
+# Run the formatter
 bundle exec rfmt <file>
 
-# Rust拡張のビルド
+# Build the Rust extension
 bundle exec rake compile
 ```
 
-## Claude Code設定
+## Claude Code Settings
 
-### プランファイルの保存場所
-プランモードで作成されるプランファイルは、以下のディレクトリに保存すること:
-- **推奨**: `.claude/plans/` （カレントディレクトリ直下）
-- グローバルの`~/.claude/plans/`ではなく、プロジェクトローカルの`.claude/plans/`を使用する
+### Plan File Location
+Plan files created in plan mode should be saved to:
+- **Preferred**: `.claude/plans/` (under the project root)
+- Use the project-local `.claude/plans/`, not the global `~/.claude/plans/`
 
-### 日本語での応答
-- 日本語で応答すること
+### Language
+- Respond in Japanese
