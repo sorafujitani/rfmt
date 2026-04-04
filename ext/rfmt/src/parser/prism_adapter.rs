@@ -167,7 +167,9 @@ pub enum PrismCommentType {
 
 /// Maps Ruby Prism comment class names (after `PrismBridge` normalization) to our enum.
 /// Unknown values default to `Line` so parsing never fails on new Prism comment kinds.
-fn deserialize_prism_comment_type<'de, D>(deserializer: D) -> std::result::Result<PrismCommentType, D::Error>
+fn deserialize_prism_comment_type<'de, D>(
+    deserializer: D,
+) -> std::result::Result<PrismCommentType, D::Error>
 where
     D: Deserializer<'de>,
 {
