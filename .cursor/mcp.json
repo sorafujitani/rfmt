@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "memoli": {
-      "command": "memoli",
-      "args": ["serve"]
-    }
-  }
-}
