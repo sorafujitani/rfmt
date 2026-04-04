@@ -1,8 +1,9 @@
 use crate::ast::{Comment, CommentPosition, CommentType, FormattingInfo, Location, Node, NodeType};
 use crate::error::{Result, RfmtError};
 use crate::parser::RubyParser;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
+use std::fmt;
 
 /// Prism parser adapter
 /// This integrates with Ruby Prism parser via Magnus FFI
@@ -144,7 +145,13 @@ pub struct PrismLocation {
 pub struct PrismComment {
     pub text: String,
     pub location: PrismLocation,
-    #[serde(rename = "type", default)]
+    /// PrismBridge sends `comment_type`; older payloads may use `type`.
+    #[serde(
+        default,
+        rename = "comment_type",
+        alias = "type",
+        deserialize_with = "deserialize_prism_comment_type"
+    )]
     pub comment_type: PrismCommentType,
     #[serde(default)]
     pub position: PrismCommentPosition,
@@ -156,6 +163,37 @@ pub enum PrismCommentType {
     #[default]
     Line,
     Block,
+}
+
+/// Maps Ruby Prism comment class names (after `PrismBridge` normalization) to our enum.
+/// Unknown values default to `Line` so parsing never fails on new Prism comment kinds.
+fn deserialize_prism_comment_type<'de, D>(deserializer: D) -> std::result::Result<PrismCommentType, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::{self, Visitor};
+
+    struct CommentTypeVisitor;
+
+    impl Visitor<'_> for CommentTypeVisitor {
+        type Value = PrismCommentType;
+
+        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            f.write_str("a Prism comment type string")
+        }
+
+        fn visit_str<E: de::Error>(self, v: &str) -> std::result::Result<Self::Value, E> {
+            Ok(match v {
+                // LineComment -> "line", InlineComment -> "inline"
+                "line" | "inline" => PrismCommentType::Line,
+                // EmbDocComment (=begin/=end) -> "embdoc"; keep "block" for compatibility
+                "block" | "embdoc" => PrismCommentType::Block,
+                _ => PrismCommentType::Line,
+            })
+        }
+    }
+
+    deserializer.deserialize_str(CommentTypeVisitor)
 }
 
 impl From<PrismCommentType> for CommentType {
@@ -199,6 +237,7 @@ pub struct PrismFormattingInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ast::CommentType;
 
     #[test]
     fn test_parse_simple_program() {
@@ -425,5 +464,119 @@ mod tests {
         );
         assert!(node.is_unknown());
         assert_eq!(node.unknown_type(), Some("totally_unknown_node"));
+    }
+
+    /// Ruby PrismBridge uses `comment_type` (not `type`) and values like `embdoc` / `inline`.
+    #[test]
+    fn test_parse_wrapper_with_prism_bridge_comment_fields() {
+        let adapter = PrismAdapter::new();
+        let json = r##"{
+            "ast": {
+                "node_type": "program_node",
+                "location": {
+                    "start_line": 1,
+                    "start_column": 0,
+                    "end_line": 2,
+                    "end_column": 0,
+                    "start_offset": 0,
+                    "end_offset": 20
+                },
+                "children": [],
+                "metadata": {},
+                "comments": [],
+                "formatting": {
+                    "indent_level": 0,
+                    "needs_blank_line_before": false,
+                    "needs_blank_line_after": false,
+                    "preserve_newlines": false,
+                    "multiline": false,
+                    "original_formatting": null
+                }
+            },
+            "comments": [
+                {
+                    "text": "=begin\nnote\n=end",
+                    "comment_type": "embdoc",
+                    "location": {
+                        "start_line": 1,
+                        "start_column": 0,
+                        "end_line": 3,
+                        "end_column": 4,
+                        "start_offset": 0,
+                        "end_offset": 16
+                    },
+                    "position": "leading"
+                },
+                {
+                    "text": "# inline style",
+                    "comment_type": "inline",
+                    "location": {
+                        "start_line": 4,
+                        "start_column": 0,
+                        "end_line": 4,
+                        "end_column": 14,
+                        "start_offset": 17,
+                        "end_offset": 31
+                    },
+                    "position": "leading"
+                }
+            ]
+        }"##;
+
+        let result = adapter.parse(json);
+        assert!(result.is_ok(), "{:?}", result.err());
+        let node = result.unwrap();
+        assert_eq!(node.comments.len(), 2);
+        assert_eq!(node.comments[0].comment_type, CommentType::Block);
+        assert_eq!(node.comments[1].comment_type, CommentType::Line);
+    }
+
+    /// Legacy JSON that used the `type` key for comment_kind still parses.
+    #[test]
+    fn test_parse_wrapper_comment_type_alias_type_key() {
+        let adapter = PrismAdapter::new();
+        let json = r##"{
+            "ast": {
+                "node_type": "program_node",
+                "location": {
+                    "start_line": 1,
+                    "start_column": 0,
+                    "end_line": 1,
+                    "end_column": 0,
+                    "start_offset": 0,
+                    "end_offset": 1
+                },
+                "children": [],
+                "metadata": {},
+                "comments": [],
+                "formatting": {
+                    "indent_level": 0,
+                    "needs_blank_line_before": false,
+                    "needs_blank_line_after": false,
+                    "preserve_newlines": false,
+                    "multiline": false,
+                    "original_formatting": null
+                }
+            },
+            "comments": [
+                {
+                    "text": "# hi",
+                    "type": "line",
+                    "location": {
+                        "start_line": 1,
+                        "start_column": 0,
+                        "end_line": 1,
+                        "end_column": 4,
+                        "start_offset": 0,
+                        "end_offset": 4
+                    },
+                    "position": "leading"
+                }
+            ]
+        }"##;
+
+        let node = adapter.parse(json).unwrap();
+        assert_eq!(node.comments.len(), 1);
+        assert_eq!(node.comments[0].comment_type, CommentType::Line);
     }
 }
