@@ -209,9 +209,16 @@ fn format_do_end_block(
                 break;
             }
             NodeType::BeginNode => {
-                // Block with rescue/ensure/else
-                let body_doc = format_child(child, ctx, registry)?;
-                docs.push(indent(concat(vec![hardline(), body_doc])));
+                // Block with rescue/else/ensure needs the clause keywords at
+                // the block opener's indent level, not at the body indent.
+                if super::begin::is_implicit_begin_with_clauses(child, ctx) {
+                    docs.push(super::begin::format_implicit_begin_body(
+                        child, ctx, registry,
+                    )?);
+                } else {
+                    let body_doc = format_child(child, ctx, registry)?;
+                    docs.push(indent(concat(vec![hardline(), body_doc])));
+                }
                 break;
             }
             _ => {

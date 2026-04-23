@@ -13,6 +13,8 @@ use crate::format::rule::{
     is_structural_node,
 };
 
+use super::begin::{format_implicit_begin_body, is_implicit_begin_with_clauses};
+
 /// Configuration for formatting a body-with-end construct.
 pub struct BodyEndConfig<'a> {
     /// The keyword (e.g., "class", "module", "def")
@@ -63,27 +65,31 @@ pub fn format_body_end(
     }
 
     // 4. Body (children), skipping structural nodes
-    let mut body_docs: Vec<Doc> = Vec::new();
-    let mut has_body_content = false;
+    let body_children: Vec<&Node> = config
+        .node
+        .children
+        .iter()
+        .filter(|c| {
+            if config.skip_same_line_children && c.location.start_line == start_line {
+                return false;
+            }
+            !is_structural_node(c)
+        })
+        .collect();
 
-    for child in &config.node.children {
-        // Skip nodes on the same line as definition (name, parameters, etc.)
-        if config.skip_same_line_children && child.location.start_line == start_line {
-            continue;
+    // Special case: body is an implicit BeginNode carrying rescue/else/ensure.
+    // In that case the clause keywords must align with the opener, not with
+    // the body statements — so we split the body and clause emission instead
+    // of wrapping everything in a single `indent(...)`.
+    if body_children.len() == 1 && is_implicit_begin_with_clauses(body_children[0], ctx) {
+        docs.push(format_implicit_begin_body(body_children[0], ctx, registry)?);
+    } else if !body_children.is_empty() {
+        let mut body_docs: Vec<Doc> = Vec::with_capacity(body_children.len() * 2);
+        for child in &body_children {
+            let child_doc = format_child(child, ctx, registry)?;
+            body_docs.push(hardline());
+            body_docs.push(child_doc);
         }
-        if is_structural_node(child) {
-            continue;
-        }
-
-        has_body_content = true;
-
-        // Format the child node using recursive rule dispatch
-        let child_doc = format_child(child, ctx, registry)?;
-        body_docs.push(hardline());
-        body_docs.push(child_doc);
-    }
-
-    if has_body_content {
         docs.push(indent(concat(body_docs)));
     }
 
