@@ -5,14 +5,17 @@
 //! - Calls with blocks: `foo.bar do ... end` or `foo.bar { ... }`
 //! - Method chains: `foo.bar.baz`
 
+use std::borrow::Cow;
+
 use crate::ast::{Node, NodeType};
-use crate::doc::{concat, hardline, indent, text, Doc};
+use crate::doc::{align, concat, hardline, indent, text, Doc};
 use crate::error::Result;
 use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
     format_child, format_leading_comments, format_statements, format_trailing_comment,
-    line_leading_indent, mark_comments_in_range_emitted, reformat_chain_lines, FormatRule,
+    line_leading_indent, mark_comments_in_range_emitted, reformat_chain_lines,
+    strip_one_trailing_newline, FormatRule,
 };
 
 /// Rule for formatting method calls.
@@ -100,7 +103,16 @@ fn format_call(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) ->
         .unwrap_or(false);
 
     if !has_block {
-        // Simple call - use source extraction with chain reformatting
+        // Simple call - use source extraction with chain reformatting.
+        //
+        // A CallNode that carries a heredoc argument (e.g.
+        // `query(<<~SQL)\n  …\nSQL`) reports its end_offset past the
+        // heredoc terminator's trailing newline. Leaving that newline in
+        // the emitted `Doc::Text` combines with the later `hardline + end`
+        // or inter-statement hardline to produce a spurious blank line.
+        // Strip at most one trailing newline so this doesn't happen; using
+        // the full `trim_end` here would instead eat a blank separator line
+        // that legitimately belongs between statements.
         if let Some(source_text) = ctx.extract_source(node) {
             let base_indent = line_leading_indent(ctx.source(), node.location.start_offset);
             let reformatted = reformat_chain_lines(
@@ -108,7 +120,8 @@ fn format_call(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) ->
                 base_indent,
                 ctx.config().formatting.indent_width,
             );
-            docs.push(text(reformatted));
+            let trimmed = strip_one_trailing_newline(&reformatted);
+            docs.push(text(trimmed.to_string()));
         }
 
         // Mark comments in this range as emitted (they're in source extraction)
@@ -127,9 +140,11 @@ fn format_call(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) ->
     let block_node = node.children.last().unwrap();
     let block_style = detect_block_style(block_node, ctx);
 
-    // Emit the call part (receiver.method(args)) from source with chain reformatting
+    // Emit the call part (receiver.method(args)) from source with chain
+    // reformatting. Track whether reformatting actually fired so the block
+    // body can be re-aligned to match the chain's new depth.
     let call_end_offset = block_node.location.start_offset;
-    if let Some(call_text) = ctx
+    let chain_reformatted = if let Some(call_text) = ctx
         .source()
         .get(node.location.start_offset..call_end_offset)
     {
@@ -139,8 +154,12 @@ fn format_call(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) ->
             base_indent,
             ctx.config().formatting.indent_width,
         );
+        let changed = matches!(reformatted, Cow::Owned(_));
         docs.push(text(reformatted));
-    }
+        changed
+    } else {
+        false
+    };
 
     // Mark comments in the call part (before block) as emitted
     // This includes trailing comments that are part of the extracted source
@@ -150,16 +169,21 @@ fn format_call(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) ->
         block_node.location.start_line,
     );
 
-    // Format the block
-    match block_style {
-        BlockStyle::DoEnd => {
-            let block_doc = format_do_end_block(block_node, ctx, registry)?;
-            docs.push(block_doc);
-        }
-        BlockStyle::Braces => {
-            let block_doc = format_brace_block(block_node, ctx, registry)?;
-            docs.push(block_doc);
-        }
+    // Format the block. When the receiver's chain was re-indented, the
+    // `do`-line ends up one level below `base_indent` instead of at
+    // `base_indent` itself, so the default `indent(body)` wrap inside the
+    // block formatter now places the body *at* the chain depth rather than
+    // one level below it (and the `end` keyword floats up to `base_indent`).
+    // Push both down with `Align` so the `do…end` body is indented relative
+    // to the chain's last line, matching what a human would write.
+    let block_doc = match block_style {
+        BlockStyle::DoEnd => format_do_end_block(block_node, ctx, registry)?,
+        BlockStyle::Braces => format_brace_block(block_node, ctx, registry)?,
+    };
+    if chain_reformatted {
+        docs.push(align(ctx.config().formatting.indent_width, block_doc));
+    } else {
+        docs.push(block_doc);
     }
 
     Ok(concat(docs))

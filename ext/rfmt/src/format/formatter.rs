@@ -6,7 +6,7 @@
 //! 3. Apply rules to generate Doc IR
 //! 4. Print Doc IR to string using Printer
 
-use crate::ast::{Node, NodeType};
+use crate::ast::{CommentType, Node, NodeType};
 use crate::config::Config;
 use crate::doc::{concat, hardline, Doc, Printer};
 use crate::error::Result;
@@ -120,16 +120,40 @@ impl Formatter {
             let child_doc = self.format_node(child, ctx)?;
             docs.push(child_doc);
 
-            // Add newlines between statements
+            // Add newlines between statements. Mirrors the logic in
+            // `format_statements` so top-level programs and node bodies
+            // agree on how comments participate in blank-line preservation:
+            //  1) subtract comment-occupied lines from the blank-line count
+            //     so a standalone comment in the gap doesn't inflate it;
+            //  2) deduct one more when the gap contains a `=begin/=end`
+            //     block comment, because that comment's `literalline`
+            //     emission already supplies one of the line breaks.
             if let Some(next_child) = children.get(i + 1) {
                 let current_end_line = child.location.end_line;
                 let next_start_line = next_child.location.start_line;
                 let line_diff = next_start_line.saturating_sub(current_end_line);
 
-                // Add 1 hardline if consecutive, 2 hardlines (1 blank line) if there was a gap
                 docs.push(hardline());
+
                 if line_diff > 1 {
-                    docs.push(hardline());
+                    let (comment_lines_in_gap, gap_has_block): (usize, bool) = ctx
+                        .get_comment_indices_in_range(current_end_line + 1, next_start_line)
+                        .filter_map(|idx| ctx.get_comment(idx).cloned())
+                        .fold((0usize, false), |(lines, had_block), c| {
+                            let span =
+                                c.location.end_line.saturating_sub(c.location.start_line) + 1;
+                            let is_block = matches!(c.comment_type, CommentType::Block);
+                            (lines + span, had_block || is_block)
+                        });
+                    let mut blank_lines = line_diff
+                        .saturating_sub(1)
+                        .saturating_sub(comment_lines_in_gap);
+                    if gap_has_block && blank_lines > 0 {
+                        blank_lines -= 1;
+                    }
+                    if blank_lines >= 1 {
+                        docs.push(hardline());
+                    }
                 }
             }
         }

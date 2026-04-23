@@ -13,7 +13,7 @@ use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
     format_child, format_leading_comments, format_trailing_comment, line_leading_indent,
-    reformat_chain_lines, FormatRule,
+    reformat_chain_lines, strip_one_trailing_newline, FormatRule,
 };
 
 /// Rule for formatting local variable write expressions.
@@ -109,7 +109,10 @@ fn format_variable_write(
         docs.push(text(format!("{} = ", name)));
 
         if is_multiline_call {
-            // Multiline call: reformat chain with indented style
+            // Multiline call: reformat chain with indented style.
+            // Also trim a trailing newline left over from a heredoc tail
+            // (`x = foo(<<~SQL)\n…\nSQL\n`) so it doesn't compound with the
+            // surrounding hardline.
             if let Some(source_text) = ctx.extract_source(value) {
                 let base_indent = line_leading_indent(ctx.source(), node.location.start_offset);
                 let reformatted = reformat_chain_lines(
@@ -117,7 +120,8 @@ fn format_variable_write(
                     base_indent,
                     ctx.config().formatting.indent_width,
                 );
-                docs.push(text(reformatted.trim_start().to_string()));
+                let trimmed = strip_one_trailing_newline(reformatted.trim_start());
+                docs.push(text(trimmed.to_string()));
             }
         } else {
             // Simple value: extract from source trimmed

@@ -108,6 +108,18 @@ impl<'a> Printer<'a> {
             self.output.push('\n');
         }
 
+        // Strip trailing whitespace on every line.
+        //
+        // When a `hardline` lands inside an `indent(...)` region and is
+        // immediately followed by another newline (because the user wrote a
+        // blank line between statements), the printer first emits
+        // `"\n" + indent_spaces`, then the next newline runs over those
+        // spaces — leaving them on the otherwise-blank line. Stripping here
+        // is simpler and safer than threading "next is newline?" state
+        // through `Doc::Line` emission, and it also removes stray spaces
+        // that show up after inline trailing comments.
+        strip_trailing_line_whitespace(&mut self.output);
+
         std::mem::take(&mut self.output)
     }
 
@@ -386,6 +398,31 @@ impl<'a> Printer<'a> {
         }
         self.indent_cache[width].clone()
     }
+}
+
+/// Strips trailing ASCII spaces/tabs from every line in `s` in-place.
+///
+/// Heredoc content embedded in `Doc::Text` also passes through this pass;
+/// trailing whitespace inside a heredoc body is extremely rare in real Ruby
+/// code and Rails projects universally run with `Layout/TrailingWhitespace`,
+/// so trimming unconditionally matches project conventions.
+fn strip_trailing_line_whitespace(buf: &mut String) {
+    if !buf.bytes().any(|b| b == b' ' || b == b'\t') {
+        return;
+    }
+
+    let mut out = String::with_capacity(buf.len());
+    for line in buf.split_inclusive('\n') {
+        // `split_inclusive` keeps the trailing `\n` attached to the line.
+        if let Some(stripped) = line.strip_suffix('\n') {
+            out.push_str(stripped.trim_end_matches([' ', '\t']));
+            out.push('\n');
+        } else {
+            // Final line without a trailing newline.
+            out.push_str(line.trim_end_matches([' ', '\t']));
+        }
+    }
+    *buf = out;
 }
 
 #[cfg(test)]
