@@ -12,8 +12,8 @@ use crate::error::Result;
 use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
-    format_child, format_leading_comments, format_trailing_comment, reformat_chain_lines,
-    FormatRule,
+    format_child, format_leading_comments, format_trailing_comment, line_leading_indent,
+    reformat_chain_lines, FormatRule,
 };
 
 /// Rule for formatting local variable write expressions.
@@ -111,8 +111,12 @@ fn format_variable_write(
         if is_multiline_call {
             // Multiline call: reformat chain with indented style
             if let Some(source_text) = ctx.extract_source(value) {
-                let reformatted =
-                    reformat_chain_lines(source_text, ctx.config().formatting.indent_width);
+                let base_indent = line_leading_indent(ctx.source(), node.location.start_offset);
+                let reformatted = reformat_chain_lines(
+                    source_text,
+                    base_indent,
+                    ctx.config().formatting.indent_width,
+                );
                 docs.push(text(reformatted.trim_start().to_string()));
             }
         } else {

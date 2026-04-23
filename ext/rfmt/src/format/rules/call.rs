@@ -12,7 +12,7 @@ use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
     format_child, format_leading_comments, format_statements, format_trailing_comment,
-    mark_comments_in_range_emitted, reformat_chain_lines, FormatRule,
+    line_leading_indent, mark_comments_in_range_emitted, reformat_chain_lines, FormatRule,
 };
 
 /// Rule for formatting method calls.
@@ -102,8 +102,12 @@ fn format_call(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) ->
     if !has_block {
         // Simple call - use source extraction with chain reformatting
         if let Some(source_text) = ctx.extract_source(node) {
-            let reformatted =
-                reformat_chain_lines(source_text, ctx.config().formatting.indent_width);
+            let base_indent = line_leading_indent(ctx.source(), node.location.start_offset);
+            let reformatted = reformat_chain_lines(
+                source_text,
+                base_indent,
+                ctx.config().formatting.indent_width,
+            );
             docs.push(text(reformatted));
         }
 
@@ -129,8 +133,12 @@ fn format_call(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) ->
         .source()
         .get(node.location.start_offset..call_end_offset)
     {
-        let reformatted =
-            reformat_chain_lines(call_text.trim_end(), ctx.config().formatting.indent_width);
+        let base_indent = line_leading_indent(ctx.source(), node.location.start_offset);
+        let reformatted = reformat_chain_lines(
+            call_text.trim_end(),
+            base_indent,
+            ctx.config().formatting.indent_width,
+        );
         docs.push(text(reformatted));
     }
 
