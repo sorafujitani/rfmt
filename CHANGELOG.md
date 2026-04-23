@@ -1,17 +1,35 @@
 ## [Unreleased]
 
-## [1.5.4] - 2026-02-22
+## [1.6.0] - 2026-04-23
 
 ### Added
-- **Editor Integration Documentation**: Comprehensive setup guides for VSCode, Neovim, Helix, Emacs, and Zed
+- **Rule-based formatter architecture**: new modular `format/` pipeline (`Formatter`, `Registry`, `Rule`) replacing the legacy monolithic emitter
+- **Intermediate Representation (IR) module**: decouples parsing from emission for composability and testability
+- New formatter rules: `StatementsRule` (body indentation), `SingletonClassRule`, `VariableWriteRule`
+- Method chain reformatting: convert aligned style to indented style when lines exceed the configured width
+- Chain reformatting wired into the fallback path for resilience
+- `config` module exported for test consumption
+- **Editor Integration Documentation**: comprehensive setup guides for VSCode, Neovim, Helix, Emacs, and Zed
   - VSCode: Format on Save configuration with Ruby LSP, settings reference table, project-specific setup
-  - Zed: Full configuration with `initialization_options` and `format_on_save`
-  - All editors work seamlessly through the Ruby LSP addon system — no editor-specific plugins required
-- README: Updated Editor Integration section with VSCode quick start (replacing "Coming Soon")
+  - Zed: full configuration with `initialization_options` and `format_on_save`
+  - All editors work through the Ruby LSP addon system — no editor-specific plugins required
+- README: Editor Integration section updated with VSCode quick start (replacing "Coming Soon")
 
 ### Changed
-- Removed Sublime Text section from editor documentation (replaced by Zed)
+- Printer optimized with indent cache and inline hints
+- `reformat_chain_lines` deduplicated across rules and optimized with `Cow` to reduce allocations
 - README: Neovim integration updated from CLI-based to Ruby LSP-based approach
+- Removed Sublime Text section from editor documentation (replaced by Zed)
+
+### Fixed
+- Prism comment JSON deserialization now accepts `comment_type` and `embdoc` fields (#97)
+- BTreeMap range panic when computing comment indices on edge inputs
+- Comment duplication during source extraction
+- Empty source input handled gracefully by the formatter runner
+- Clippy warnings: use `repeat_n`
+
+### Removed
+- Legacy `Emitter` module (1844 LOC) — superseded by the new `Formatter`
 
 ## [1.5.3] - 2026-02-22
 
