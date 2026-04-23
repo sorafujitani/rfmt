@@ -13,6 +13,77 @@ use crate::format::rule::{
     format_child, format_leading_comments, format_statements, format_trailing_comment, FormatRule,
 };
 
+/// True when this BeginNode represents an implicit begin (the source does not
+/// start with the `begin` keyword) AND carries at least one rescue/else/ensure
+/// clause. Such bodies need the rescue/else/ensure keywords emitted at the
+/// outer (e.g. `def`) indent level rather than at the body indent level.
+pub(crate) fn is_implicit_begin_with_clauses(node: &Node, ctx: &FormatContext) -> bool {
+    if node.node_type != NodeType::BeginNode {
+        return false;
+    }
+    let has_clause = node.children.iter().any(|c| {
+        matches!(
+            c.node_type,
+            NodeType::RescueNode | NodeType::EnsureNode | NodeType::ElseNode
+        )
+    });
+    if !has_clause {
+        return false;
+    }
+    ctx.extract_source(node)
+        .map(|s| !s.trim_start().starts_with("begin"))
+        .unwrap_or(false)
+}
+
+/// Emits the body of a construct (def/class/module/block) whose body is an
+/// implicit BeginNode with rescue/else/ensure clauses.
+///
+/// The returned Doc is meant to sit between the opening line (e.g. `def foo`)
+/// and a trailing `hardline + text("end")` emitted by the caller. Body
+/// statements are wrapped in `indent`, while rescue/else/ensure clause
+/// keywords are emitted at the caller's current indent level so that they
+/// align with the opener instead of the body.
+pub(crate) fn format_implicit_begin_body(
+    node: &Node,
+    ctx: &mut FormatContext,
+    registry: &RuleRegistry,
+) -> Result<Doc> {
+    let mut body_children: Vec<&Node> = Vec::new();
+    let mut clause_children: Vec<&Node> = Vec::new();
+
+    for child in &node.children {
+        match child.node_type {
+            NodeType::RescueNode | NodeType::EnsureNode | NodeType::ElseNode => {
+                clause_children.push(child);
+            }
+            _ => {
+                body_children.push(child);
+            }
+        }
+    }
+
+    let mut docs: Vec<Doc> = Vec::with_capacity(clause_children.len() * 2 + 2);
+
+    if !body_children.is_empty() {
+        let mut body_docs: Vec<Doc> = Vec::with_capacity(body_children.len() * 2 + 1);
+        body_docs.push(hardline());
+        for (i, child) in body_children.iter().enumerate() {
+            if i > 0 {
+                body_docs.push(hardline());
+            }
+            body_docs.push(format_child(child, ctx, registry)?);
+        }
+        docs.push(indent(concat(body_docs)));
+    }
+
+    for clause in clause_children {
+        docs.push(hardline());
+        docs.push(format_child(clause, ctx, registry)?);
+    }
+
+    Ok(concat(docs))
+}
+
 /// Rule for formatting begin/rescue/ensure blocks.
 pub struct BeginRule;
 
@@ -71,14 +142,36 @@ fn format_explicit_begin(
     }
 
     docs.push(text("begin"));
-    docs.push(hardline());
 
+    let mut body_children: Vec<&Node> = Vec::new();
+    let mut clause_children: Vec<&Node> = Vec::new();
     for child in &node.children {
-        let child_doc = format_child(child, ctx, registry)?;
-        docs.push(child_doc);
-        docs.push(hardline());
+        match child.node_type {
+            NodeType::RescueNode | NodeType::EnsureNode | NodeType::ElseNode => {
+                clause_children.push(child);
+            }
+            _ => body_children.push(child),
+        }
     }
 
+    if !body_children.is_empty() {
+        let mut body_docs: Vec<Doc> = Vec::with_capacity(body_children.len() * 2 + 1);
+        body_docs.push(hardline());
+        for (i, child) in body_children.iter().enumerate() {
+            if i > 0 {
+                body_docs.push(hardline());
+            }
+            body_docs.push(format_child(child, ctx, registry)?);
+        }
+        docs.push(indent(concat(body_docs)));
+    }
+
+    for clause in &clause_children {
+        docs.push(hardline());
+        docs.push(format_child(clause, ctx, registry)?);
+    }
+
+    docs.push(hardline());
     docs.push(text("end"));
 
     // Trailing comment on end line
@@ -167,24 +260,30 @@ fn format_rescue(
         }
     }
 
-    docs.push(hardline());
-
-    // Emit rescue body and handle subsequent rescue nodes
+    // Emit rescue body (indented under the rescue keyword) and subsequent
+    // chained rescue clauses (at the same indent level as this rescue).
+    //
+    // The hardline lives INSIDE the `indent(...)` wrap so that the body's
+    // first statement lands at `caller_indent + indent_width`, matching the
+    // indentation applied by hardlines later inside `format_statements`.
+    let mut body_stmts: Option<&Node> = None;
+    let mut subsequent: Option<&Node> = None;
     for child in &node.children {
         match &child.node_type {
-            NodeType::StatementsNode => {
-                let body_doc = format_statements(child, ctx, registry)?;
-                docs.push(indent(body_doc));
-            }
-            NodeType::RescueNode => {
-                // Emit subsequent rescue clause
-                let rescue_doc = format_rescue(child, ctx, registry, dedent_level)?;
-                docs.push(rescue_doc);
-            }
-            _ => {
-                // Skip exception classes and variable (already handled above)
-            }
+            NodeType::StatementsNode => body_stmts = Some(child),
+            NodeType::RescueNode => subsequent = Some(child),
+            _ => {}
         }
+    }
+
+    if let Some(stmts) = body_stmts {
+        let body_doc = format_statements(stmts, ctx, registry)?;
+        docs.push(indent(concat(vec![hardline(), body_doc])));
+    }
+
+    if let Some(sub) = subsequent {
+        docs.push(hardline());
+        docs.push(format_rescue(sub, ctx, registry, dedent_level)?);
     }
 
     Ok(concat(docs))
@@ -207,18 +306,19 @@ fn format_ensure(
     }
 
     docs.push(text("ensure"));
-    docs.push(hardline());
 
-    // Emit ensure body statements
+    // Emit ensure body. The hardline lives INSIDE the `indent(...)` wrap so
+    // that every body statement — including the first one — lands at
+    // `caller_indent + indent_width`.
     for child in &node.children {
         match &child.node_type {
             NodeType::StatementsNode => {
                 let body_doc = format_statements(child, ctx, registry)?;
-                docs.push(indent(body_doc));
+                docs.push(indent(concat(vec![hardline(), body_doc])));
             }
             _ => {
                 let child_doc = format_child(child, ctx, registry)?;
-                docs.push(indent(child_doc));
+                docs.push(indent(concat(vec![hardline(), child_doc])));
             }
         }
     }
