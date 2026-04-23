@@ -279,6 +279,22 @@ RSpec.describe Rfmt do
       end
     end
 
+    it 'parses and formats source with embdoc (=begin/=end) comments' do
+      source = <<~RUBY
+        =begin
+        documentation
+        =end
+
+        class Foo
+        end
+      RUBY
+
+      expect { Rfmt.format(source) }.not_to raise_error
+      result = Rfmt.format(source)
+      expect(result).to include('class Foo')
+      expect(Prism.parse(result).success?).to be true
+    end
+
     describe 'inline comments after blocks' do
       it 'preserves inline comments after inline brace blocks' do
         source = "b.each { p it } # c\n"
