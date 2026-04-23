@@ -314,24 +314,47 @@ pub fn format_statements(
     Ok(concat(docs))
 }
 
+/// Returns the number of leading space/tab characters on the line containing `offset`.
+///
+/// The source text extracted by `FormatContext::extract_source` starts at the node's
+/// offset and does not include the whitespace that precedes the first line in the
+/// original source. `Doc::Text` is printed verbatim without re-indenting embedded
+/// newlines, so any reformatting that emits a multi-line string must include the
+/// original leading indent itself.
+pub fn line_leading_indent(source: &str, offset: usize) -> usize {
+    let offset = offset.min(source.len());
+    let line_start = source[..offset].rfind('\n').map(|p| p + 1).unwrap_or(0);
+    source.as_bytes()[line_start..offset]
+        .iter()
+        .take_while(|&&b| b == b' ' || b == b'\t')
+        .count()
+}
+
 /// Reformats multiline method chain text with indented style.
 ///
 /// Converts aligned method chains to indented style:
 /// - First line is kept as-is (trimmed at end)
-/// - Subsequent lines starting with `.` or `&.` are re-indented with one level of indentation
+/// - Subsequent lines starting with `.` or `&.` are re-indented to
+///   `base_indent + indent_width` spaces
+///
+/// `base_indent` is the column at which the first line starts in the original source
+/// (obtain via `line_leading_indent`). Because `Doc::Text` is printed verbatim without
+/// re-indenting embedded newlines, this indent must be included in the returned string.
 ///
 /// Returns `Cow::Borrowed` when no transformation is needed to avoid allocation.
 ///
-/// # Arguments
-/// * `source_text` - The source text containing a method chain
-/// * `indent_width` - The number of spaces for one level of indentation
-///
 /// # Example
 /// ```text
-/// Input (indent_width=2):  "foo.bar\n                  .baz"
-/// Output:                  "foo.bar\n  .baz"
+/// Input (base_indent=4, indent_width=2):
+///   "foo.bar\n                  .baz"
+/// Output:
+///   "foo.bar\n      .baz"
 /// ```
-pub fn reformat_chain_lines(source_text: &str, indent_width: usize) -> std::borrow::Cow<'_, str> {
+pub fn reformat_chain_lines(
+    source_text: &str,
+    base_indent: usize,
+    indent_width: usize,
+) -> std::borrow::Cow<'_, str> {
     use std::borrow::Cow;
 
     let lines: Vec<&str> = source_text.lines().collect();
@@ -350,7 +373,7 @@ pub fn reformat_chain_lines(source_text: &str, indent_width: usize) -> std::borr
     }
 
     // Build the indented chain with pre-allocated capacity
-    let chain_indent = " ".repeat(indent_width);
+    let chain_indent = " ".repeat(base_indent + indent_width);
     let mut result = String::with_capacity(source_text.len());
     result.push_str(lines[0].trim_end());
 
@@ -528,28 +551,51 @@ mod tests {
     #[test]
     fn test_reformat_chain_lines_single_line() {
         let input = "foo.bar.baz";
-        let result = reformat_chain_lines(input, 2);
+        let result = reformat_chain_lines(input, 0, 2);
         assert_eq!(result, "foo.bar.baz");
     }
 
     #[test]
     fn test_reformat_chain_lines_multiline_chain() {
         let input = "foo.bar\n                  .baz\n                  .qux";
-        let result = reformat_chain_lines(input, 2);
+        let result = reformat_chain_lines(input, 0, 2);
         assert_eq!(result, "foo.bar\n  .baz\n  .qux");
     }
 
     #[test]
     fn test_reformat_chain_lines_safe_navigation() {
         let input = "foo&.bar\n                  &.baz";
-        let result = reformat_chain_lines(input, 2);
+        let result = reformat_chain_lines(input, 0, 2);
         assert_eq!(result, "foo&.bar\n  &.baz");
     }
 
     #[test]
     fn test_reformat_chain_lines_no_chain() {
         let input = "foo(\n  arg1,\n  arg2\n)";
-        let result = reformat_chain_lines(input, 2);
+        let result = reformat_chain_lines(input, 0, 2);
         assert_eq!(result, input);
+    }
+
+    #[test]
+    fn test_reformat_chain_lines_preserves_base_indent() {
+        // Simulates a chain inside a 4-space-indented method body:
+        // the caller must include base_indent so the printed continuation
+        // lines up with `base_indent + indent_width` columns.
+        let input = "foo.bar\n                  .baz\n                  .qux";
+        let result = reformat_chain_lines(input, 4, 2);
+        assert_eq!(result, "foo.bar\n      .baz\n      .qux");
+    }
+
+    #[test]
+    fn test_line_leading_indent_counts_spaces_and_tabs() {
+        let source = "def foo\n    bar\n\tbaz\nqux\n";
+        let bar = source.find("bar").unwrap();
+        let baz = source.find("baz").unwrap();
+        let qux = source.find("qux").unwrap();
+        assert_eq!(line_leading_indent(source, bar), 4);
+        assert_eq!(line_leading_indent(source, baz), 1);
+        assert_eq!(line_leading_indent(source, qux), 0);
+        // Out-of-range offset is clamped.
+        assert_eq!(line_leading_indent(source, usize::MAX), 0);
     }
 }

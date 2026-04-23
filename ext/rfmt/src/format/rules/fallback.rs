@@ -10,8 +10,8 @@ use crate::error::Result;
 use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
-    format_leading_comments, format_trailing_comment, mark_comments_in_range_emitted,
-    reformat_chain_lines, FormatRule,
+    format_leading_comments, format_trailing_comment, line_leading_indent,
+    mark_comments_in_range_emitted, reformat_chain_lines, FormatRule,
 };
 
 /// Fallback rule that extracts source text directly.
@@ -38,8 +38,12 @@ impl FormatRule for FallbackRule {
 
         // Extract source text with chain reformatting
         if let Some(source_text) = ctx.extract_source(node) {
-            let reformatted =
-                reformat_chain_lines(source_text, ctx.config().formatting.indent_width);
+            let base_indent = line_leading_indent(ctx.source(), node.location.start_offset);
+            let reformatted = reformat_chain_lines(
+                source_text,
+                base_indent,
+                ctx.config().formatting.indent_width,
+            );
             docs.push(text(reformatted));
 
             // Mark any comments within this node's range as emitted
