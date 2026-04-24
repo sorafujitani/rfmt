@@ -508,8 +508,42 @@ pub fn reformat_chain_lines(
         return Cow::Borrowed(source_text);
     }
 
-    // Build the indented chain with pre-allocated capacity
-    let chain_indent = " ".repeat(base_indent + indent_width);
+    // Determine how much the chain is moving left. Before this pass, every
+    // `.method` line sat at some original "chain indent" (most commonly
+    // aligned under the first receiver's dot). We rewrite those lines to
+    // `base_indent + indent_width` — but that also means any multi-line
+    // *arguments* that lived inside a chain call like `.select( … )` used
+    // to be deeper than the original chain indent, and will now look
+    // orphaned off to the right if we leave them alone:
+    //
+    //     @users = User.left_joins(...)
+    //                 .select(           <- was col 17, becomes col 6
+    //                   'users.*, ' \   <- still at col 19 — orphaned
+    //                 )
+    //                 .having(...)
+    //
+    // Compute the delta between the original chain indent and the new
+    // one, and shift every non-chain continuation line that lives at
+    // (or below) the original chain indent by the same amount. Lines
+    // shallower than the original chain indent (e.g. a heredoc body
+    // whose squiggly indent is measured from the terminator) are left
+    // alone, so we don't accidentally eat through them.
+    let new_chain_indent = base_indent + indent_width;
+    let chain_indent_str = " ".repeat(new_chain_indent);
+
+    let original_chain_indent = lines[1..].iter().find_map(|l| {
+        let t = l.trim_start();
+        if t.starts_with('.') || t.starts_with("&.") {
+            Some(l.len() - t.len())
+        } else {
+            None
+        }
+    });
+
+    let arg_shift = original_chain_indent
+        .map(|orig| orig.saturating_sub(new_chain_indent))
+        .unwrap_or(0);
+
     let mut result = String::with_capacity(source_text.len());
     result.push_str(lines[0].trim_end());
 
@@ -517,8 +551,18 @@ pub fn reformat_chain_lines(
         result.push('\n');
         let trimmed = line.trim();
         if trimmed.starts_with('.') || trimmed.starts_with("&.") {
-            result.push_str(&chain_indent);
+            result.push_str(&chain_indent_str);
             result.push_str(trimmed);
+        } else if arg_shift > 0 && !trimmed.is_empty() {
+            let indent = line.len() - line.trim_start().len();
+            let chain_base = original_chain_indent.unwrap_or(0);
+            if indent >= chain_base {
+                let new_indent = indent - arg_shift;
+                result.push_str(&" ".repeat(new_indent));
+                result.push_str(line.trim_start());
+            } else {
+                result.push_str(line);
+            }
         } else {
             // Non-chain continuation (e.g., heredoc content): preserve as-is
             result.push_str(line);
