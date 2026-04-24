@@ -13,9 +13,9 @@ use crate::error::Result;
 use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
-    format_child, format_leading_comments, format_statements, format_trailing_comment,
-    line_leading_indent, mark_comments_in_range_emitted, reformat_chain_lines,
-    strip_one_trailing_newline, FormatRule,
+    format_child, format_comments_before_end, format_leading_comments, format_statements,
+    format_trailing_comment, line_leading_indent, mark_comments_in_range_emitted,
+    reformat_chain_lines, strip_one_trailing_newline, FormatRule,
 };
 
 /// Rule for formatting method calls.
@@ -249,6 +249,23 @@ fn format_do_end_block(
                 // Skip parameter nodes
             }
         }
+    }
+
+    // Emit any standalone comments between the last body statement and `end`.
+    //
+    // Without this the orphan comments inside a `do…end` block (e.g. the
+    // commented-out config stanzas in a generated `spec_helper.rb`) never
+    // get claimed by any `format_leading_comments` call, fall through to
+    // `format_remaining_comments` at the end of the file, and get emitted
+    // *after* the block's own `end` — producing `end# comment…` with no
+    // separator and dropping the body indent.
+    let comments_before_end = format_comments_before_end(
+        ctx,
+        block_node.location.start_line,
+        block_node.location.end_line,
+    );
+    if !comments_before_end.is_empty() {
+        docs.push(indent(comments_before_end));
     }
 
     // Emit 'end'

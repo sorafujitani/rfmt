@@ -217,6 +217,23 @@ pub fn format_comments_before_end(
     }
 
     let mut docs: Vec<Doc> = vec![hardline()];
+    // Preserve the blank line that separated the body's last content from
+    // the first trailing comment. Without this, a construct like
+    //
+    //   def foo
+    //     body
+    //                          <- blank line
+    //     # trailing annotation
+    //   end
+    //
+    // collapses to `body\n# trailing annotation\nend`. Detect the case
+    // heuristically: if the source line immediately above the first
+    // standalone comment is blank, emit an extra hardline.
+    if let Some(first) = standalone_refs.first() {
+        if first.start_line > 1 && is_line_blank(ctx.source(), first.start_line - 1) {
+            docs.push(hardline());
+        }
+    }
     let mut last_end_line: Option<usize> = None;
     let mut indices_to_mark: Vec<usize> = Vec::with_capacity(standalone_refs.len());
 
@@ -297,11 +314,23 @@ pub fn format_remaining_comments(ctx: &mut FormatContext, last_code_line: usize)
     let mut indices_to_mark: Vec<usize> = Vec::with_capacity(comment_refs.len());
 
     for cref in &comment_refs {
-        // Preserve blank lines
+        // Preserve blank lines. On the first iteration we must emit *at
+        // least one* hardline to separate the first remaining comment from
+        // the main document's last token (otherwise an orphan comment whose
+        // `start_line <= last_code_line` would concatenate onto whatever
+        // ended the output — producing e.g. `end# comment…` when a block's
+        // internal comments fall through to this tail handler). Round-tripping
+        // the already-formatted output must still be idempotent, so we
+        // cap the emission at the number of line breaks visible in the
+        // source: 1 for an adjacent comment, N for N-1 blank lines above it.
         let gap = cref.start_line.saturating_sub(last_end_line);
 
-        // Only add newlines if not the first comment or if there's a gap
-        if !is_first || gap > 0 {
+        if is_first {
+            let hardlines_to_emit = gap.max(1);
+            for _ in 0..hardlines_to_emit {
+                docs.push(hardline());
+            }
+        } else if gap > 0 {
             for _ in 0..gap.max(1) {
                 docs.push(hardline());
             }
@@ -497,6 +526,27 @@ pub fn reformat_chain_lines(
     }
 
     Cow::Owned(result)
+}
+
+/// Returns true when the given 1-based `line` in `source` contains only
+/// whitespace (or is empty). Returns false for any line that has code or
+/// a comment.
+fn is_line_blank(source: &str, line: usize) -> bool {
+    let mut current = 1usize;
+    let mut line_start = 0usize;
+    for (i, b) in source.bytes().enumerate() {
+        if current == line {
+            let end = source[i..].find('\n').map_or(source.len(), |n| i + n);
+            return source[line_start..end]
+                .bytes()
+                .all(|b| b == b' ' || b == b'\t' || b == b'\r');
+        }
+        if b == b'\n' {
+            current += 1;
+            line_start = i + 1;
+        }
+    }
+    false
 }
 
 /// Removes at most one trailing `\n` (optionally preceded by a single `\r`)
