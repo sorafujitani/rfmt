@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [1.6.3] - 2026-04-24
+
+Minor stability refinements on top of the 1.6.x architecture release. See the 1.6.1 notes below for the feature set this series delivers.
+
 ## [1.6.2] - 2026-04-24
 
 Minor stability refinements on top of the 1.6.x architecture release. See the 1.6.1 notes below for the feature set this series delivers.
