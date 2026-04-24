@@ -1,5 +1,25 @@
 ## [Unreleased]
 
+## [1.6.1] - 2026-04-24
+
+Follow-up release consolidating the 1.6.0 architecture work.
+
+### Rule-based formatter
+
+The rule-based `format/` pipeline (`Formatter`, `Registry`, `Rule`) is the canonical formatting path, replacing the legacy monolithic emitter. Rules covering body indentation (`StatementsRule`), singleton classes (`SingletonClassRule`), and variable writes (`VariableWriteRule`) ship as part of the default registry. The Intermediate Representation (IR) module decouples parsing from emission for composability and testability.
+
+### Method chain reformatting
+
+Multi-line method chains can be reformatted from aligned style (indented under the first dot) to indented style (one level beyond the receiver), preserving the source's base indent. The pass is wired into the fallback path for resilience.
+
+### Printer optimizations
+
+The printer carries a pre-computed indent cache and inline hints for the hot path; `reformat_chain_lines` has been deduplicated across rules and uses `Cow<str>` to avoid allocations on pass-through.
+
+### Editor integration
+
+Setup guides for VSCode, Neovim, Helix, Emacs, and Zed land in the repository; every editor uses the Ruby LSP addon system, so there are no editor-specific plugins to maintain. The README's Editor Integration section replaces the previous "Coming Soon" placeholder with a VSCode quick start.
+
 ## [1.6.0] - 2026-04-23
 
 ### Added
