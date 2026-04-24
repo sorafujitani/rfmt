@@ -88,7 +88,14 @@ fn format_variable_write(
             | NodeType::ForNode
     );
 
-    if is_block_value {
+    // Only split the assignment across two lines when the block value
+    // actually begins below the `=`. When the user wrote
+    // `x = begin\n  …\nend` (the opener is on the same line as the
+    // assignment), preserve that shape — splitting it mangles a common
+    // Rails idiom used for defaulted constants and service objects.
+    let inline_block_value = is_block_value && value.location.start_line == start_line;
+
+    if is_block_value && !inline_block_value {
         // Block value: format on new line with indent
         // x =
         //   if true
@@ -101,6 +108,9 @@ fn format_variable_write(
             hardline(),
             format_child(value, ctx, registry)?,
         ])));
+    } else if inline_block_value {
+        docs.push(text(format!("{} = ", name)));
+        docs.push(format_child(value, ctx, registry)?);
     } else {
         // Check for multiline method chain
         let is_multiline_call = matches!(value.node_type, NodeType::CallNode)

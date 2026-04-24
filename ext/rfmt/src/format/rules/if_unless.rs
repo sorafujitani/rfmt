@@ -13,7 +13,8 @@ use crate::error::Result;
 use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
-    format_leading_comments, format_statements, format_trailing_comment, FormatRule,
+    format_leading_comments, format_statements, format_trailing_comment,
+    strip_one_trailing_newline, FormatRule,
 };
 
 /// Rule for formatting if conditionals.
@@ -101,9 +102,30 @@ fn format_postfix(
         docs.push(leading);
     }
 
-    // Emit statement
+    // Emit statement. When the statement contains a heredoc whose body
+    // spills past the opener line, the bridge extends the statement's
+    // end_offset to cover the terminator — and that extended slice *also*
+    // sweeps in the intervening `if cond` modifier text that sits between
+    // the opener's `)` and the heredoc body. Appending our own
+    // ` if <cond>` after that text would then either produce
+    // `... if cond if cond` (duplicated modifier) or, worse, land the
+    // modifier on the same line as `SQL`, breaking heredoc termination.
+    //
+    // Detect the heredoc-in-statement case and emit the slice verbatim;
+    // the modifier is already baked into the source text right where
+    // Ruby expects it.
     if let Some(statements) = node.children.get(1) {
         if let Some(source_text) = ctx.extract_source(statements) {
+            if statement_contains_heredoc_tail(source_text) {
+                docs.push(text(source_text.trim_end_matches('\n').to_string()));
+
+                let trailing = format_trailing_comment(ctx, node.location.end_line);
+                if !trailing.is_empty() {
+                    docs.push(trailing);
+                }
+                return Ok(concat(docs));
+            }
+
             docs.push(text(source_text.trim()));
         }
     }
@@ -126,6 +148,26 @@ fn format_postfix(
     }
 
     Ok(concat(docs))
+}
+
+/// True if `source` looks like `<opener_with_heredoc>…\n<body>\n<TERMINATOR>`:
+/// that is, line 1 contains a heredoc opening marker (`<<~`, `<<-`, `<<`) and
+/// at least one subsequent line is not a chain continuation. The bridge
+/// extends the node's end_offset to cover the heredoc tail, so this slice
+/// already contains any `if`/`unless` modifier that was typed between the
+/// opener's closing paren and the heredoc body on the opener line.
+fn statement_contains_heredoc_tail(source: &str) -> bool {
+    let source = source.trim_end_matches('\n');
+    let Some((first, rest)) = source.split_once('\n') else {
+        return false;
+    };
+    if !first.contains("<<~") && !first.contains("<<-") && !first.contains("<<") {
+        return false;
+    }
+    rest.lines().any(|l| {
+        let t = l.trim_start();
+        !t.is_empty() && !t.starts_with('.') && !t.starts_with("&.")
+    })
 }
 
 /// Formats ternary operator: `cond ? then_expr : else_expr`
@@ -240,10 +282,15 @@ fn format_normal(
         docs.push(text(" "));
     }
 
-    // Emit predicate (condition)
+    // Emit predicate (condition). When the predicate is something like
+    // `(sql = <<~SQL)`, Prism's bridge stretches the heredoc-containing
+    // nodes' end_offset past the terminator's newline. Leaving that
+    // newline in the emitted text combines with our own `hardline` before
+    // the then-clause to produce a spurious blank line after the
+    // terminator. Strip at most one trailing newline.
     if let Some(predicate) = node.children.first() {
         if let Some(source_text) = ctx.extract_source(predicate) {
-            docs.push(text(source_text));
+            docs.push(text(strip_one_trailing_newline(source_text).to_string()));
         }
     }
 

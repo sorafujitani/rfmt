@@ -454,6 +454,21 @@ pub fn reformat_chain_lines(
         return Cow::Borrowed(source_text);
     }
 
+    // Skip reformatting when the first line opens a new scope (a `{` brace
+    // lambda, a `do` block, or a `do |params|` block). The `.method` lines
+    // that follow are chain continuations *inside the block body*, not of
+    // the outer call — re-indenting them relative to the outer
+    // `base_indent` collapses the nested chain one level to the left and
+    // breaks the visual structure of the block body.
+    //
+    // This deliberately keeps the reformat conservative: for a top-level
+    // `User.active.where(...)` chain, line 1 ends with an identifier so
+    // we still rewrite aligned → indented as PR #100 intended.
+    let first_line = lines[0].trim_end();
+    if first_line.ends_with('{') || first_line.ends_with(" do") || first_line.ends_with('|') {
+        return Cow::Borrowed(source_text);
+    }
+
     // Check if there are actual chain continuation lines (. or &.)
     let has_chain = lines[1..].iter().any(|l| {
         let t = l.trim_start();

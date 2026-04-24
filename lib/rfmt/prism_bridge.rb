@@ -448,9 +448,16 @@ module Rfmt
           metadata['name'] = name
         end
       when Prism::DefNode
-        if (name = extract_node_name(node))
-          metadata['name'] = name
-        end
+        # Prefer `name_loc.slice` over `name.to_s` so unary operator suffixes
+        # (`def !@`, `def +@`, `def -@`) survive the round-trip. Prism
+        # normalizes `name` to the symbol with the `@` stripped for `!@`,
+        # which would otherwise rewrite `def !@` to `def !` silently.
+        name = if node.respond_to?(:name_loc) && node.name_loc
+                 node.name_loc.slice
+               else
+                 extract_node_name(node)
+               end
+        metadata['name'] = name if name
         metadata['parameters_count'] = extract_parameter_count(node).to_s
         # Extract parameters text directly from source
         if node.parameters
