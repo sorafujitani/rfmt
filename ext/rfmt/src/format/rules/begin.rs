@@ -78,9 +78,39 @@ pub(crate) fn format_implicit_begin_body(
 
     for clause in clause_children {
         docs.push(hardline());
-        docs.push(format_child(clause, ctx, registry)?);
+        docs.push(format_begin_clause(clause, ctx, registry)?);
     }
 
+    Ok(concat(docs))
+}
+
+/// Emits a rescue/else/ensure clause the way the enclosing begin expects.
+///
+/// `format_child` sends ElseNode to `FallbackRule`, which slices the source
+/// between `else` and the next keyword — but Prism's `ElseNode.location`
+/// stretches into the *following* clause's keyword (`ensure`, or the
+/// begin's `end`). Emitting that slice as-is duplicates whichever keyword
+/// comes after, producing e.g. `else\n  y\nensure\nensure\n  z\nend` or
+/// `else\n  y\nend\nend`. Handle ElseNode explicitly so we emit only
+/// `else\n  body` and let the caller (or the subsequent EnsureRule) write
+/// the following keyword.
+fn format_begin_clause(
+    clause: &Node,
+    ctx: &mut FormatContext,
+    registry: &RuleRegistry,
+) -> Result<Doc> {
+    if !matches!(clause.node_type, NodeType::ElseNode) {
+        return format_child(clause, ctx, registry);
+    }
+
+    let mut docs: Vec<Doc> = Vec::with_capacity(3);
+    docs.push(text("else"));
+    for child in &clause.children {
+        if matches!(child.node_type, NodeType::StatementsNode) {
+            let body_doc = format_statements(child, ctx, registry)?;
+            docs.push(indent(concat(vec![hardline(), body_doc])));
+        }
+    }
     Ok(concat(docs))
 }
 
@@ -168,7 +198,7 @@ fn format_explicit_begin(
 
     for clause in &clause_children {
         docs.push(hardline());
-        docs.push(format_child(clause, ctx, registry)?);
+        docs.push(format_begin_clause(clause, ctx, registry)?);
     }
 
     docs.push(hardline());
