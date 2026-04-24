@@ -215,6 +215,15 @@ fn format_rescue(
     // But since we're in Doc IR, we handle this at the caller level
     let _ = dedent_level;
 
+    // Emit any standalone comments that sit immediately before the rescue
+    // keyword. Without this they would be picked up as leading comments of
+    // the first statement inside the rescue body, which visually moves an
+    // annotation like `# retry on flaky errors` *into* the rescue branch.
+    let leading = format_leading_comments(ctx, node.location.start_line);
+    if !leading.is_empty() {
+        docs.push(leading);
+    }
+
     docs.push(text("rescue"));
 
     // Extract exception classes and variable from source

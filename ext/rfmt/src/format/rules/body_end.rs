@@ -10,7 +10,7 @@ use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
     format_child, format_comments_before_end, format_leading_comments, format_trailing_comment,
-    is_structural_node,
+    is_structural_node, mark_comments_in_range_emitted,
 };
 
 use super::begin::{format_implicit_begin_body, is_implicit_begin_with_clauses};
@@ -51,6 +51,24 @@ pub fn format_body_end(
     let leading = format_leading_comments(ctx, start_line);
     if !leading.is_empty() {
         docs.push(leading);
+    }
+
+    // Single-line form: `def foo = expr` (endless), `def foo; body; end`,
+    // `class Foo; end`, etc. Emit the source verbatim instead of forcing
+    // a multi-line `def ... end` layout. This preserves Ruby 3+ endless
+    // methods and the `Error < StandardError; end` exception-hierarchy
+    // idiom that is pervasive in Rails code.
+    if start_line == end_line {
+        if let Some(source_text) = ctx.extract_source(config.node) {
+            docs.push(text(source_text.to_string()));
+            mark_comments_in_range_emitted(ctx, start_line, end_line);
+
+            let trailing = format_trailing_comment(ctx, end_line);
+            if !trailing.is_empty() {
+                docs.push(trailing);
+            }
+            return Ok(concat(docs));
+        }
     }
 
     // 2. Build header: "keyword ..."

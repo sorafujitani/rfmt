@@ -62,17 +62,28 @@ module Rfmt
     # Serialize the Prism AST with comments to JSON
     def self.serialize_ast_with_comments(result)
       comments = result.comments.map do |comment|
+        loc = comment.location
+        end_line = loc.end_line
+        # Prism's `=begin ... =end` (EmbDocComment) location ends at
+        # `<=end_line>:0`, i.e. the column-0 start of the line AFTER the
+        # `=end` terminator. Reporting that larger end_line makes the
+        # comment appear to overlap with the next statement, so the
+        # comment gets misattributed to a deeper node (e.g. the first
+        # expression inside the next method body) and ends up emitted in
+        # the wrong place. Snap it back to the terminator line.
+        end_line = loc.end_line - 1 if loc.end_column.zero? && loc.end_line > loc.start_line
+
         {
           comment_type: comment.class.name.split('::').last.downcase.gsub('comment', ''),
           location: {
-            start_line: comment.location.start_line,
-            start_column: comment.location.start_column,
-            end_line: comment.location.end_line,
-            end_column: comment.location.end_column,
-            start_offset: comment.location.start_offset,
-            end_offset: comment.location.end_offset
+            start_line: loc.start_line,
+            start_column: loc.start_column,
+            end_line: end_line,
+            end_column: loc.end_column,
+            start_offset: loc.start_offset,
+            end_offset: loc.end_offset
           },
-          text: comment.location.slice,
+          text: loc.slice,
           position: 'leading' # Default position, will be refined by Rust
         }
       end
@@ -120,7 +131,7 @@ module Rfmt
         closing = node.closing_loc
         if closing.end_offset > end_offset
           end_offset = closing.end_offset
-          end_line = closing.end_line
+          end_line = heredoc_terminator_line(closing)
           end_column = closing.end_column
         end
       end
@@ -145,6 +156,19 @@ module Rfmt
       }
     end
 
+    # Prism reports a heredoc's `closing_loc` as `<terminator_line>:0..(terminator_line+1):0`,
+    # i.e. its `end_line` is the LINE AFTER the terminator. Using that as the
+    # node's `end_line` makes blank-line preservation fail: a real blank line
+    # right after the terminator looks identical (diff == 1) to two adjacent
+    # statements with no separator. Use the terminator's own line instead.
+    def self.heredoc_terminator_line(closing_loc)
+      if closing_loc.end_column.zero? && closing_loc.end_line > closing_loc.start_line
+        closing_loc.start_line
+      else
+        closing_loc.end_line
+      end
+    end
+
     # Recursively find the maximum closing_loc among all descendant nodes
     # Returns nil if no closing_loc found, otherwise { end_offset:, end_line:, end_column: }
     def self.find_max_closing_loc_recursive(node, depth: 0)
@@ -158,7 +182,7 @@ module Rfmt
           if max_closing.nil? || closing.end_offset > max_closing[:end_offset]
             max_closing = {
               end_offset: closing.end_offset,
-              end_line: closing.end_line,
+              end_line: heredoc_terminator_line(closing),
               end_column: closing.end_column
             }
           end

@@ -11,7 +11,7 @@ use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
     format_leading_comments, format_trailing_comment, line_leading_indent,
-    mark_comments_in_range_emitted, reformat_chain_lines, FormatRule,
+    mark_comments_in_range_emitted, reformat_chain_lines, strip_one_trailing_newline, FormatRule,
 };
 
 /// Fallback rule that extracts source text directly.
@@ -36,7 +36,16 @@ impl FormatRule for FallbackRule {
             docs.push(leading);
         }
 
-        // Extract source text with chain reformatting
+        // Extract source text with chain reformatting.
+        //
+        // Nodes such as ConstantWriteNode for `CONST = <<~HEREDOC ... HEREDOC`
+        // report an end_offset that sits past the heredoc terminator's
+        // newline. Preserving that newline verbatim combines with the
+        // surrounding `format_statements` hardline to produce a spurious
+        // blank line before the following statement or `end`. Strip at
+        // most one trailing newline (not all trailing whitespace, which
+        // could swallow an intentional blank line captured by the node's
+        // extent).
         if let Some(source_text) = ctx.extract_source(node) {
             let base_indent = line_leading_indent(ctx.source(), node.location.start_offset);
             let reformatted = reformat_chain_lines(
@@ -44,7 +53,8 @@ impl FormatRule for FallbackRule {
                 base_indent,
                 ctx.config().formatting.indent_width,
             );
-            docs.push(text(reformatted));
+            let trimmed = strip_one_trailing_newline(&reformatted);
+            docs.push(text(trimmed.to_string()));
 
             // Mark any comments within this node's range as emitted
             // (they are included in the source extraction)

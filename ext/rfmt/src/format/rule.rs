@@ -3,8 +3,8 @@
 //! This module defines the core FormatRule trait that all formatting rules implement,
 //! along with shared helper functions for common formatting patterns.
 
-use crate::ast::Node;
-use crate::doc::{concat, hardline, leading_comment, trailing_comment, Doc};
+use crate::ast::{CommentType, Node};
+use crate::doc::{concat, hardline, leading_comment, literalline, text, trailing_comment, Doc};
 use crate::error::Result;
 
 use super::context::FormatContext;
@@ -46,6 +46,33 @@ struct CommentRef {
     idx: usize,
     start_line: usize,
     end_line: usize,
+    is_block: bool,
+}
+
+/// Emits a single leading comment at the configured indent context.
+///
+/// `=begin ... =end` (Prism's `EmbDocComment`) must start in column 0;
+/// nesting it under an `indent(...)` wrapper would emit `=begin` at the
+/// body indent, which is a *syntax error*. Use `literalline` to break out
+/// of the current indent so the `=begin` and `=end` markers — and every
+/// intermediate line — land at column 0. The following `hardline` then
+/// restores the normal indented flow for the code that comes after.
+///
+/// Prism's location slice for an embdoc includes the trailing newline that
+/// sits after `=end`; strip it so that our own `hardline` doesn't produce
+/// a double line break.
+fn push_leading_comment(docs: &mut Vec<Doc>, comment_text: &str, is_block: bool) {
+    if is_block {
+        let body = comment_text
+            .strip_suffix('\n')
+            .and_then(|s| s.strip_suffix('\r').or(Some(s)))
+            .unwrap_or(comment_text);
+        docs.push(literalline());
+        docs.push(text(body.to_string()));
+        docs.push(hardline());
+    } else {
+        docs.push(leading_comment(comment_text, true));
+    }
 }
 
 /// Formats leading comments before a given line.
@@ -68,6 +95,7 @@ pub fn format_leading_comments(ctx: &mut FormatContext, line: usize) -> Doc {
                 idx,
                 start_line: c.location.start_line,
                 end_line: c.location.end_line,
+                is_block: matches!(c.comment_type, CommentType::Block),
             })
         })
         .collect();
@@ -90,7 +118,7 @@ pub fn format_leading_comments(ctx: &mut FormatContext, line: usize) -> Doc {
         }
 
         if let Some(comment) = ctx.get_comment(cref.idx) {
-            docs.push(leading_comment(&comment.text, true));
+            push_leading_comment(&mut docs, &comment.text, cref.is_block);
         }
         last_end_line = Some(cref.end_line);
         indices_to_mark.push(cref.idx);
@@ -175,6 +203,7 @@ pub fn format_comments_before_end(
                         idx,
                         start_line: c.location.start_line,
                         end_line: c.location.end_line,
+                        is_block: matches!(c.comment_type, CommentType::Block),
                     })
                 } else {
                     None
@@ -191,7 +220,8 @@ pub fn format_comments_before_end(
     let mut last_end_line: Option<usize> = None;
     let mut indices_to_mark: Vec<usize> = Vec::with_capacity(standalone_refs.len());
 
-    for cref in &standalone_refs {
+    let last_idx = standalone_refs.len().saturating_sub(1);
+    for (i, cref) in standalone_refs.iter().enumerate() {
         // Preserve blank lines between comments
         if let Some(prev_end) = last_end_line {
             let gap = cref.start_line.saturating_sub(prev_end);
@@ -201,7 +231,26 @@ pub fn format_comments_before_end(
         }
 
         if let Some(comment) = ctx.get_comment(cref.idx) {
-            docs.push(leading_comment(&comment.text, true));
+            // The caller always emits its own `hardline + "end"` right after
+            // us, so the last comment must *not* also emit its own trailing
+            // newline — doing so produces a spurious blank line between the
+            // comment and the `end` keyword.
+            let hard_line_after = i != last_idx;
+            if cref.is_block {
+                let body = comment
+                    .text
+                    .strip_suffix('\n')
+                    .and_then(|s| s.strip_suffix('\r').or(Some(s)))
+                    .unwrap_or(&comment.text)
+                    .to_string();
+                docs.push(literalline());
+                docs.push(text(body));
+                if hard_line_after {
+                    docs.push(hardline());
+                }
+            } else {
+                docs.push(leading_comment(&comment.text, hard_line_after));
+            }
         }
         last_end_line = Some(cref.end_line);
         indices_to_mark.push(cref.idx);
@@ -233,6 +282,7 @@ pub fn format_remaining_comments(ctx: &mut FormatContext, last_code_line: usize)
                 idx,
                 start_line: c.location.start_line,
                 end_line: c.location.end_line,
+                is_block: matches!(c.comment_type, CommentType::Block),
             })
         })
         .collect();
@@ -258,7 +308,18 @@ pub fn format_remaining_comments(ctx: &mut FormatContext, last_code_line: usize)
         }
 
         if let Some(comment) = ctx.get_comment(cref.idx) {
-            docs.push(leading_comment(&comment.text, false));
+            if cref.is_block {
+                let body = comment
+                    .text
+                    .strip_suffix('\n')
+                    .and_then(|s| s.strip_suffix('\r').or(Some(s)))
+                    .unwrap_or(&comment.text)
+                    .to_string();
+                docs.push(literalline());
+                docs.push(text(body));
+            } else {
+                docs.push(leading_comment(&comment.text, false));
+            }
         }
         last_end_line = cref.end_line;
         is_first = false;
@@ -298,15 +359,46 @@ pub fn format_statements(
         let child_doc = format_child(child, ctx, registry)?;
         docs.push(child_doc);
 
-        // Add newlines between statements
+        // Add newlines between statements. A pure line-number diff would add
+        // a blank-line hardline whenever two consecutive statements sit on
+        // lines that are more than 1 apart — but that gap may be occupied
+        // by one or more standalone comments, each of which gets emitted as
+        // a leading comment of the next statement and already supplies its
+        // own line break. Subtract the lines consumed by comments so we
+        // only preserve *actually* blank lines between statements.
         if let Some(next_child) = node.children.get(i + 1) {
             let current_end_line = child.location.end_line;
             let next_start_line = next_child.location.start_line;
             let line_diff = next_start_line.saturating_sub(current_end_line);
 
             docs.push(hardline());
+
             if line_diff > 1 {
-                docs.push(hardline());
+                let (comment_lines_in_gap, gap_has_block): (usize, bool) = ctx
+                    .get_comment_indices_in_range(current_end_line + 1, next_start_line)
+                    .filter_map(|idx| ctx.get_comment(idx).cloned())
+                    .fold((0usize, false), |(lines, had_block), c| {
+                        let span = c.location.end_line.saturating_sub(c.location.start_line) + 1;
+                        let is_block = matches!(c.comment_type, CommentType::Block);
+                        (lines + span, had_block || is_block)
+                    });
+                // `line_diff - 1` is the count of lines strictly between the
+                // two statements. Subtract comment-occupied lines to get the
+                // count of truly blank lines.
+                let mut blank_lines = line_diff
+                    .saturating_sub(1)
+                    .saturating_sub(comment_lines_in_gap);
+                // A block comment (`=begin/=end`) is emitted via
+                // `literalline + text + hardline`. The leading `literalline`
+                // already supplies one line break, so the normal
+                // blank-line hardline added here would produce one extra
+                // blank line above `=begin`. Deduct one.
+                if gap_has_block && blank_lines > 0 {
+                    blank_lines -= 1;
+                }
+                if blank_lines >= 1 {
+                    docs.push(hardline());
+                }
             }
         }
     }
@@ -390,6 +482,24 @@ pub fn reformat_chain_lines(
     }
 
     Cow::Owned(result)
+}
+
+/// Removes at most one trailing `\n` (optionally preceded by a single `\r`)
+/// from `s`. Spaces, tabs, and any additional preceding newlines are
+/// preserved.
+///
+/// This is used by source-extracting rules (FallbackRule, CallRule,
+/// VariableWriteRule) to strip the terminator-line newline that Prism
+/// includes in node extents for constructs like
+/// `foo(<<~HEREDOC)\n…\nHEREDOC\n`. A full `trim_end` would also eat any
+/// blank separator line that happens to fall inside the node's range,
+/// collapsing the spacing between consecutive statements.
+pub fn strip_one_trailing_newline(s: &str) -> &str {
+    if let Some(rest) = s.strip_suffix('\n') {
+        rest.strip_suffix('\r').unwrap_or(rest)
+    } else {
+        s
+    }
 }
 
 /// Marks comments within a line range as emitted.
