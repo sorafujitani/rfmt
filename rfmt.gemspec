@@ -34,7 +34,7 @@ Gem::Specification.new do |spec|
     'CHANGELOG.md'
   ]
   spec.bindir = 'exe'
-  spec.executables = ['rfmt', 'rfmt-lsp']
+  spec.executables = %w[rfmt rfmt-lsp]
   spec.require_paths = ['lib']
   spec.extensions = ['ext/rfmt/extconf.rb']
 

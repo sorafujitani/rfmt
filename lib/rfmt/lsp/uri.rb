@@ -27,7 +27,7 @@ module Rfmt
       def percent_encode(value)
         value.bytes.map do |byte|
           char = byte.chr
-          char.match?(/[A-Za-z0-9._~\/-]/) ? char : format('%%%02X', byte)
+          char.match?(%r{[A-Za-z0-9._~/-]}) ? char : format('%%%02X', byte)
         end.join
       end
     end

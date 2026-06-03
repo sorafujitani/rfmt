@@ -30,11 +30,11 @@ module Rfmt
         existing_root(File.dirname(path))
       end
 
-      def with_root_for(uri)
+      def with_root_for(uri, &block)
         root = root_for(uri)
-        return yield unless root
+        return block.call unless root
 
-        Dir.chdir(root) { yield }
+        Dir.chdir(root, &block)
       end
 
       private

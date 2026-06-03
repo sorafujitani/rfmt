@@ -20,6 +20,8 @@ module Rfmt
       end
 
       def self.full_document_range(source)
+        return { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } } if source.empty?
+
         lines = source.split("\n", -1)
 
         {

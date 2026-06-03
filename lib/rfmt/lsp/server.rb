@@ -36,31 +36,57 @@ module Rfmt
         id = message['id']
         params = message['params'] || {}
 
-        case method
-        when 'initialize'
-          handle_initialize(id, params)
-        when 'initialized'
-          nil
-        when 'textDocument/didOpen'
-          handle_did_open(params)
-        when 'textDocument/didChange'
-          handle_did_change(params)
-        when 'textDocument/didClose'
-          handle_did_close(params)
-        when 'textDocument/formatting'
-          handle_formatting(id, params)
-        when 'shutdown'
-          handle_shutdown(id)
-        when 'exit'
-          :exit
-        else
-          respond_error(id, METHOD_NOT_FOUND, "Method not found: #{method}") if id
-        end
+        dispatch_message(method, id, params)
       rescue StandardError => e
         respond_error(id, INTERNAL_ERROR, e.message) if id
       end
 
       private
+
+      def dispatch_message(method, id, params)
+        if request_handler?(method)
+          dispatch_request(method, id, params)
+        else
+          dispatch_notification(method, params) || respond_method_not_found(id, method)
+        end
+      end
+
+      def request_handler?(method)
+        %w[initialize textDocument/formatting shutdown].include?(method)
+      end
+
+      def dispatch_request(method, id, params)
+        case method
+        when 'initialize'
+          handle_initialize(id, params)
+        when 'textDocument/formatting'
+          handle_formatting(id, params)
+        when 'shutdown'
+          handle_shutdown(id)
+        end
+      end
+
+      def dispatch_notification(method, params)
+        case method
+        when 'initialized'
+          true
+        when 'textDocument/didOpen'
+          handle_did_open(params)
+          true
+        when 'textDocument/didChange'
+          handle_did_change(params)
+          true
+        when 'textDocument/didClose'
+          handle_did_close(params)
+          true
+        when 'exit'
+          :exit
+        end
+      end
+
+      def respond_method_not_found(id, method)
+        respond_error(id, METHOD_NOT_FOUND, "Method not found: #{method}") if id
+      end
 
       def handle_initialize(id, params)
         @workspace.configure(params)
