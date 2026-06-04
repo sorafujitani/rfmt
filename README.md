@@ -379,17 +379,28 @@ gem install rfmt
 rfmt-lsp
 ```
 
-Example Helix configuration:
+Example Neovim configuration (with `nvim-lspconfig`):
 
-```toml
-[language-server.rfmt]
-command = "rfmt-lsp"
+```lua
+local configs = require("lspconfig.configs")
+local lspconfig = require("lspconfig")
 
-[[language]]
-name = "ruby"
-language-servers = ["rfmt"]
-auto-format = true
+if not configs.rfmt then
+  configs.rfmt = {
+    default_config = {
+      cmd = { "rfmt-lsp" },
+      filetypes = { "ruby" },
+      root_dir = lspconfig.util.root_pattern(".rfmt.yml", ".git"),
+      single_file_support = true,
+    },
+  }
+end
+
+lspconfig.rfmt.setup({})
 ```
+
+Helix, Emacs, and Zed configurations are covered in the
+[Editor Integration Guide](docs/editors.md).
 
 ### VSCode (Quick Start)
 

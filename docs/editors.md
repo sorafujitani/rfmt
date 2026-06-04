@@ -23,19 +23,8 @@ formatting. It does not require a project Gemfile or Ruby LSP. The server reads
 `.rfmt.yml` from the workspace root, parent directories, or your home directory,
 matching the normal rfmt configuration discovery behavior.
 
-### Helix
-
-Add to `~/.config/helix/languages.toml`:
-
-```toml
-[language-server.rfmt]
-command = "rfmt-lsp"
-
-[[language]]
-name = "ruby"
-language-servers = ["rfmt"]
-auto-format = true
-```
+> **VSCode users**: VSCode integrates through Ruby LSP rather than the
+> standalone server. See [Ruby LSP Add-on](#ruby-lsp-add-on) below.
 
 ### Neovim
 
@@ -89,6 +78,20 @@ Add to `settings.json`:
     }
   }
 }
+```
+
+### Helix
+
+Add to `~/.config/helix/languages.toml`:
+
+```toml
+[language-server.rfmt]
+command = "rfmt-lsp"
+
+[[language]]
+name = "ruby"
+language-servers = ["rfmt"]
+auto-format = true
 ```
 
 ## Ruby LSP Add-on
