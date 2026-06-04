@@ -361,7 +361,35 @@ end
 
 ## Editor Integration
 
-rfmt integrates with editors through [Ruby LSP](https://shopify.github.io/ruby-lsp/). For detailed setup instructions, see [Editor Integration Guide](docs/editors.md).
+rfmt can integrate with editors in two ways:
+
+- Standalone LSP: run `rfmt-lsp` directly from your editor. This works well for single
+  Ruby scripts or projects without a Gemfile.
+- Ruby LSP add-on: use rfmt as the formatter inside
+  [Ruby LSP](https://shopify.github.io/ruby-lsp/).
+
+For detailed setup instructions, see [Editor Integration Guide](docs/editors.md).
+
+### Standalone LSP
+
+After installing rfmt, configure your editor's Ruby language server command to `rfmt-lsp`.
+
+```bash
+gem install rfmt
+rfmt-lsp
+```
+
+Example Helix configuration:
+
+```toml
+[language-server.rfmt]
+command = "rfmt-lsp"
+
+[[language]]
+name = "ruby"
+language-servers = ["rfmt"]
+auto-format = true
+```
 
 ### VSCode (Quick Start)
 

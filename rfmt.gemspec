@@ -24,6 +24,7 @@ Gem::Specification.new do |spec|
   # Specify which files should be added to the gem when it is released.
   # Explicitly list files to avoid including compiled artifacts (.bundle, .so)
   spec.files = Dir[
+    'exe/*',
     'lib/**/*.rb',
     'ext/**/*.{rb,rs,toml}',
     'Cargo.toml',
@@ -33,12 +34,15 @@ Gem::Specification.new do |spec|
     'CHANGELOG.md'
   ]
   spec.bindir = 'exe'
-  spec.executables = ['rfmt']
+  spec.executables = %w[rfmt rfmt-lsp]
   spec.require_paths = ['lib']
   spec.extensions = ['ext/rfmt/extconf.rb']
 
   spec.add_dependency 'diff-lcs', '~> 1.5'
   spec.add_dependency 'diffy', '~> 3.4'
+  spec.add_dependency 'language_server-protocol', '~> 3.17'
+  spec.add_dependency 'parallel', '~> 1.24'
+  spec.add_dependency 'prism', '~> 1.6'
   spec.add_dependency 'rb_sys', '~> 0.9.120'
   spec.add_dependency 'thor', '~> 1.3'
 end
