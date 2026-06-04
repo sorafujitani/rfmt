@@ -1,5 +1,18 @@
 ## [Unreleased]
 
+## [1.7.0] - 2026-06-04
+
+rfmt now ships a standalone LSP server. Point any LSP-capable editor at `rfmt-lsp` and you get format-on-save — no Ruby LSP, no Gemfile, and no editor-specific plugin required. This makes rfmt usable from Helix, Neovim, Emacs, and any other LSP client, including in projects that don't bundle rfmt.
+
+### Added
+
+- Standalone LSP server `rfmt-lsp` (#108). Provides format-on-save in any LSP-capable editor without requiring Ruby LSP or a Gemfile:
+  - `textDocument/formatting` with full document sync; unsaved buffer contents are formatted via `didOpen`/`didChange` tracking
+  - `.rfmt.yml` is resolved relative to the workspace root (`rootUri`/`workspaceFolders`)
+  - Graceful handling of syntax errors (returns no edits instead of crashing), empty files, and unsupported LSP methods
+  - New `exe/rfmt-lsp` executable shipped with the gem
+- Editor setup guides for the standalone server (Neovim, Helix, Emacs eglot) in `docs/editors.md`
+
 ## [1.6.3] - 2026-04-24
 
 Minor stability refinements on top of the 1.6.x architecture release. See the 1.6.1 notes below for the feature set this series delivers.
