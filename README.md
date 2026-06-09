@@ -6,6 +6,7 @@ A Ruby code formatter written in Rust
 
 [![Gem Version](https://badge.fury.io/rb/rfmt.svg)](https://rubygems.org/gems/rfmt)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-db61a2?logo=githubsponsors)](https://github.com/sponsors/sorafujitani)
 
 [Installation](#installation) •
 [Usage](#usage) •
