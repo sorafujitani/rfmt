@@ -56,6 +56,9 @@ jobs:
     - name: Run Ruby tests
       run: bundle exec rspec
 
+    - name: Run corpus check
+      run: bundle exec ruby scripts/corpus_check.rb
+
     - name: Run Rust tests
       run: cargo test --manifest-path ext/rfmt/Cargo.toml
 
