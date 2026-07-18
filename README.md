@@ -30,7 +30,7 @@ A Ruby code formatter written in Rust
 - **Opinionated**: Minimal configuration with consistent output
 - **Idempotent**: Running multiple times produces identical results
 - **Comment preservation**: Maintains existing comment placement
-- **Rust implementation**: Core formatter implemented in Rust
+- **Rust implementation**: Parsing and formatting both run natively in Rust (via the [ruby-prism](https://crates.io/crates/ruby-prism) crate); Ruby provides the CLI and LSP shell
 
 ## Features
 
@@ -49,29 +49,22 @@ Enforces code style rules:
 
 ## Performance
 
-rfmt delivers consistent, fast formatting across projects of any size:
+Parsing and formatting both run natively in Rust (the [ruby-prism](https://crates.io/crates/ruby-prism) crate, with prism statically linked), so the per-file cost is well under a millisecond:
 
-| Project Size | Files | Execution Time | Throughput |
-|-------------|-------|----------------|------------|
-| Small | 9 files | ~105ms | 85 files/sec |
-| Medium | 35 files | ~110ms | 315 files/sec |
-| Large | 151 files | ~100ms | 1,560 files/sec |
+| Pipeline | In-process format time |
+|----------|------------------------|
+| Before native parsing (Ruby Prism parse + JSON handoff to Rust) | 4.28 ms/file |
+| Now (parsing and formatting in Rust) | 0.19 ms/file |
 
-**Key Performance Characteristics:**
+Measured with `scripts/bench_format.rb` over rfmt's own `lib/` corpus on arm64 macOS, Ruby 3.4. Reproduce with:
 
-- **Constant Time**: Execution time stays around 100ms regardless of project size
-- **Parallel Processing**: Automatic scaling with available CPU cores
-- **High Throughput**: Up to 1,500+ files per second on large projects
-- **Low Overhead**: Minimal startup time and memory usage
+```bash
+bundle exec ruby scripts/bench_format.rb
+```
 
-**Test Environment:**
-- CPU: Apple Silicon (arm64)
-- Ruby: 3.4.8
-- Average of 5 runs per test
+A cold CLI invocation (`rfmt --check FILE`) takes roughly 0.1-0.25 s of wall-clock time; that is Ruby VM startup, not formatting.
 
-*Built with Rust for optimal performance and memory efficiency.*
-
-For detailed performance comparisons and benchmarks, see [Performance Benchmarks](docs/benchmark.md).
+For more detail and a historical comparison against RuboCop, see [Performance Benchmarks](docs/benchmark.md).
 
 ## Installation
 
