@@ -1,0 +1,5 @@
+# macOS leaves Ruby symbols unresolved until the extension is loaded into a
+# Ruby process (same as RbConfig DLDFLAGS, which `rake compile` passes).
+# Needed so plain `cargo build` / `cargo test` can link the cdylib too.
+[target.'cfg(target_vendor = "apple")']
+rustflags = ["-C", "link-arg=-Wl,-undefined,dynamic_lookup"]

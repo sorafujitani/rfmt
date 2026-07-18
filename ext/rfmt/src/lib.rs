@@ -1,10 +1,10 @@
-mod ast;
+pub mod ast;
 pub mod config;
 pub mod doc;
-mod error;
+pub mod error;
 pub mod format;
 mod logging;
-mod parser;
+pub mod parser;
 mod policy;
 
 use policy::SecurityPolicy;

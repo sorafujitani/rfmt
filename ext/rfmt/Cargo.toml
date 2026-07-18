@@ -8,7 +8,11 @@ publish = false
 
 [lib]
 name = "rfmt"
-crate-type = ["cdylib"]
+# rlib in addition to cdylib so integration tests (tests/) can link the crate
+crate-type = ["cdylib", "rlib"]
+# The doc examples are illustrative and were never compiled while the crate
+# was cdylib-only; keep them out of the test suite
+doctest = false
 
 [dependencies]
 # Ruby FFI
