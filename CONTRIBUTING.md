@@ -73,8 +73,7 @@ bundle exec rspec
 rfmt/
 ├── lib/                    # Ruby code
 │   ├── rfmt.rb            # Main entry point
-│   └── rfmt/
-│       └── prism_bridge.rb # Ruby-Rust bridge
+│   └── rfmt/              # CLI, LSP, configuration
 ├── ext/rfmt/              # Rust extension
 │   ├── src/
 │   │   ├── lib.rs         # FFI interface
@@ -95,8 +94,7 @@ rfmt/
 ### Key Components
 
 #### Ruby Side (`lib/`)
-- **Rfmt module**: Main interface for users
-- **PrismBridge**: Bridges Ruby's Prism parser with Rust
+- **Rfmt module**: Main interface for users; parsing and formatting happen natively in Rust
 
 #### Rust Side (`ext/rfmt/src/`)
 - **error/**: Error types and handling (E001-E999)

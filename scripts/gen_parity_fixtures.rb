@@ -29,14 +29,17 @@ BRIDGE_FILES = %w[lib/rfmt/prism_bridge.rb lib/rfmt/prism_node_extractor.rb].fre
 def load_bridge_from_git_history
   # rev-list also returns the deletion commit, so keep the newest commit
   # where the file is still present.
-  sha = `git -C #{REPO} rev-list HEAD -- #{BRIDGE_FILES.first}`.split.find do |commit|
-    system("git -C #{REPO} cat-file -e #{commit}:#{BRIDGE_FILES.first}", err: File::NULL)
+  commits = `git -C "#{REPO}" rev-list HEAD -- #{BRIDGE_FILES.first}`
+  abort 'git rev-list failed' unless $CHILD_STATUS.success?
+
+  sha = commits.split.find do |commit|
+    system('git', '-C', REPO, 'cat-file', '-e', "#{commit}:#{BRIDGE_FILES.first}", err: File::NULL)
   end
   abort "No commit containing #{BRIDGE_FILES.first} found" if sha.nil?
 
   Dir.mktmpdir do |dir|
     BRIDGE_FILES.each do |path|
-      source = `git -C #{REPO} show #{sha}:#{path}`
+      source = `git -C "#{REPO}" show #{sha}:#{path}`
       abort "Failed to read #{path} at #{sha}" unless $CHILD_STATUS.success?
       File.write(File.join(dir, File.basename(path)), source)
     end
