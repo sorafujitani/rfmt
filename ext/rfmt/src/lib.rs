@@ -12,7 +12,7 @@ use policy::SecurityPolicy;
 use config::Config;
 use format::Formatter;
 use magnus::{function, prelude::*, Error, Ruby};
-use parser::{PrismAdapter, RubyParser};
+use parser::{NativeAdapter, PrismAdapter, RubyParser};
 
 fn format_ruby_code(ruby: &Ruby, source: String, json: String) -> Result<String, Error> {
     let policy = SecurityPolicy::default();
@@ -23,6 +23,29 @@ fn format_ruby_code(ruby: &Ruby, source: String, json: String) -> Result<String,
 
     let parser = PrismAdapter::new();
     let ast = parser.parse(&json).map_err(|e| e.to_magnus_error(ruby))?;
+
+    let config = Config::discover().map_err(|e| e.to_magnus_error(ruby))?;
+    let formatter = Formatter::new(config);
+
+    let formatted = formatter
+        .format(&source, &ast)
+        .map_err(|e| e.to_magnus_error(ruby))?;
+
+    Ok(formatted)
+}
+
+// Temporary for the prism migration: same flow as format_ruby_code with only
+// the parse path swapped, so differential_check.rb isolates converter bugs.
+// Deleted in phase 7 when NativeAdapter becomes the only path.
+fn format_ruby_code_native(ruby: &Ruby, source: String) -> Result<String, Error> {
+    let policy = SecurityPolicy::default();
+
+    policy
+        .validate_source_size(&source)
+        .map_err(|e| e.to_magnus_error(ruby))?;
+
+    let parser = NativeAdapter::new();
+    let ast = parser.parse(&source).map_err(|e| e.to_magnus_error(ruby))?;
 
     let config = Config::discover().map_err(|e| e.to_magnus_error(ruby))?;
     let formatter = Formatter::new(config);
@@ -54,6 +77,7 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
     let module = ruby.define_module("Rfmt")?;
 
     module.define_singleton_method("format_code", function!(format_ruby_code, 2))?;
+    module.define_singleton_method("format_code_native", function!(format_ruby_code_native, 1))?;
     module.define_singleton_method("parse_to_json", function!(parse_to_json, 1))?;
     module.define_singleton_method("rust_version", function!(rust_version, 0))?;
 
