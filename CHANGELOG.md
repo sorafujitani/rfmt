@@ -1,5 +1,22 @@
 ## [Unreleased]
 
+Parsing now happens natively in Rust. The Ruby-side Prism parse and JSON handoff have been replaced by the ruby-prism crate with prism statically linked into the extension; Ruby remains the CLI/LSP shell.
+
+### Changed
+
+- Native parsing via the ruby-prism crate: in-process formatting is about 22x faster (4.28 ms/file to 0.19 ms/file, measured with `scripts/bench_format.rb`)
+- `--config` is now honored when formatting
+- File writes are atomic (write to a temp file, then rename)
+
+### Added
+
+- Output-validation guard: formatted output is re-parsed and rejected if it fails to parse
+- Corpus check (`scripts/corpus_check.rb`): reformats every Ruby file in the repository and verifies AST equivalence with the prism gem; runs in CI alongside the parity fixtures
+
+### Removed
+
+- prism gem runtime dependency; it remains a development-only dependency for the corpus check and parity fixtures
+
 ## [1.7.0] - 2026-06-04
 
 rfmt now ships a standalone LSP server. Point any LSP-capable editor at `rfmt-lsp` and you get format-on-save — no Ruby LSP, no Gemfile, and no editor-specific plugin required. This makes rfmt usable from Helix, Neovim, Emacs, and any other LSP client, including in projects that don't bundle rfmt.
