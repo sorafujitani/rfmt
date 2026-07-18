@@ -39,6 +39,21 @@ module Rfmt
     raise Error, "Unexpected error during formatting: #{e.class}: #{e.message}"
   end
 
+  # Temporary for the prism migration: same flow as .format minus the
+  # PrismBridge JSON step, so differential_check.rb can compare the two
+  # parse paths. Deleted in phase 7.
+  def self.format_native(source)
+    formatted = format_code_native(source)
+
+    validate_output!(formatted)
+
+    formatted
+  rescue RfmtError
+    raise
+  rescue StandardError => e
+    raise Error, "Unexpected error during formatting: #{e.class}: #{e.message}"
+  end
+
   def self.validate_output!(formatted)
     result = Prism.parse(formatted)
     return if result.success?
