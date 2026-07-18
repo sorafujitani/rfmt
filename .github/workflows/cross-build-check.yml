@@ -45,3 +45,49 @@ jobs:
         # rb-sys-dock collapses the pre-script to one line, so it must be a
         # single command. Sourced (not executed) so the exports reach cargo.
         pre-script: . scripts/ci/cross_env.sh
+
+    - name: Upload gem artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: gem-${{ matrix.platform }}
+        path: pkg/*-${{ matrix.platform }}.gem
+        if-no-files-found: error
+
+  # Installing the precompiled gem on a Rust-free runner proves the artifact
+  # is usable, not just that compilation succeeded.
+  install-check:
+    name: Install precompiled gem (x86_64-linux)
+    needs: cross-build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.4'
+
+    - name: Download x86_64-linux gem
+      uses: actions/download-artifact@v4
+      with:
+        name: gem-x86_64-linux
+        path: gems
+
+    - name: Install gem without a Rust toolchain
+      run: |
+        rustup self uninstall -y || true
+        gem install gems/*-x86_64-linux.gem
+
+    - name: Format via library API
+      run: |
+        OUTPUT=$(ruby -rrfmt -e 'puts Rfmt.format("x=1")')
+        echo "$OUTPUT"
+        test "$OUTPUT" = "x = 1"
+
+    - name: Format via rfmt executable
+      run: |
+        printf 'def foo\nx=1\nend\n' > /tmp/sample.rb
+        rfmt /tmp/sample.rb
+        cat /tmp/sample.rb
+        grep -q '^  x = 1$' /tmp/sample.rb
+        rfmt --check /tmp/sample.rb
