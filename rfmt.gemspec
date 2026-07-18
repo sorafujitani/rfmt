@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description = 'Write a longer description or delete this line.'
   spec.homepage = 'https://github.com/fs0414/rfmt'
   spec.license = 'MIT'
-  spec.required_ruby_version = '>= 3.1.0'
+  spec.required_ruby_version = '>= 3.3.0'
   spec.required_rubygems_version = '>= 3.0.0'
 
   spec.metadata['allowed_push_host'] = 'https://rubygems.org'

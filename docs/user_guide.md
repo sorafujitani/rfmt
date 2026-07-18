@@ -16,7 +16,7 @@
 
 ### Requirements
 
-- Ruby 3.0 or higher
+- Ruby 3.3 or higher
 - Rust 1.70 or higher (for building from source)
 
 ### Install from RubyGems
@@ -521,12 +521,11 @@ pre-commit:
 
 ### What Ruby versions are supported?
 
-rfmt supports **Ruby 3.0 and higher**. We test against:
+rfmt supports **Ruby 3.3 and higher**. We test against:
 
-- Ruby 3.0
-- Ruby 3.1
-- Ruby 3.2
 - Ruby 3.3
+- Ruby 3.4
+- Ruby 4.0
 
 ### How can I contribute?
 

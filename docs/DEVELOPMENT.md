@@ -15,7 +15,7 @@ This guide covers testing, building, and releasing rfmt.
 
 ### Required Tools
 
-- **Ruby**: 3.0 or later
+- **Ruby**: 3.3 or later
 - **Rust**: 1.70 or later (installed via rustup)
 - **Bundler**: `gem install bundler`
 - **Rake**: Included in Ruby standard library
@@ -642,7 +642,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby: ['3.0', '3.1', '3.2', '3.3']
+        ruby: ['3.3', '3.4', '4.0']
 
     steps:
     - uses: actions/checkout@v4
