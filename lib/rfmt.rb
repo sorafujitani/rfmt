@@ -14,41 +14,47 @@ module Rfmt
   # AST validation errors
   class ValidationError < RfmtError; end
 
+  # Rust reports errors as plain StandardError with a [Rfmt::<kind>] prefix;
+  # these two kinds map onto the public exception classes.
+  NATIVE_PARSE_ERROR_PREFIX = '[Rfmt::ParseError] '
+  NATIVE_VALIDATION_ERROR_PREFIX = '[Rfmt::ValidationError] '
+  private_constant :NATIVE_PARSE_ERROR_PREFIX, :NATIVE_VALIDATION_ERROR_PREFIX
+
   # Format Ruby source code
+  # Parsing and output validation both happen natively in Rust
   # @param source [String] Ruby source code to format
   # @return [String] Formatted Ruby code
   def self.format(source)
-    # Step 1: Parse with Prism (Ruby side)
+    format_code(source)
+  rescue StandardError => e
+    raise wrap_native_error(e)
+  end
+
+  def self.wrap_native_error(error)
+    message = error.message
+    if message.start_with?(NATIVE_PARSE_ERROR_PREFIX)
+      Error.new("Failed to parse Ruby code: #{message.delete_prefix(NATIVE_PARSE_ERROR_PREFIX)}")
+    elsif message.start_with?(NATIVE_VALIDATION_ERROR_PREFIX)
+      ValidationError.new(message.delete_prefix(NATIVE_VALIDATION_ERROR_PREFIX))
+    else
+      Error.new("Unexpected error during formatting: #{error.class}: #{message}")
+    end
+  end
+  private_class_method :wrap_native_error
+
+  # Temporary for the prism migration: the pre-switchover pipeline
+  # (PrismBridge JSON round-trip), kept so differential_check.rb can compare
+  # it against the native .format. Deleted in phase 7.
+  def self.format_legacy(source)
     prism_json = PrismBridge.parse(source)
-
-    # Step 2: Format in Rust
-    # Pass both source and AST to enable source extraction fallback
-    formatted = format_code(source, prism_json)
-
-    # Guard against formatter bugs: never emit syntactically invalid Ruby
-    validate_output!(formatted)
-
-    formatted
+    format_code_legacy(source, prism_json)
   rescue PrismBridge::ParseError => e
-    # Re-raise with more context
     raise Error, "Failed to parse Ruby code: #{e.message}"
   rescue RfmtError
-    # Rust side errors are re-raised as-is to preserve error details
     raise
   rescue StandardError => e
     raise Error, "Unexpected error during formatting: #{e.class}: #{e.message}"
   end
-
-  def self.validate_output!(formatted)
-    result = Prism.parse(formatted)
-    return if result.success?
-
-    error = result.errors.first
-    raise ValidationError, 'Formatter produced syntactically invalid output ' \
-                           "(this is a bug in rfmt, not in your code): #{error.message} " \
-                           "at line #{error.location.start_line}"
-  end
-  private_class_method :validate_output!
 
   # Format a Ruby file
   # @param path [String] Path to Ruby file
@@ -70,8 +76,9 @@ module Rfmt
   # @param source [String] Ruby source code
   # @return [String] AST representation
   def self.parse(source)
-    prism_json = PrismBridge.parse(source)
-    parse_to_json(prism_json)
+    parse_to_json(source)
+  rescue StandardError => e
+    raise wrap_native_error(e)
   end
 
   # Configuration management
