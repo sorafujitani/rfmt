@@ -4,7 +4,7 @@ Parsing now happens natively in Rust. The Ruby-side Prism parse and JSON handoff
 
 ### Changed
 
-- Native parsing via the ruby-prism crate: in-process formatting is about 22x faster (4.28 ms/file to 0.19 ms/file, measured with `scripts/bench_format.rb`)
+- Native parsing via the ruby-prism crate: in-process formatting is about 22x faster: 0.19 ms/file measured with `scripts/bench_format.rb`, against a historical pre-migration baseline of 4.28 ms/file
 - `--config` is now honored when formatting
 - File writes are atomic (write to a temp file, then rename)
 

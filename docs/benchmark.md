@@ -6,7 +6,7 @@ Parsing and formatting both run inside the Rust extension (the ruby-prism crate,
 
 | Pipeline | In-process format time |
 |----------|------------------------|
-| Before native parsing (Ruby Prism parse + JSON handoff to Rust) | 4.28 ms/file |
+| Before native parsing (Ruby Prism parse + JSON handoff to Rust; historical, not reproducible from this checkout) | 4.28 ms/file |
 | After (parsing and formatting in Rust) | 0.19 ms/file |
 
 Reproduce:

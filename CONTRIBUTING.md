@@ -23,7 +23,7 @@ This project adheres to the Contributor Covenant [Code of Conduct](CODE_OF_CONDU
 
 ### Prerequisites
 
-- Ruby 3.0 or higher
+- Ruby 3.3 or higher
 - Rust 1.70 or higher
 - Git
 - Bundler

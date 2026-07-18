@@ -53,7 +53,7 @@ Parsing and formatting both run natively in Rust (the [ruby-prism](https://crate
 
 | Pipeline | In-process format time |
 |----------|------------------------|
-| Before native parsing (Ruby Prism parse + JSON handoff to Rust) | 4.28 ms/file |
+| Before native parsing (Ruby Prism parse + JSON handoff to Rust; historical, not reproducible from this checkout) | 4.28 ms/file |
 | Now (parsing and formatting in Rust) | 0.19 ms/file |
 
 Measured with `scripts/bench_format.rb` over rfmt's own `lib/` corpus on arm64 macOS, Ruby 3.4. Reproduce with:

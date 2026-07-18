@@ -267,7 +267,7 @@ config = {
   }
 }
 
-formatted = Rfmt.format(source, config: config)
+formatted = Rfmt.format(source, config_path: '.rfmt.yml')
 ```
 
 ### Error Handling
