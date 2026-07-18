@@ -1,13 +1,17 @@
-//! Native ruby-prism -> internal AST converter (prism migration phase 3).
+//! Native ruby-prism -> internal AST converter (prism migration phases 3-4).
 //!
 //! Ports the conversion semantics of `lib/rfmt/prism_bridge.rb` exactly so the
-//! two paths can be diffed node-by-node (`tests/native_parity.rs`). Metadata
-//! and comments are intentionally left empty until phase 4.
+//! two paths can be diffed node-by-node (`tests/native_parity.rs`), including
+//! the live per-type metadata keys and the flat root comment list.
 
-use crate::ast::{FormattingInfo, Location, Node as AstNode, NodeType};
+use crate::ast::{
+    Comment, CommentPosition, CommentType, FormattingInfo, Location, Node as AstNode, NodeType,
+};
 use crate::error::{Result, RfmtError};
 use crate::parser::RubyParser;
-use ruby_prism::{ArgumentsNode, Location as PrismLocation, Node as PrismNode, Visit};
+use ruby_prism::{
+    ArgumentsNode, ConstantId, Location as PrismLocation, Node as PrismNode, ParseResult, Visit,
+};
 use std::collections::HashMap;
 
 /// Parses Ruby source with the ruby-prism crate and converts it to the
@@ -46,8 +50,48 @@ impl RubyParser for NativeAdapter {
         }
 
         let converter = Converter { index: &index };
-        Ok(converter.convert(&parse_result.node()).node)
+        let mut root = converter.convert(&parse_result.node()).node;
+        // As in the bridge/PrismAdapter pipeline, all comments live in a flat
+        // list on the root node; per-node comments stay empty.
+        root.comments = root_comments(&parse_result, &index);
+        Ok(root)
     }
+}
+
+/// The bridge's serialize_ast_with_comments: every comment with its source
+/// slice as text, always Leading (refined later by the formatter).
+fn root_comments(result: &ParseResult<'_>, index: &LineIndex) -> Vec<Comment> {
+    result
+        .comments()
+        .map(|comment| {
+            let loc = comment.location();
+            let (start_line, start_column) = index.line_column(loc.start_offset());
+            let (mut end_line, end_column) = index.line_column(loc.end_offset());
+            // Prism ends `=begin ... =end` at column 0 of the line AFTER the
+            // terminator; snap back so the comment doesn't appear to overlap
+            // the next statement. Only the location is snapped: text and
+            // offsets keep the raw span (bridge parity).
+            if end_column == 0 && end_line > start_line {
+                end_line -= 1;
+            }
+            Comment {
+                text: String::from_utf8_lossy(loc.as_slice()).into_owned(),
+                location: Location::new(
+                    start_line,
+                    start_column,
+                    end_line,
+                    end_column,
+                    loc.start_offset(),
+                    loc.end_offset(),
+                ),
+                comment_type: match comment.type_() {
+                    ruby_prism::CommentType::InlineComment => CommentType::Line,
+                    ruby_prism::CommentType::EmbDocComment => CommentType::Block,
+                },
+                position: CommentPosition::Leading,
+            }
+        })
+        .collect()
 }
 
 /// Line-start byte offsets over the source, for deriving 1-based lines and
@@ -186,7 +230,7 @@ impl Converter<'_> {
                 end_offset,
             ),
             children,
-            metadata: HashMap::new(),
+            metadata: extract_metadata(node),
             comments: Vec::new(),
             formatting: FormattingInfo {
                 multiline,
@@ -779,6 +823,144 @@ impl Converter<'_> {
         }
         parts.push(Part::ClosingOf(intermediate));
     }
+}
+
+/// The bridge's per-type metadata (prism_bridge.rb extract_metadata), minus
+/// the keys nothing downstream reads (parameters_count, message, content,
+/// value). All values stay strings for adapter-port parity.
+fn extract_metadata(node: &PrismNode<'_>) -> HashMap<String, String> {
+    let mut metadata = HashMap::new();
+
+    match node {
+        PrismNode::ClassNode { .. } => {
+            let n = node.as_class_node().unwrap();
+            metadata.insert(
+                "name".to_string(),
+                class_or_module_name(&n.constant_path(), &n.name()),
+            );
+            if let Some(superclass) = n.superclass() {
+                metadata.insert("superclass".to_string(), superclass_name(&superclass));
+            }
+        }
+        PrismNode::ModuleNode { .. } => {
+            let n = node.as_module_node().unwrap();
+            metadata.insert(
+                "name".to_string(),
+                class_or_module_name(&n.constant_path(), &n.name()),
+            );
+        }
+        PrismNode::DefNode { .. } => {
+            let n = node.as_def_node().unwrap();
+            // name_loc slice rather than the name symbol, so unary operator
+            // suffixes survive (prism normalizes `def !@` to :!).
+            metadata.insert("name".to_string(), slice_string(&n.name_loc()));
+            if let Some(parameters) = n.parameters() {
+                metadata.insert(
+                    "parameters_text".to_string(),
+                    slice_string(&parameters.location()),
+                );
+                metadata.insert(
+                    "has_parens".to_string(),
+                    n.lparen_loc().is_some().to_string(),
+                );
+            }
+            if let Some(receiver) = n.receiver() {
+                let value = if receiver.as_self_node().is_some() {
+                    "self".to_string()
+                } else {
+                    slice_string(&receiver.location())
+                };
+                metadata.insert("receiver".to_string(), value);
+            }
+        }
+        PrismNode::CallNode { .. } => {
+            let n = node.as_call_node().unwrap();
+            metadata.insert("name".to_string(), constant_id_string(&n.name()));
+        }
+        PrismNode::LocalVariableWriteNode { .. } => {
+            let n = node.as_local_variable_write_node().unwrap();
+            metadata.insert("name".to_string(), constant_id_string(&n.name()));
+        }
+        PrismNode::InstanceVariableWriteNode { .. } => {
+            let n = node.as_instance_variable_write_node().unwrap();
+            metadata.insert("name".to_string(), constant_id_string(&n.name()));
+        }
+        // UnlessNode gets no is_ternary key: the bridge guards on
+        // respond_to?(:if_keyword_loc), which UnlessNode lacks.
+        PrismNode::IfNode { .. } => {
+            let n = node.as_if_node().unwrap();
+            metadata.insert(
+                "is_ternary".to_string(),
+                n.if_keyword_loc().is_none().to_string(),
+            );
+        }
+        _ => {}
+    }
+
+    metadata
+}
+
+fn slice_string(loc: &PrismLocation<'_>) -> String {
+    String::from_utf8_lossy(loc.as_slice()).into_owned()
+}
+
+fn constant_id_string(id: &ConstantId<'_>) -> String {
+    String::from_utf8_lossy(id.as_slice()).into_owned()
+}
+
+/// prism_node_extractor.rb extract_class_or_module_name: constant_path is
+/// always present, `name` is the bridge's fallback for exotic paths.
+fn class_or_module_name(constant_path: &PrismNode<'_>, name: &ConstantId<'_>) -> String {
+    if let Some(read) = constant_path.as_constant_read_node() {
+        constant_id_string(&read.name())
+    } else if let Some(path) = constant_path.as_constant_path_node() {
+        constant_path_full_name(&path).unwrap_or_else(|| slice_string(&constant_path.location()))
+    } else {
+        constant_id_string(name)
+    }
+}
+
+/// prism_node_extractor.rb extract_superclass_name.
+fn superclass_name(superclass: &PrismNode<'_>) -> String {
+    if let Some(read) = superclass.as_constant_read_node() {
+        constant_id_string(&read.name())
+    } else if let Some(path) = superclass.as_constant_path_node() {
+        constant_path_full_name(&path).unwrap_or_else(|| slice_string(&superclass.location()))
+    } else {
+        // CallNode superclasses (`ActiveRecord::Migration[8.1]`) and the
+        // bridge's generic fallback both take the source slice.
+        slice_string(&superclass.location())
+    }
+}
+
+/// The prism gem's ConstantPathNode#full_name. Divergence: where the gem
+/// raises (dynamic parts like `self::Foo`, or missing names) and so aborts
+/// the whole bridge parse, this returns None and the callers fall back to
+/// the source slice.
+fn constant_path_full_name(path: &ruby_prism::ConstantPathNode<'_>) -> Option<String> {
+    let mut parts = vec![constant_id_string(&path.name()?)];
+    let mut parent = path.parent();
+    loop {
+        match parent {
+            // Root scope (`::Foo`): the gem prepends an empty part.
+            None => {
+                parts.push(String::new());
+                break;
+            }
+            Some(node) => {
+                if let Some(inner) = node.as_constant_path_node() {
+                    parts.push(constant_id_string(&inner.name()?));
+                    parent = inner.parent();
+                } else {
+                    let read = node.as_constant_read_node()?;
+                    parts.push(constant_id_string(&read.name()));
+                    break;
+                }
+            }
+        }
+    }
+    parts.reverse();
+    Some(parts.join("::"))
 }
 
 /// Direct children of a node in prism's generic child_nodes order. The crate

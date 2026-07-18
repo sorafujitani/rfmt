@@ -1,16 +1,22 @@
-//! Parity tests for the native ruby-prism converter (migration phase 3).
+//! Parity tests for the native ruby-prism converter (migration phases 3-4).
 //!
 //! Each fixture under tests/fixtures/parity/ exists as a .rb source and the
 //! JSON the Ruby PrismBridge produced for it (regenerate with
 //! `bundle exec ruby scripts/gen_parity_fixtures.rb`). The .rb goes through
 //! the new NativeAdapter, the .json through the legacy PrismAdapter, and the
-//! trees must agree on node types, all six location fields, children, and
-//! formatting.multiline. Metadata and comments are phase 4 and not compared.
+//! trees must agree on node types, all six location fields, children,
+//! formatting.multiline, metadata, and comments.
 
-use rfmt::ast::Node;
+use rfmt::ast::{Location, Node};
 use rfmt::parser::{NativeAdapter, PrismAdapter, RubyParser};
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+
+/// Keys the bridge still emits but nothing downstream reads; the native
+/// converter intentionally drops them, so they are stripped from the JSON
+/// side before the exact metadata comparison.
+const DEAD_METADATA_KEYS: [&str; 4] = ["parameters_count", "message", "content", "value"];
 
 fn fixtures_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/parity")
@@ -31,46 +37,61 @@ fn push_diff<T: std::fmt::Debug + PartialEq>(
     }
 }
 
+fn live_metadata(metadata: &HashMap<String, String>) -> HashMap<String, String> {
+    metadata
+        .iter()
+        .filter(|(key, _)| !DEAD_METADATA_KEYS.contains(&key.as_str()))
+        .map(|(key, value)| (key.clone(), value.clone()))
+        .collect()
+}
+
+fn compare_locations(path: &str, json: &Location, native: &Location, diffs: &mut Vec<String>) {
+    push_diff(
+        diffs,
+        path,
+        "start_line",
+        &json.start_line,
+        &native.start_line,
+    );
+    push_diff(
+        diffs,
+        path,
+        "start_column",
+        &json.start_column,
+        &native.start_column,
+    );
+    push_diff(diffs, path, "end_line", &json.end_line, &native.end_line);
+    push_diff(
+        diffs,
+        path,
+        "end_column",
+        &json.end_column,
+        &native.end_column,
+    );
+    push_diff(
+        diffs,
+        path,
+        "start_offset",
+        &json.start_offset,
+        &native.start_offset,
+    );
+    push_diff(
+        diffs,
+        path,
+        "end_offset",
+        &json.end_offset,
+        &native.end_offset,
+    );
+}
+
 fn compare_nodes(path: &str, json: &Node, native: &Node, diffs: &mut Vec<String>) {
     push_diff(diffs, path, "node_type", &json.node_type, &native.node_type);
 
-    let jl = &json.location;
-    let nl = &native.location;
-    push_diff(
+    compare_locations(
+        &format!("{}.location", path),
+        &json.location,
+        &native.location,
         diffs,
-        path,
-        "location.start_line",
-        &jl.start_line,
-        &nl.start_line,
-    );
-    push_diff(
-        diffs,
-        path,
-        "location.start_column",
-        &jl.start_column,
-        &nl.start_column,
-    );
-    push_diff(diffs, path, "location.end_line", &jl.end_line, &nl.end_line);
-    push_diff(
-        diffs,
-        path,
-        "location.end_column",
-        &jl.end_column,
-        &nl.end_column,
-    );
-    push_diff(
-        diffs,
-        path,
-        "location.start_offset",
-        &jl.start_offset,
-        &nl.start_offset,
-    );
-    push_diff(
-        diffs,
-        path,
-        "location.end_offset",
-        &jl.end_offset,
-        &nl.end_offset,
     );
 
     push_diff(
@@ -80,6 +101,35 @@ fn compare_nodes(path: &str, json: &Node, native: &Node, diffs: &mut Vec<String>
         &json.formatting.multiline,
         &native.formatting.multiline,
     );
+
+    let json_metadata = live_metadata(&json.metadata);
+    push_diff(diffs, path, "metadata", &json_metadata, &native.metadata);
+
+    push_diff(
+        diffs,
+        path,
+        "comments.len",
+        &json.comments.len(),
+        &native.comments.len(),
+    );
+    for (i, (jc, nc)) in json.comments.iter().zip(native.comments.iter()).enumerate() {
+        let cpath = format!("{}.comments[{}]", path, i);
+        push_diff(diffs, &cpath, "text", &jc.text, &nc.text);
+        push_diff(
+            diffs,
+            &cpath,
+            "comment_type",
+            &jc.comment_type,
+            &nc.comment_type,
+        );
+        push_diff(diffs, &cpath, "position", &jc.position, &nc.position);
+        compare_locations(
+            &format!("{}.location", cpath),
+            &jc.location,
+            &nc.location,
+            diffs,
+        );
+    }
 
     push_diff(
         diffs,
@@ -103,7 +153,7 @@ fn native_conversion_matches_ruby_bridge() {
         .collect();
     names.sort();
     assert!(
-        names.len() >= 7,
+        names.len() >= 11,
         "expected the full parity fixture set, found {:?}",
         names
     );
@@ -147,6 +197,39 @@ fn comparator_detects_a_mutated_tree() {
         diffs[0].starts_with("root.children[0].location.end_line: "),
         "{diffs:?}"
     );
+}
+
+#[test]
+fn comparator_detects_a_mutated_metadata_value() {
+    let reference = NativeAdapter::new()
+        .parse("def foo(a)\n  a\nend\n")
+        .unwrap();
+    let mut mutated = reference.clone();
+    let def = mutated.children.first_mut().expect("def child");
+    assert_eq!(def.metadata.get("name").map(String::as_str), Some("foo"));
+    def.metadata.insert("name".to_string(), "bar".to_string());
+
+    let mut diffs = Vec::new();
+    compare_nodes("root", &reference, &mutated, &mut diffs);
+    assert_eq!(diffs.len(), 1, "{diffs:?}");
+    assert!(
+        diffs[0].starts_with("root.children[0].metadata: "),
+        "{diffs:?}"
+    );
+}
+
+#[test]
+fn comparator_detects_a_mutated_comment() {
+    let reference = NativeAdapter::new().parse("# hello\nx = 1\n").unwrap();
+    let mut mutated = reference.clone();
+    let comment = mutated.comments.first_mut().expect("root comment");
+    assert_eq!(comment.text, "# hello");
+    comment.text = "# tampered".to_string();
+
+    let mut diffs = Vec::new();
+    compare_nodes("root", &reference, &mutated, &mut diffs);
+    assert_eq!(diffs.len(), 1, "{diffs:?}");
+    assert!(diffs[0].starts_with("root.comments[0].text: "), "{diffs:?}");
 }
 
 #[test]
