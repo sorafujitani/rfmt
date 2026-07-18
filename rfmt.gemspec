@@ -42,7 +42,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'diffy', '~> 3.4'
   spec.add_dependency 'language_server-protocol', '~> 3.17'
   spec.add_dependency 'parallel', '~> 1.24'
-  spec.add_dependency 'prism', '~> 1.6'
   spec.add_dependency 'rb_sys', '~> 0.9.120'
   spec.add_dependency 'thor', '~> 1.3'
 end
