@@ -13,7 +13,7 @@ use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
     format_child, format_leading_comments, format_trailing_comment, line_leading_indent,
-    reformat_chain_lines, strip_one_trailing_newline, FormatRule,
+    mark_comments_in_range_emitted, reformat_chain_lines, strip_one_trailing_newline, FormatRule,
 };
 
 /// Rule for formatting local variable write expressions.
@@ -66,6 +66,7 @@ fn format_variable_write(
             // No value: fallback to source extraction
             if let Some(source_text) = ctx.extract_source(node) {
                 docs.push(text(source_text.to_string()));
+                mark_comments_in_range_emitted(ctx, start_line, end_line);
             }
             let trailing = format_trailing_comment(ctx, end_line);
             if !trailing.is_empty() {
@@ -132,11 +133,24 @@ fn format_variable_write(
                 );
                 let trimmed = strip_one_trailing_newline(reformatted.trim_start());
                 docs.push(text(trimmed.to_string()));
+                // The extracted text carries any interior comments verbatim
+                // (e.g. inside a `do…end` block); without marking them they
+                // get re-emitted at EOF by format_remaining_comments.
+                mark_comments_in_range_emitted(
+                    ctx,
+                    value.location.start_line,
+                    value.location.end_line,
+                );
             }
         } else {
             // Simple value: extract from source trimmed
             if let Some(source_text) = ctx.extract_source(value) {
                 docs.push(text(source_text.trim().to_string()));
+                mark_comments_in_range_emitted(
+                    ctx,
+                    value.location.start_line,
+                    value.location.end_line,
+                );
             }
         }
     }

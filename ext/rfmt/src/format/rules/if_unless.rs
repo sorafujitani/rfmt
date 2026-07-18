@@ -14,7 +14,7 @@ use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
     format_leading_comments, format_statements, format_trailing_comment,
-    strip_one_trailing_newline, FormatRule,
+    mark_comments_in_range_emitted, strip_one_trailing_newline, FormatRule,
 };
 
 /// Rule for formatting if conditionals.
@@ -115,8 +115,13 @@ fn format_postfix(
     // the modifier is already baked into the source text right where
     // Ruby expects it.
     if let Some(statements) = node.children.get(1) {
-        if let Some(source_text) = ctx.extract_source(statements) {
-            if statement_contains_heredoc_tail(source_text) {
+        if let Some(source_text) = ctx.extract_source(statements).map(str::to_string) {
+            mark_comments_in_range_emitted(
+                ctx,
+                statements.location.start_line,
+                statements.location.end_line,
+            );
+            if statement_contains_heredoc_tail(&source_text) {
                 docs.push(text(source_text.trim_end_matches('\n').to_string()));
 
                 let trailing = format_trailing_comment(ctx, node.location.end_line);
@@ -193,6 +198,11 @@ fn format_ternary(node: &Node, ctx: &mut FormatContext) -> Result<Doc> {
     if let Some(statements) = node.children.get(1) {
         if let Some(source_text) = ctx.extract_source(statements) {
             docs.push(text(source_text.trim()));
+            mark_comments_in_range_emitted(
+                ctx,
+                statements.location.start_line,
+                statements.location.end_line,
+            );
         }
     }
 
@@ -203,6 +213,11 @@ fn format_ternary(node: &Node, ctx: &mut FormatContext) -> Result<Doc> {
         if let Some(else_statements) = else_node.children.first() {
             if let Some(source_text) = ctx.extract_source(else_statements) {
                 docs.push(text(source_text.trim()));
+                mark_comments_in_range_emitted(
+                    ctx,
+                    else_statements.location.start_line,
+                    else_statements.location.end_line,
+                );
             }
         }
     }
