@@ -23,8 +23,8 @@ use super::rule::format_remaining_comments;
 pub struct Formatter {
     /// Configuration for formatting
     config: Config,
-    /// Registry of formatting rules
-    registry: RuleRegistry,
+    /// Registry of formatting rules (shared: rules are stateless)
+    registry: &'static RuleRegistry,
 }
 
 impl Formatter {
@@ -32,13 +32,8 @@ impl Formatter {
     pub fn new(config: Config) -> Self {
         Self {
             config,
-            registry: RuleRegistry::default_registry(),
+            registry: RuleRegistry::shared(),
         }
-    }
-
-    /// Creates a new formatter with a custom registry.
-    pub fn with_registry(config: Config, registry: RuleRegistry) -> Self {
-        Self { config, registry }
     }
 
     /// Formats Ruby source code.
@@ -91,7 +86,7 @@ impl Formatter {
 
     /// Returns a reference to the registry for recursive formatting.
     pub fn registry(&self) -> &RuleRegistry {
-        &self.registry
+        self.registry
     }
 
     /// Formats the program node (root).
