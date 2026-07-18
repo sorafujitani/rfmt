@@ -168,4 +168,58 @@ RSpec.describe 'Config-based formatting' do
       expect(formatted).to include("\t\tputs \"not positive\"")
     end
   end
+
+  describe 'explicit config path' do
+    it 'honors config_path over discovery' do
+      File.write('rfmt.yml', <<~YAML)
+        formatting:
+          indent_width: 2
+      YAML
+      File.write('custom.yml', <<~YAML)
+        formatting:
+          indent_width: 4
+      YAML
+
+      formatted = Rfmt.format(source_code, config_path: 'custom.yml')
+
+      expect(formatted.lines).to include("    def initialize(name)\n")
+    end
+
+    it 'raises loudly when the explicit path does not exist' do
+      expect do
+        Rfmt.format(source_code, config_path: 'missing.yml')
+      end.to raise_error(Rfmt::Error, /Failed to read config file/)
+    end
+
+    it 'raises loudly when the explicit file is invalid' do
+      File.write('broken.yml', <<~YAML)
+        formatting:
+          line_length: 20
+      YAML
+
+      # Discovery swallows broken files into defaults; an explicit path must not.
+      expect do
+        Rfmt.format(source_code, config_path: 'broken.yml')
+      end.to raise_error(Rfmt::Error, /line_length/)
+    end
+  end
+
+  describe 'discovery cache invalidation' do
+    it 'picks up edits to the discovered config between in-process calls' do
+      File.write('.rfmt.yml', <<~YAML)
+        formatting:
+          indent_width: 4
+      YAML
+      expect(Rfmt.format(source_code).lines).to include("    def initialize(name)\n")
+
+      File.write('.rfmt.yml', <<~YAML)
+        formatting:
+          indent_width: 3
+      YAML
+      # Force a distinct mtime so the test does not depend on filesystem timestamp resolution
+      File.utime(Time.now, Time.now + 2, '.rfmt.yml')
+
+      expect(Rfmt.format(source_code).lines).to include("   def initialize(name)\n")
+    end
+  end
 end

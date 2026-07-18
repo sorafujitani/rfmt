@@ -6,6 +6,7 @@
 use crate::ast::NodeType;
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::sync::OnceLock;
 
 use super::rule::{BoxedRule, FormatRule};
 use super::rules::{
@@ -102,6 +103,13 @@ impl RuleRegistry {
             .get(&key)
             .map(|r| r.as_ref())
             .unwrap_or(self.fallback.as_ref())
+    }
+
+    /// Rules are stateless, so one registry serves every format call;
+    /// building ~23 boxed rules per call was pure waste.
+    pub fn shared() -> &'static Self {
+        static SHARED: OnceLock<RuleRegistry> = OnceLock::new();
+        SHARED.get_or_init(Self::default_registry)
     }
 
     pub fn default_registry() -> Self {

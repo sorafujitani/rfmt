@@ -1,4 +1,7 @@
 use serde::{Deserialize, Serialize};
+use std::path::{Path, PathBuf};
+use std::sync::Mutex;
+use std::time::SystemTime;
 
 /// Complete configuration structure matching .rfmt.yml format
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -98,43 +101,114 @@ pub enum TrailingComma {
     Multiline,
 }
 
+/// Search order within each directory: rfmt.yml, rfmt.yaml, .rfmt.yml, .rfmt.yaml
+const CONFIG_FILE_NAMES: [&str; 4] = ["rfmt.yml", "rfmt.yaml", ".rfmt.yml", ".rfmt.yaml"];
+
+/// Discovery result cached per process so repeated format calls (CLI batch,
+/// long-lived LSP) skip the cwd-to-root-to-home filesystem walk.
+struct DiscoveryCache {
+    cwd: PathBuf,
+    /// Discovered file and its mtime; `None` when nothing was found.
+    found: Option<(PathBuf, SystemTime)>,
+    config: Config,
+}
+
+static DISCOVERY_CACHE: Mutex<Option<DiscoveryCache>> = Mutex::new(None);
+
+/// Explicit-path loads cached separately, keyed by canonical path + mtime,
+/// so a CLI batch does not re-parse the same YAML once per file.
+static EXPLICIT_CACHE: Mutex<Option<(PathBuf, SystemTime, Config)>> = Mutex::new(None);
+
 impl Config {
-    /// Discover configuration file in current directory or parent directories
-    /// Searches in order: rfmt.yml, rfmt.yaml, .rfmt.yml, .rfmt.yaml
-    pub fn discover() -> crate::error::Result<Self> {
-        let config_files = ["rfmt.yml", "rfmt.yaml", ".rfmt.yml", ".rfmt.yaml"];
+    /// Resolve the effective configuration.
+    ///
+    /// Error handling differs by intent: an explicit path was asked for by
+    /// name, so load failures must surface loudly; discovery merely stumbles
+    /// on files, so a broken discovered file logs a warning and falls back
+    /// to defaults (an LSP mid-edit of .rfmt.yml must not break formatting).
+    pub fn resolve(explicit_path: Option<&Path>) -> crate::error::Result<Self> {
+        match explicit_path {
+            Some(path) => Self::load_explicit_cached(path),
+            None => {
+                let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+                Ok(Self::discover_cached_from(&cwd))
+            }
+        }
+    }
 
-        // Try current directory and parent directories
-        if let Ok(mut current_dir) = std::env::current_dir() {
-            loop {
-                for filename in &config_files {
-                    let config_path = current_dir.join(filename);
-                    if config_path.exists() {
-                        log::info!("Found config file: {:?}", config_path);
-                        return Self::load_file(&config_path);
-                    }
-                }
+    fn load_explicit_cached(path: &Path) -> crate::error::Result<Self> {
+        // Canonicalize so a relative path is not confused across cwd changes.
+        let key = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+        // mtime read before the load: a racing write can only make the cache
+        // entry look older than the content, forcing a reload, never staleness.
+        let mtime = file_mtime(&key);
 
-                // Move to parent directory
-                if !current_dir.pop() {
-                    break;
-                }
+        let mut guard = EXPLICIT_CACHE
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+
+        if let (Some((cached_path, cached_mtime, config)), Some(mtime)) = (guard.as_ref(), mtime) {
+            if *cached_path == key && *cached_mtime == mtime {
+                return Ok(config.clone());
             }
         }
 
-        // Try home directory
-        if let Some(home_dir) = dirs::home_dir() {
-            for filename in &config_files {
-                let config_path = home_dir.join(filename);
-                if config_path.exists() {
-                    log::debug!("Found config file in home: {:?}", config_path);
-                    return Self::load_file(&config_path);
-                }
+        let config = Self::load_file(path)?;
+        if let Some(mtime) = mtime {
+            *guard = Some((key, mtime, config.clone()));
+        }
+        Ok(config)
+    }
+
+    fn discover_cached_from(cwd: &Path) -> Self {
+        let mut guard = DISCOVERY_CACHE
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+
+        if let Some(cache) = guard.as_ref() {
+            if cache.cwd == cwd && cache_is_fresh(cwd, cache) {
+                return cache.config.clone();
             }
         }
 
-        log::info!("No config file found, using defaults");
-        Ok(Config::default())
+        let (config, found) = Self::discover_from(cwd);
+        *guard = Some(DiscoveryCache {
+            cwd: cwd.to_path_buf(),
+            found,
+            config: config.clone(),
+        });
+        config
+    }
+
+    /// Walk `start` up to the root, then the home directory.
+    fn find_config_file(start: &Path) -> Option<PathBuf> {
+        let mut current_dir = start.to_path_buf();
+        loop {
+            if let Some(path) = first_candidate_in(&current_dir) {
+                return Some(path);
+            }
+            if !current_dir.pop() {
+                break;
+            }
+        }
+
+        dirs::home_dir().and_then(|home| first_candidate_in(&home))
+    }
+
+    fn discover_from(start: &Path) -> (Self, Option<(PathBuf, SystemTime)>) {
+        let Some(path) = Self::find_config_file(start) else {
+            log::info!("No config file found, using defaults");
+            return (Config::default(), None);
+        };
+
+        // A broken file is still cached with its mtime so fixing it triggers a reload.
+        let config = Self::load_file(&path).unwrap_or_else(|e| {
+            log::warn!("Ignoring config file {:?}: {}", path, e);
+            Config::default()
+        });
+        let mtime = file_mtime(&path).unwrap_or(SystemTime::UNIX_EPOCH);
+        log::info!("Found config file: {:?}", path);
+        (config, Some((path, mtime)))
     }
 
     /// Load configuration from a YAML file
@@ -223,6 +297,35 @@ impl Config {
         }
 
         false
+    }
+}
+
+fn first_candidate_in(dir: &Path) -> Option<PathBuf> {
+    CONFIG_FILE_NAMES
+        .iter()
+        .map(|name| dir.join(name))
+        .find(|path| path.exists())
+}
+
+fn file_mtime(path: &Path) -> Option<SystemTime> {
+    std::fs::metadata(path).and_then(|m| m.modified()).ok()
+}
+
+/// Cheap per-call re-validation replacing the full walk: stat the cwd
+/// candidates (catches a config newly created where formatting runs) and the
+/// discovered file's mtime (catches edits; a vanished file forces a re-walk).
+/// A config newly created outside cwd (parent directory or home) is not
+/// detected until something else invalidates the cache.
+fn cache_is_fresh(cwd: &Path, cache: &DiscoveryCache) -> bool {
+    let cwd_candidate = first_candidate_in(cwd);
+    match &cache.found {
+        Some((path, mtime)) => {
+            if cwd_candidate.is_some_and(|candidate| candidate != *path) {
+                return false;
+            }
+            file_mtime(path) == Some(*mtime)
+        }
+        None => cwd_candidate.is_none(),
     }
 }
 
@@ -415,6 +518,140 @@ formatting:
         if let Err(RfmtError::ConfigError { message, .. }) = result {
             assert!(message.contains("parse"));
         }
+    }
+
+    // The discovery cache is process-global; serialize the tests that touch it.
+    static CACHE_TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    fn write_indent_config(path: &Path, indent_width: usize) {
+        std::fs::write(
+            path,
+            format!("formatting:\n  indent_width: {indent_width}\n"),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn test_resolve_explicit_missing_path_errors_loudly() {
+        let result = Config::resolve(Some(Path::new("/nonexistent/rfmt.yml")));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_resolve_explicit_broken_file_errors_loudly() {
+        let mut file = NamedTempFile::new().unwrap();
+        file.write_all(b"formatting:\n  line_length: not_a_number\n")
+            .unwrap();
+        file.flush().unwrap();
+
+        assert!(Config::resolve(Some(file.path())).is_err());
+    }
+
+    #[test]
+    fn test_resolve_explicit_path_cached_and_reloaded_on_change() {
+        let _lock = CACHE_TEST_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("custom.yml");
+
+        write_indent_config(&path, 4);
+        assert_eq!(
+            Config::resolve(Some(&path))
+                .unwrap()
+                .formatting
+                .indent_width,
+            4
+        );
+
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        write_indent_config(&path, 3);
+        assert_eq!(
+            Config::resolve(Some(&path))
+                .unwrap()
+                .formatting
+                .indent_width,
+            3
+        );
+    }
+
+    #[test]
+    fn test_discovered_broken_file_falls_back_to_defaults() {
+        let _lock = CACHE_TEST_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("rfmt.yml"),
+            "formatting:\n  indent_width: 99\n",
+        )
+        .unwrap();
+
+        // Unlike an explicit path, discovery swallows load errors.
+        let config = Config::discover_cached_from(dir.path());
+        assert_eq!(config.formatting.indent_width, 2);
+    }
+
+    #[test]
+    fn test_discovery_cache_reloads_on_mtime_change() {
+        let _lock = CACHE_TEST_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("rfmt.yml");
+
+        write_indent_config(&path, 4);
+        assert_eq!(
+            Config::discover_cached_from(dir.path())
+                .formatting
+                .indent_width,
+            4
+        );
+
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        write_indent_config(&path, 3);
+        assert_eq!(
+            Config::discover_cached_from(dir.path())
+                .formatting
+                .indent_width,
+            3
+        );
+    }
+
+    #[test]
+    fn test_discovery_cache_missing_file_falls_back_to_walk() {
+        let _lock = CACHE_TEST_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let sub = dir.path().join("sub");
+        std::fs::create_dir(&sub).unwrap();
+        let path = dir.path().join("rfmt.yml");
+
+        write_indent_config(&path, 4);
+        assert_eq!(
+            Config::discover_cached_from(&sub).formatting.indent_width,
+            4
+        );
+
+        std::fs::remove_file(&path).unwrap();
+        assert_eq!(
+            Config::discover_cached_from(&sub).formatting.indent_width,
+            2
+        );
+    }
+
+    #[test]
+    fn test_discovery_nothing_found_cached_then_new_config_in_cwd() {
+        let _lock = CACHE_TEST_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+
+        assert_eq!(
+            Config::discover_cached_from(dir.path())
+                .formatting
+                .indent_width,
+            2
+        );
+
+        write_indent_config(&dir.path().join("rfmt.yml"), 5);
+        assert_eq!(
+            Config::discover_cached_from(dir.path())
+                .formatting
+                .indent_width,
+            5
+        );
     }
 
     #[test]
