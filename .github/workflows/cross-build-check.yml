@@ -10,6 +10,8 @@ on:
       - 'ext/rfmt/Cargo.toml'
       - 'Cargo.lock'
       - 'ext/rfmt/extconf.rb'
+      - '.github/workflows/cross-build-check.yml'
+      - 'scripts/ci/cross_env.sh'
 
 jobs:
   cross-build:
