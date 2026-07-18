@@ -2,7 +2,6 @@
 
 require_relative 'rfmt/version'
 require_relative 'rfmt/native_extension_loader'
-require_relative 'rfmt/prism_bridge'
 
 # Load native extension with version-aware loader
 Rfmt::NativeExtensionLoader.load_extension
@@ -41,20 +40,6 @@ module Rfmt
     end
   end
   private_class_method :wrap_native_error
-
-  # Temporary for the prism migration: the pre-switchover pipeline
-  # (PrismBridge JSON round-trip), kept so differential_check.rb can compare
-  # it against the native .format. Deleted in phase 7.
-  def self.format_legacy(source)
-    prism_json = PrismBridge.parse(source)
-    format_code_legacy(source, prism_json)
-  rescue PrismBridge::ParseError => e
-    raise Error, "Failed to parse Ruby code: #{e.message}"
-  rescue RfmtError
-    raise
-  rescue StandardError => e
-    raise Error, "Unexpected error during formatting: #{e.class}: #{e.message}"
-  end
 
   # Format a Ruby file
   # @param path [String] Path to Ruby file

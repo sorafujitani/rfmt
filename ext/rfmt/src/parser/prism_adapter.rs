@@ -1,3 +1,8 @@
+//! Test support only: no production caller since the phase 7 legacy-path
+//! deletion. Deserializes the frozen golden JSON fixtures under
+//! tests/fixtures/parity/ so native_parity.rs can pin NativeAdapter's output
+//! against future ruby-prism crate bumps.
+
 use crate::ast::{Comment, CommentPosition, CommentType, FormattingInfo, Location, Node, NodeType};
 use crate::error::{Result, RfmtError};
 use crate::parser::RubyParser;
