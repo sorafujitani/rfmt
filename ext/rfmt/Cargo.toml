@@ -30,6 +30,7 @@ log = { version = "0.4", features = ["std"] }
 # Configuration
 dirs = "5.0"
 globset = "0.4"
+ruby-prism = "1.9"
 
 [dev-dependencies]
 tempfile = "3.8"
