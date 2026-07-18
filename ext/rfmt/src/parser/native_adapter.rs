@@ -951,11 +951,10 @@ fn constant_path_full_name(path: &ruby_prism::ConstantPathNode<'_>) -> Option<St
                 if let Some(inner) = node.as_constant_path_node() {
                     parts.push(constant_id_string(&inner.name()?));
                     parent = inner.parent();
-                } else if let Some(read) = node.as_constant_read_node() {
+                } else {
+                    let read = node.as_constant_read_node()?;
                     parts.push(constant_id_string(&read.name()));
                     break;
-                } else {
-                    return None;
                 }
             }
         }
