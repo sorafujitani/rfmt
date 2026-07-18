@@ -79,7 +79,7 @@ impl Formatter {
             _ => {
                 // Use the rule registry for specific node types
                 let rule = self.registry.get_rule(&node.node_type);
-                rule.format(node, ctx, &self.registry)
+                rule.format(node, ctx, self.registry)
             }
         }
     }

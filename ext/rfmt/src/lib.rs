@@ -25,7 +25,7 @@ fn format_ruby_code(ruby: &Ruby, source: String) -> Result<String, Error> {
     let parser = NativeAdapter::new();
     let ast = parser.parse(&source).map_err(|e| e.to_magnus_error(ruby))?;
 
-    let config = Config::discover().map_err(|e| e.to_magnus_error(ruby))?;
+    let config = Config::resolve(None).map_err(|e| e.to_magnus_error(ruby))?;
     let formatter = Formatter::new(config);
 
     let formatted = formatter
