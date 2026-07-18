@@ -33,7 +33,7 @@ body:
         - Rust - Config (ext/rfmt/src/config/)
         - Rust - Parser (ext/rfmt/src/parser/)
         - Rust - Error Handling (ext/rfmt/src/error/)
-        - Ruby - PrismBridge (lib/rfmt/)
+        - Ruby (lib/rfmt/)
         - Ruby - CLI (exe/)
         - Multiple layers
     validations:

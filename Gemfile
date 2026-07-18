@@ -5,9 +5,6 @@ source 'https://rubygems.org'
 # Specify your gem's dependencies in rfmt.gemspec
 gemspec
 
-# Parser
-gem 'prism', '~> 1.9.0'
-
 # CLI
 gem 'diff-lcs', '~> 1.5'
 gem 'diffy', '~> 3.4'
@@ -35,5 +32,8 @@ end
 
 # Ruby LSP integration (optional)
 group :development do
+  # Development-time only: corpus_check.rb's AST comparator and
+  # gen_parity_fixtures.rb parse with Ruby Prism; runtime never requires it.
+  gem 'prism', '~> 1.9.0'
   gem 'ruby-lsp', '>= 0.17.0'
 end

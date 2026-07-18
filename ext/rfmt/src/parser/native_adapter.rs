@@ -1,8 +1,10 @@
 //! Native ruby-prism -> internal AST converter (prism migration phases 3-4).
 //!
-//! Ports the conversion semantics of `lib/rfmt/prism_bridge.rb` exactly so the
-//! two paths can be diffed node-by-node (`tests/native_parity.rs`), including
-//! the live per-type metadata keys and the flat root comment list.
+//! Ports the conversion semantics of the pre-migration Ruby bridge
+//! (`lib/rfmt/prism_bridge.rb`, now only in git history) exactly, so its
+//! frozen output can be diffed node-by-node (`tests/native_parity.rs`),
+//! including the live per-type metadata keys and the flat root comment list.
+//! Comments below cite the bridge's files and line numbers as of deletion.
 
 use crate::ast::{
     Comment, CommentPosition, CommentType, FormattingInfo, Location, Node as AstNode, NodeType,
@@ -44,7 +46,7 @@ impl RubyParser for NativeAdapter {
             .collect();
         if !errors.is_empty() {
             // ParseError so lib/rfmt.rb surfaces it as Rfmt::Error
-            // "Failed to parse Ruby code: ..." (PrismBridge parity).
+            // "Failed to parse Ruby code: ..." (same shape the pre-migration Ruby bridge raised).
             return Err(RfmtError::ParseError(format!(
                 "Parse errors:\n{}",
                 errors.join("\n")

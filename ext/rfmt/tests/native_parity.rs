@@ -1,11 +1,12 @@
-//! Parity tests for the native ruby-prism converter (migration phases 3-4).
+//! Parity tests for the native ruby-prism converter.
 //!
 //! Each fixture under tests/fixtures/parity/ exists as a .rb source and the
-//! JSON the Ruby PrismBridge produced for it (regenerate with
-//! `bundle exec ruby scripts/gen_parity_fixtures.rb`). The .rb goes through
-//! the new NativeAdapter, the .json through the legacy PrismAdapter, and the
-//! trees must agree on node types, all six location fields, children,
-//! formatting.multiline, metadata, and comments.
+//! frozen golden JSON the (now deleted) Ruby PrismBridge produced for it.
+//! The .rb goes through NativeAdapter, the .json through the test-support
+//! PrismAdapter, and the trees must agree on node types, all six location
+//! fields, children, formatting.multiline, metadata, and comments. This pins
+//! NativeAdapter's output shape against future ruby-prism crate bumps; only
+//! `bundle exec ruby scripts/gen_parity_fixtures.rb` may regenerate the JSON.
 
 use rfmt::ast::{Location, Node};
 use rfmt::parser::{NativeAdapter, PrismAdapter, RubyParser};

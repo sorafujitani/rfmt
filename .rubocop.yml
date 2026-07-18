@@ -34,7 +34,6 @@ Metrics/AbcSize:
   Exclude:
     - 'spec/snapshot_spec.rb'
     - 'lib/rfmt/cli.rb'
-    - 'lib/rfmt/prism_bridge.rb'
     - 'bin/release'
     - 'scripts/**/*'
 
@@ -44,8 +43,6 @@ Metrics/MethodLength:
     - 'spec/snapshot_spec.rb'
     - 'lib/rfmt.rb'
     - 'lib/rfmt/cli.rb'
-    - 'lib/rfmt/prism_bridge.rb'
-    - 'lib/rfmt/prism_node_extractor.rb'
     - 'bin/release'
     - 'Rakefile'
     - 'scripts/**/*'
@@ -54,7 +51,6 @@ Metrics/ClassLength:
   Max: 200
   Exclude:
     - 'lib/rfmt/cli.rb'
-    - 'lib/rfmt/prism_bridge.rb'
     - 'bin/release'
     - 'scripts/**/*'
 
@@ -62,13 +58,11 @@ Metrics/CyclomaticComplexity:
   Max: 10
   Exclude:
     - 'lib/rfmt/cli.rb'
-    - 'lib/rfmt/prism_bridge.rb'
 
 Metrics/PerceivedComplexity:
   Max: 10
   Exclude:
     - 'lib/rfmt/cli.rb'
-    - 'lib/rfmt/prism_bridge.rb'
 
 # Lint violations that are acceptable for specific cases
 Lint/DuplicateBranch:
