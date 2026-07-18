@@ -3,17 +3,13 @@
 require 'yaml'
 
 module Rfmt
-  # Configuration management for rfmt
+  # File selection and cache concerns only: formatter settings (indent_width
+  # etc.) live in the Rust Config, reached via Rfmt.format(config_path:).
   class Configuration
     class ConfigError < StandardError; end
 
     DEFAULT_CONFIG = {
       'version' => '1.0',
-      'formatting' => {
-        'line_length' => 100,
-        'indent_width' => 2,
-        'indent_style' => 'spaces'
-      },
       'include' => ['**/*.rb'],
       'exclude' => ['vendor/**/*', 'tmp/**/*', 'node_modules/**/*']
     }.freeze
@@ -43,11 +39,6 @@ module Rfmt
       (included_files - excluded_files).select { |f| File.file?(f) }
     end
 
-    # Get formatting configuration
-    def formatting_config
-      @config['formatting']
-    end
-
     private
 
     def load_configuration(options)
@@ -64,16 +55,7 @@ module Rfmt
       options.delete('file')
       config = deep_merge(config, options) unless options.empty?
 
-      validate_config!(config)
       config
-    end
-
-    def validate_config!(config)
-      line_length = config.dig('formatting', 'line_length')
-      raise ConfigError, 'line_length must be positive' if line_length && line_length <= 0
-
-      indent_width = config.dig('formatting', 'indent_width')
-      raise ConfigError, 'indent_width must be positive' if indent_width && indent_width <= 0
     end
 
     def deep_merge(hash1, hash2)

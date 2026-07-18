@@ -17,14 +17,22 @@ module Rfmt
   # these two kinds map onto the public exception classes.
   NATIVE_PARSE_ERROR_PREFIX = '[Rfmt::ParseError] '
   NATIVE_VALIDATION_ERROR_PREFIX = '[Rfmt::ValidationError] '
-  private_constant :NATIVE_PARSE_ERROR_PREFIX, :NATIVE_VALIDATION_ERROR_PREFIX
+  NATIVE_CONFIG_ERROR_PREFIX = '[Rfmt::ConfigError] '
+  private_constant :NATIVE_PARSE_ERROR_PREFIX, :NATIVE_VALIDATION_ERROR_PREFIX,
+                   :NATIVE_CONFIG_ERROR_PREFIX
 
   # Format Ruby source code
-  # Parsing and output validation both happen natively in Rust
+  # Parsing, config resolution, and output validation all happen natively in Rust
   # @param source [String] Ruby source code to format
+  # @param config_path [String, nil] Explicit config file path; nil discovers
+  #   rfmt.yml/.rfmt.yml from the current directory upward (cached per process)
   # @return [String] Formatted Ruby code
-  def self.format(source)
-    format_code(source)
+  def self.format(source, config_path: nil)
+    if config_path
+      format_code_with_config(source, config_path.to_s)
+    else
+      format_code(source)
+    end
   rescue StandardError => e
     raise wrap_native_error(e)
   end
@@ -35,6 +43,8 @@ module Rfmt
       Error.new("Failed to parse Ruby code: #{message.delete_prefix(NATIVE_PARSE_ERROR_PREFIX)}")
     elsif message.start_with?(NATIVE_VALIDATION_ERROR_PREFIX)
       ValidationError.new(message.delete_prefix(NATIVE_VALIDATION_ERROR_PREFIX))
+    elsif message.start_with?(NATIVE_CONFIG_ERROR_PREFIX)
+      Error.new(message.delete_prefix(NATIVE_CONFIG_ERROR_PREFIX))
     else
       Error.new("Unexpected error during formatting: #{error.class}: #{message}")
     end

@@ -45,11 +45,15 @@ module Rfmt
 
   # Command Line Interface for rfmt
   class CLI < Thor
+    def self.exit_on_failure?
+      true
+    end
+
     # Constants
     PROGRESS_THRESHOLD = 20  # Show progress for file counts >= this
     PROGRESS_INTERVAL = 10   # Update progress every N files
 
-    class_option :config, type: :string, desc: 'Path to configuration file'
+    class_option :config, type: :string, desc: 'Path to configuration file (formatting options and file selection)'
     class_option :verbose, type: :boolean, desc: 'Verbose output'
 
     default_command :format
@@ -184,6 +188,8 @@ module Rfmt
 
     def load_config
       if options[:config]
+        raise Thor::Error, "Configuration file not found: #{options[:config]}" unless File.exist?(options[:config])
+
         Configuration.new(file: options[:config])
       else
         Configuration.discover
@@ -256,7 +262,7 @@ module Rfmt
       start_time = Time.now
       source = File.read(file)
 
-      formatted = Rfmt.format(source)
+      formatted = Rfmt.format(source, config_path: options[:config])
       changed = source != formatted
 
       {
