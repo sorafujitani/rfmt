@@ -7,9 +7,7 @@ module CorpusCheck
   CORPUS_GLOBS = ['lib/**/*.rb', 'spec/**/*.rb', 'scripts/**/*.rb'].freeze
 
   # Files with known formatter bugs, skipped with a warning (exit stays 0).
-  KNOWN_FAILURES = [
-    'lib/rfmt/prism_bridge.rb' # comments inside a do..end block are re-emitted after the block on every pass (idempotency bug)
-  ].freeze
+  KNOWN_FAILURES = [].freeze
 
   # Structural AST equality that ignores source positions, so that a
   # reformatted file can be compared against its original.
