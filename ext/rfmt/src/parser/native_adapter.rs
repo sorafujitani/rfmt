@@ -44,7 +44,7 @@ impl RubyParser for NativeAdapter {
             .collect();
         if !errors.is_empty() {
             // ParseError so lib/rfmt.rb surfaces it as Rfmt::Error
-            // "Failed to parse Ruby code: ..." (PrismBridge parity).
+            // "Failed to parse Ruby code: ..." (same shape the pre-migration Ruby bridge raised).
             return Err(RfmtError::ParseError(format!(
                 "Parse errors:\n{}",
                 errors.join("\n")
