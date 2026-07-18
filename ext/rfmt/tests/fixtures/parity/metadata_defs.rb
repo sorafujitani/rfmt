@@ -27,3 +27,7 @@ end
 def none
   0
 end
+
+def empty_parens()
+  nil
+end

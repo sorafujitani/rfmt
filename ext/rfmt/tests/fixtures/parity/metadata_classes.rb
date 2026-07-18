@@ -22,3 +22,9 @@ end
 
 module Gamma
 end
+
+class ::TopScoped < ::Deep::Nested::Base
+end
+
+module Alpha::Beta::Gamma
+end
