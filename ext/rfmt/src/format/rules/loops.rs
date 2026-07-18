@@ -12,7 +12,8 @@ use crate::error::Result;
 use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
-    format_leading_comments, format_statements, format_trailing_comment, FormatRule,
+    format_leading_comments, format_statements, format_trailing_comment,
+    mark_comments_in_range_emitted, FormatRule,
 };
 
 /// Rule for formatting while loops.
@@ -80,6 +81,7 @@ fn format_postfix_while_until(node: &Node, ctx: &mut FormatContext, keyword: &st
     // Extract from source for postfix form
     if let Some(source_text) = ctx.extract_source(node) {
         docs.push(text(source_text));
+        mark_comments_in_range_emitted(ctx, node.location.start_line, node.location.end_line);
     }
 
     // Trailing comment
