@@ -43,5 +43,5 @@ jobs:
         platform: ${{ matrix.platform }}
         ruby-versions: '3.3,3.4'
         # rb-sys-dock collapses the pre-script to one line, so it must be a
-        # single command; the actual script lives in the repo.
-        pre-script: bash scripts/ci/cross_diag.sh
+        # single command. Sourced (not executed) so the exports reach cargo.
+        pre-script: . scripts/ci/cross_env.sh
