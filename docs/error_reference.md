@@ -395,44 +395,36 @@ Help: https://rfmt.dev/errors/E006
 
 **Type:** `Rfmt::PrismError`
 
-**Description:** Error in Prism parser integration.
+**Description:** Error in the embedded prism parser integration. Parsing happens inside the Rust extension via the statically linked ruby-prism crate; the prism gem is not used at runtime.
 
 **Common Causes:**
-- Prism parser version mismatch
-- Invalid JSON from parser
 - Internal parser error
+- Unexpected AST structure
 
 **Example Error:**
 
 ```
-[Rfmt::PrismError] Prism integration error: Failed to parse JSON from Prism
-Invalid node structure in AST
+[Rfmt::PrismError] Prism integration error: unexpected node structure
 
 Help: https://rfmt.dev/errors/E007
 ```
 
 **Solutions:**
 
-1. **Update dependencies:**
+1. **Update rfmt:**
    ```bash
-   bundle update prism rfmt
+   gem update rfmt
    ```
 
-2. **Verify Prism installation:**
-   ```bash
-   gem list prism
-   ```
-
-3. **Check for corruption:**
+2. **Rebuild the extension (source installs):**
    ```bash
    bundle exec rake clean
    bundle exec rake compile
    ```
 
-4. **Report the issue:**
+3. **Report the issue:**
    This is an internal error. Please report with:
    - rfmt version
-   - Prism gem version
    - Code that triggers the error
 
 **Related Issues:**

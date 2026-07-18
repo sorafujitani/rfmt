@@ -270,22 +270,6 @@ config = {
 formatted = Rfmt.format(source, config: config)
 ```
 
-### Parse and Inspect AST
-
-```ruby
-require 'rfmt'
-
-source = "class Foo\nend"
-
-# Parse to JSON AST
-ast_json = Rfmt::PrismBridge.parse(source)
-ast = JSON.parse(ast_json)
-
-# Inspect structure
-puts ast['ast']['node_type']  # => "program_node"
-puts ast['comments'].length   # => 0
-```
-
 ### Error Handling
 
 ```ruby
