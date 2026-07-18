@@ -1,0 +1,43 @@
+name: Cross-build check
+
+# Manual gate for changes that affect native compilation (e.g. new -sys
+# crates): proves every precompiled target still builds without cutting a
+# release.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'ext/rfmt/Cargo.toml'
+      - 'Cargo.lock'
+      - 'ext/rfmt/extconf.rb'
+
+jobs:
+  cross-build:
+    name: Cross build ${{ matrix.platform }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - x86_64-linux
+          - x86_64-linux-musl
+          - aarch64-linux
+          - aarch64-linux-musl
+          - x86_64-darwin
+          - arm64-darwin
+          - x64-mingw-ucrt
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.4'
+
+    - name: Clean vendor directory
+      run: rm -rf vendor/bundle
+
+    - uses: oxidize-rb/actions/cross-gem@v1
+      with:
+        platform: ${{ matrix.platform }}
+        ruby-versions: '3.3,3.4'

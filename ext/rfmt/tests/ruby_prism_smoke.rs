@@ -35,7 +35,10 @@ value = compute(sql) # trailing comment
 
     let first = statements.body().iter().next().expect("first statement");
     let loc = first.location();
-    assert_eq!(&source[loc.start_offset()..loc.end_offset()], "result = fetch&.body");
+    assert_eq!(
+        &source[loc.start_offset()..loc.end_offset()],
+        "result = fetch&.body"
+    );
 }
 
 #[test]
