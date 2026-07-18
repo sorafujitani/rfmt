@@ -266,6 +266,14 @@ cargo test test_node_creation
 cargo test parse
 ```
 
+### コーパスチェック
+
+コーパスチェックはリポジトリ内のすべての Ruby ファイルをフォーマットし、再フォーマット後の出力が構造的に同一の AST にパースされることを prism gem（開発専用の依存）で検証します。パリティフィクスチャとあわせて、フォーマッタ変更の主要な安全網です:
+
+```bash
+bundle exec ruby scripts/corpus_check.rb
+```
+
 ### カバレッジ
 
 ```bash
@@ -511,14 +519,7 @@ ls -la lib/rfmt/rfmt.so      # Linux
 
 #### 問題: "Prism integration error"
 
-```bash
-# Prism gemのバージョンを確認
-bundle list | grep prism
-
-# ~> 1.6.0 であるべき
-# 必要に応じて更新
-bundle update prism
-```
+パースは Rust 拡張の内部で静的リンクされた ruby-prism crate により行われるため、このエラーは依存関係の問題ではなく rfmt 自体のバグを示します。Gemfile の prism gem はコーパスチェックとパリティフィクスチャで使う開発専用の依存であり、更新しても実行時のパースには影響しません。エラーを引き起こした入力を添えて issue を作成してください。
 
 #### 問題: Segmentation fault
 

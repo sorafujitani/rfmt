@@ -1,5 +1,26 @@
 # パフォーマンスベンチマーク
 
+## インプロセスのフォーマットスループット（現行）
+
+パースとフォーマットはどちらも Rust 拡張の内部で実行されます（ruby-prism crate、prism は静的リンク）。`scripts/bench_format.rb` で rfmt 自身の `lib/` コーパス（15ファイル、ウォームアップ後5ラウンド）を arm64 macOS・Ruby 3.4 上で測定したインプロセスのスループット:
+
+| パイプライン | インプロセスのフォーマット時間 |
+|----------|------------------------|
+| ネイティブパース移行前（Ruby Prism パース + JSON で Rust へ受け渡し。歴史的な値で、現在のチェックアウトからは再現不能） | 4.28 ms/ファイル |
+| 移行後（パースとフォーマットを Rust で実行） | 0.19 ms/ファイル |
+
+再現方法:
+
+```bash
+bundle exec ruby scripts/bench_format.rb
+```
+
+コールドな CLI 実行（同一マシンで `bundle exec rfmt --check FILE` を5回実行した中央値）は Bundler 経由で約 0.23 秒、Bundler なし（`ruby -Ilib exe/rfmt --check FILE`）で約 0.11 秒です。Ruby VM と Bundler の起動時間が支配的で、フォーマット自体は誤差の範囲です。したがってパイプラインの変更はインプロセスで測定する必要があります。
+
+## RuboCop との過去の CLI 比較（rfmt 1.3.3）
+
+以下はすべてネイティブパース移行前に rfmt 1.3.3 で測定したものです。コールドな CLI のウォールクロック時間の比較であり、どちらのツールも VM 起動時間が支配的です。ベンチマークスクリプトはローカルの `tmp/` ディレクトリにありリポジトリには含まれていないため、これらの数値は過去の参考値としてのみ残しており、チェックアウトから再現することはできません。
+
 ## テスト環境
 
 ### システム
@@ -95,16 +116,12 @@ RuboCop:
 - RuboCop平均実行時間: 797-798ms
 - 実行時間差: 約678ms
 
-## 生データ
+## 生データとスクリプト
 
-完全なベンチマーク結果:
-- [`tmp/benchmark_test/comparison_report.txt`](../tmp/benchmark_test/comparison_report.txt)
+上記の過去の比較はローカルの `tmp/benchmark_test/` ディレクトリのスクリプトで生成したもので、リポジトリには含まれていません。以前の実行による CLI タイミングの生データは [`benchmark/results.json`](benchmark/results.json) に残しています。
 
-## ベンチマークスクリプト
+現行パイプラインの再現可能なベンチマークは [`scripts/bench_format.rb`](../scripts/bench_format.rb) です:
 
-ソース: [`tmp/benchmark_test/comparison_benchmark.rb`](../tmp/benchmark_test/comparison_benchmark.rb)
-
-ベンチマーク実行方法:
 ```bash
-ruby tmp/benchmark_test/comparison_benchmark.rb
+bundle exec ruby scripts/bench_format.rb
 ```

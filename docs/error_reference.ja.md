@@ -395,44 +395,36 @@ exclude:                  # Globパターンの配列
 
 **タイプ:** `Rfmt::PrismError`
 
-**説明:** Prismパーサー統合のエラーです。
+**説明:** 組み込みprismパーサー統合のエラーです。パースは Rust 拡張の内部で静的リンクされた ruby-prism crate により行われ、prism gem は実行時には使われません。
 
 **よくある原因:**
-- Prismパーサーのバージョン不一致
-- パーサーからの無効なJSON
 - 内部パーサーエラー
+- 予期しないAST構造
 
 **エラー例:**
 
 ```
-[Rfmt::PrismError] Prism統合エラー: PrismからのJSON解析に失敗
-ASTのノード構造が無効です
+[Rfmt::PrismError] Prism統合エラー: 予期しないノード構造
 
 ヘルプ: https://rfmt.dev/errors/E007
 ```
 
 **解決方法:**
 
-1. **依存関係を更新:**
+1. **rfmtを更新:**
    ```bash
-   bundle update prism rfmt
+   gem update rfmt
    ```
 
-2. **Prismのインストールを確認:**
-   ```bash
-   gem list prism
-   ```
-
-3. **破損を確認:**
+2. **拡張を再ビルド（ソースインストールの場合）:**
    ```bash
    bundle exec rake clean
    bundle exec rake compile
    ```
 
-4. **問題を報告:**
+3. **問題を報告:**
    これは内部エラーです。以下の情報で報告してください：
    - rfmtバージョン
-   - Prism gemバージョン
    - エラーをトリガーするコード
 
 **関連Issue:**

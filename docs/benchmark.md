@@ -1,5 +1,26 @@
 # Performance Benchmark
 
+## In-Process Formatting Throughput (current)
+
+Parsing and formatting both run inside the Rust extension (the ruby-prism crate, with prism statically linked). In-process throughput, measured with `scripts/bench_format.rb` over rfmt's own `lib/` corpus (15 files, 5 warm rounds) on arm64 macOS, Ruby 3.4:
+
+| Pipeline | In-process format time |
+|----------|------------------------|
+| Before native parsing (Ruby Prism parse + JSON handoff to Rust; historical, not reproducible from this checkout) | 4.28 ms/file |
+| After (parsing and formatting in Rust) | 0.19 ms/file |
+
+Reproduce:
+
+```bash
+bundle exec ruby scripts/bench_format.rb
+```
+
+Cold CLI wall clock (`bundle exec rfmt --check FILE`, median of 5 runs on the same machine) is about 0.23 s with Bundler, 0.11 s without (`ruby -Ilib exe/rfmt --check FILE`). Ruby VM and Bundler startup dominate; formatting itself is a rounding error. Pipeline changes must therefore be measured in-process.
+
+## Historical CLI Comparison vs RuboCop (rfmt 1.3.3)
+
+Everything below was measured before the native parsing migration, with rfmt 1.3.3. It compares cold CLI wall-clock time, which is dominated by VM startup for both tools. The benchmark scripts lived in a local `tmp/` directory and are not part of the repository, so these numbers are kept for historical context only and cannot be reproduced from a checkout.
+
 ## Test Environment
 
 ### System
@@ -95,16 +116,12 @@ Execution time measurements across different file counts and line counts.
 - RuboCop average execution: 797-798ms
 - Execution time difference: ~678ms
 
-## Raw Data
+## Raw Data and Scripts
 
-Full benchmark results:
-- [`tmp/benchmark_test/comparison_report.txt`](../tmp/benchmark_test/comparison_report.txt)
+The historical comparison above was produced by scripts in a local `tmp/benchmark_test/` directory that is not checked into the repository. Raw CLI timing data from an earlier run is kept in [`benchmark/results.json`](benchmark/results.json).
 
-## Benchmark Script
+The reproducible benchmark for the current pipeline is [`scripts/bench_format.rb`](../scripts/bench_format.rb):
 
-Source: [`tmp/benchmark_test/comparison_benchmark.rb`](../tmp/benchmark_test/comparison_benchmark.rb)
-
-Run benchmark:
 ```bash
-ruby tmp/benchmark_test/comparison_benchmark.rb
+bundle exec ruby scripts/bench_format.rb
 ```

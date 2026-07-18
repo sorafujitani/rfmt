@@ -23,7 +23,7 @@ This project adheres to the Contributor Covenant [Code of Conduct](CODE_OF_CONDU
 
 ### Prerequisites
 
-- Ruby 3.0 or higher
+- Ruby 3.3 or higher
 - Rust 1.70 or higher
 - Git
 - Bundler
@@ -100,7 +100,7 @@ rfmt/
 - **error/**: Error types and handling (E001-E999)
 - **logging/**: Structured logging system
 - **debug/**: Debug context and macros
-- **parser/**: AST parsing from Prism JSON
+- **parser/**: Native parsing via the ruby-prism crate (prism statically linked)
 - **formatter/**: Formatting rules engine
 - **emitter/**: Formatted code output
 

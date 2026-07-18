@@ -75,10 +75,14 @@ jobs:
     - name: Clean vendor directory
       run: rm -rf vendor/bundle
 
-    - uses: oxidize-rb/actions/cross-gem@v1
+    # pre-script support is unreleased (v1.4.4 accepts but ignores it); pin main
+    - uses: oxidize-rb/actions/cross-gem@85175a9d5f63d4491253e957d3fc3f4ed7f17534
       with:
         platform: ${{ matrix.platform }}
         ruby-versions: '3.3,3.4'
+        # rb-sys-dock collapses the pre-script to one line, so it must be a
+        # single command. Sourced (not executed) so the exports reach cargo.
+        pre-script: . scripts/ci/cross_env.sh
 
     - name: Upload gem artifact
       uses: actions/upload-artifact@v4
