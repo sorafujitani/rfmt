@@ -391,6 +391,8 @@ impl std::str::FromStr for NodeType {
 
 impl NodeType {
     /// Parse a node type from a string (convenience wrapper for `FromStr`)
+    // Infallible unlike the trait method; flagged only since the module went pub
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Self {
         s.parse().unwrap()
     }

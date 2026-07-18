@@ -34,7 +34,7 @@ GEM
     parser (3.3.10.2)
       ast (~> 2.4.1)
       racc
-    prism (1.6.0)
+    prism (1.9.0)
     psych (5.3.1)
       date
       stringio
@@ -114,7 +114,7 @@ DEPENDENCIES
   irb (< 1.15)
   lefthook (~> 1.5)
   parallel (~> 1.24)
-  prism (~> 1.6.0)
+  prism (~> 1.9.0)
   rake (~> 13.0)
   rake-compiler (~> 1.2)
   rdoc (< 6.7)

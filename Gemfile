@@ -6,7 +6,7 @@ source 'https://rubygems.org'
 gemspec
 
 # Parser
-gem 'prism', '~> 1.6.0'
+gem 'prism', '~> 1.9.0'
 
 # CLI
 gem 'diff-lcs', '~> 1.5'

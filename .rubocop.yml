@@ -4,6 +4,7 @@ AllCops:
   Exclude:
     - 'vendor/**/*'
     - 'spec/fixtures/**/*'
+    - 'ext/rfmt/tests/fixtures/**/*'
     - 'tmp/**/*'
     - 'pkg/**/*'
     - 'ext/rfmt/spec/**/*'
