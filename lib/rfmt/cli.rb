@@ -125,11 +125,11 @@ module Rfmt
       say "Rust extension: #{Rfmt.rust_version}"
     end
 
-    desc 'config', 'Show current configuration'
+    desc 'config', 'Show the effective configuration the formatter will use'
     def config_cmd
-      config = load_config
-      require 'json'
-      say JSON.pretty_generate(config.config)
+      say Rfmt.resolved_config(config_path: options[:config])
+    rescue Rfmt::Error => e
+      raise Thor::Error, e.message
     end
 
     desc 'cache SUBCOMMAND', 'Manage cache'
@@ -188,11 +188,21 @@ module Rfmt
 
     def load_config
       if options[:config]
-        raise Thor::Error, "Configuration file not found: #{options[:config]}" unless File.exist?(options[:config])
-
+        validate_explicit_config!(options[:config])
         Configuration.new(file: options[:config])
       else
         Configuration.discover
+      end
+    end
+
+    # Fail fast once instead of repeating the same load error per file
+    def validate_explicit_config!(path)
+      raise Thor::Error, "Configuration file not found: #{path}" unless File.exist?(path)
+
+      begin
+        Rfmt.resolved_config(config_path: path)
+      rescue Rfmt::Error => e
+        raise Thor::Error, e.message
       end
     end
 

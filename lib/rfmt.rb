@@ -44,7 +44,7 @@ module Rfmt
     elsif message.start_with?(NATIVE_VALIDATION_ERROR_PREFIX)
       ValidationError.new(message.delete_prefix(NATIVE_VALIDATION_ERROR_PREFIX))
     elsif message.start_with?(NATIVE_CONFIG_ERROR_PREFIX)
-      Error.new(message.delete_prefix(NATIVE_CONFIG_ERROR_PREFIX))
+      Error.new("Configuration error: #{message.delete_prefix(NATIVE_CONFIG_ERROR_PREFIX)}")
     else
       Error.new("Unexpected error during formatting: #{error.class}: #{message}")
     end
@@ -59,6 +59,15 @@ module Rfmt
     format(source)
   rescue Errno::ENOENT
     raise Error, "File not found: #{path}"
+  end
+
+  # Effective configuration as the Rust formatter resolves it
+  # @param config_path [String, nil] Explicit config file path; nil discovers
+  # @return [String] YAML dump of the resolved configuration
+  def self.resolved_config(config_path: nil)
+    resolved_config_yaml(config_path&.to_s)
+  rescue StandardError => e
+    raise wrap_native_error(e)
   end
 
   # Get version information
@@ -132,7 +141,8 @@ module Rfmt
       current_dir = Dir.pwd
 
       loop do
-        ['.rfmt.yml', '.rfmt.yaml', 'rfmt.yml', 'rfmt.yaml'].each do |filename|
+        # Same search order as the Rust side (config/mod.rs CONFIG_FILE_NAMES)
+        ['rfmt.yml', 'rfmt.yaml', '.rfmt.yml', '.rfmt.yaml'].each do |filename|
           config_path = File.join(current_dir, filename)
           return config_path if File.exist?(config_path)
         end
@@ -150,7 +160,7 @@ module Rfmt
         nil
       end
       if home_dir
-        ['.rfmt.yml', '.rfmt.yaml', 'rfmt.yml', 'rfmt.yaml'].each do |filename|
+        ['rfmt.yml', 'rfmt.yaml', '.rfmt.yml', '.rfmt.yaml'].each do |filename|
           config_path = File.join(home_dir, filename)
           return config_path if File.exist?(config_path)
         end

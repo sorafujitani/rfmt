@@ -52,6 +52,16 @@ fn format_impl(ruby: &Ruby, source: String, config_path: Option<String>) -> Resu
     Ok(formatted)
 }
 
+/// Serialize the effective configuration so Ruby can display exactly what
+/// the formatter will use (CLI `config` command, --config fail-fast check)
+fn resolved_config_yaml(ruby: &Ruby, config_path: Option<String>) -> Result<String, Error> {
+    let config = Config::resolve(config_path.as_deref().map(std::path::Path::new))
+        .map_err(|e| e.to_magnus_error(ruby))?;
+
+    serde_yaml::to_string(&config)
+        .map_err(|e| Error::new(ruby.exception_standard_error(), e.to_string()))
+}
+
 /// Parse Ruby source code and return the internal AST representation
 /// This is useful for debugging and integration testing
 fn parse_to_json(ruby: &Ruby, source: String) -> Result<String, Error> {
@@ -77,6 +87,7 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
         function!(format_ruby_code_with_config, 2),
     )?;
     module.define_singleton_method("parse_to_json", function!(parse_to_json, 1))?;
+    module.define_singleton_method("resolved_config_yaml", function!(resolved_config_yaml, 1))?;
     module.define_singleton_method("rust_version", function!(rust_version, 0))?;
 
     Ok(())

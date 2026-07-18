@@ -115,6 +115,10 @@ struct DiscoveryCache {
 
 static DISCOVERY_CACHE: Mutex<Option<DiscoveryCache>> = Mutex::new(None);
 
+/// Explicit-path loads cached separately, keyed by canonical path + mtime,
+/// so a CLI batch does not re-parse the same YAML once per file.
+static EXPLICIT_CACHE: Mutex<Option<(PathBuf, SystemTime, Config)>> = Mutex::new(None);
+
 impl Config {
     /// Resolve the effective configuration.
     ///
@@ -124,12 +128,36 @@ impl Config {
     /// to defaults (an LSP mid-edit of .rfmt.yml must not break formatting).
     pub fn resolve(explicit_path: Option<&Path>) -> crate::error::Result<Self> {
         match explicit_path {
-            Some(path) => Self::load_file(path),
+            Some(path) => Self::load_explicit_cached(path),
             None => {
                 let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
                 Ok(Self::discover_cached_from(&cwd))
             }
         }
+    }
+
+    fn load_explicit_cached(path: &Path) -> crate::error::Result<Self> {
+        // Canonicalize so a relative path is not confused across cwd changes.
+        let key = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+        // mtime read before the load: a racing write can only make the cache
+        // entry look older than the content, forcing a reload, never staleness.
+        let mtime = file_mtime(&key);
+
+        let mut guard = EXPLICIT_CACHE
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+
+        if let (Some((cached_path, cached_mtime, config)), Some(mtime)) = (guard.as_ref(), mtime) {
+            if *cached_path == key && *cached_mtime == mtime {
+                return Ok(config.clone());
+            }
+        }
+
+        let config = Self::load_file(path)?;
+        if let Some(mtime) = mtime {
+            *guard = Some((key, mtime, config.clone()));
+        }
+        Ok(config)
     }
 
     fn discover_cached_from(cwd: &Path) -> Self {
@@ -286,7 +314,7 @@ fn file_mtime(path: &Path) -> Option<SystemTime> {
 /// Cheap per-call re-validation replacing the full walk: stat the cwd
 /// candidates (catches a config newly created where formatting runs) and the
 /// discovered file's mtime (catches edits; a vanished file forces a re-walk).
-/// A config appearing only in an intermediate parent directory is not
+/// A config newly created outside cwd (parent directory or home) is not
 /// detected until something else invalidates the cache.
 fn cache_is_fresh(cwd: &Path, cache: &DiscoveryCache) -> bool {
     let cwd_candidate = first_candidate_in(cwd);
@@ -517,6 +545,32 @@ formatting:
         file.flush().unwrap();
 
         assert!(Config::resolve(Some(file.path())).is_err());
+    }
+
+    #[test]
+    fn test_resolve_explicit_path_cached_and_reloaded_on_change() {
+        let _lock = CACHE_TEST_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("custom.yml");
+
+        write_indent_config(&path, 4);
+        assert_eq!(
+            Config::resolve(Some(&path))
+                .unwrap()
+                .formatting
+                .indent_width,
+            4
+        );
+
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        write_indent_config(&path, 3);
+        assert_eq!(
+            Config::resolve(Some(&path))
+                .unwrap()
+                .formatting
+                .indent_width,
+            3
+        );
     }
 
     #[test]

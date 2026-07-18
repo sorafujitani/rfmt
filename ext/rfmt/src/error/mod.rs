@@ -17,6 +17,9 @@ pub enum RfmtError {
     #[error("{0}")]
     ValidationError(String),
 
+    #[error("{message}")]
+    ConfigError { message: String },
+
     #[error("Format error: {0}")]
     FormatError(String),
 
@@ -25,9 +28,6 @@ pub enum RfmtError {
         feature: String,
         explanation: String,
     },
-
-    #[error("Configuration error: {message}")]
-    ConfigError { message: String },
 }
 
 // Implement From for std::fmt::Error
