@@ -5,3 +5,9 @@
 [workspace]
 members = ["./ext/rfmt"]
 resolver = "2"
+
+# panic = "abort" must not be set here: magnus relies on unwinding to convert
+# Rust panics into Ruby exceptions instead of killing the host process.
+[profile.release]
+lto = "thin"
+codegen-units = 1
