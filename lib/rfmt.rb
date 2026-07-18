@@ -23,7 +23,12 @@ module Rfmt
 
     # Step 2: Format in Rust
     # Pass both source and AST to enable source extraction fallback
-    format_code(source, prism_json)
+    formatted = format_code(source, prism_json)
+
+    # Guard against formatter bugs: never emit syntactically invalid Ruby
+    validate_output!(formatted)
+
+    formatted
   rescue PrismBridge::ParseError => e
     # Re-raise with more context
     raise Error, "Failed to parse Ruby code: #{e.message}"
@@ -33,6 +38,17 @@ module Rfmt
   rescue StandardError => e
     raise Error, "Unexpected error during formatting: #{e.class}: #{e.message}"
   end
+
+  def self.validate_output!(formatted)
+    result = Prism.parse(formatted)
+    return if result.success?
+
+    error = result.errors.first
+    raise ValidationError, 'Formatter produced syntactically invalid output ' \
+                           "(this is a bug in rfmt, not in your code): #{error.message} " \
+                           "at line #{error.location.start_line}"
+  end
+  private_class_method :validate_output!
 
   # Format a Ruby file
   # @param path [String] Path to Ruby file
