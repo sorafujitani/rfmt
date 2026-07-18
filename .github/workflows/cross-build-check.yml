@@ -37,8 +37,8 @@ jobs:
     - name: Clean vendor directory
       run: rm -rf vendor/bundle
 
-    # v1 points at a version without pre-script support; pin explicitly
-    - uses: oxidize-rb/actions/cross-gem@v1.4.4
+    # pre-script support is unreleased (v1.4.4 accepts but ignores it); pin main
+    - uses: oxidize-rb/actions/cross-gem@85175a9d5f63d4491253e957d3fc3f4ed7f17534
       with:
         platform: ${{ matrix.platform }}
         ruby-versions: '3.3,3.4'
