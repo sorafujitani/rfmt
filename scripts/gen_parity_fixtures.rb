@@ -7,6 +7,14 @@
 
 require_relative '../lib/rfmt/prism_bridge'
 
+# Parity means same-version parity: the JSON side must come from the same
+# prism line as the ruby-prism crate in ext/rfmt/Cargo.toml.
+EXPECTED_PRISM = '1.9'
+unless Prism::VERSION.start_with?("#{EXPECTED_PRISM}.")
+  abort "prism gem is #{Prism::VERSION}, expected #{EXPECTED_PRISM}.x " \
+        '(run via bundle exec; keep Gemfile in sync with the ruby-prism crate)'
+end
+
 fixtures_dir = File.expand_path('../ext/rfmt/tests/fixtures/parity', __dir__)
 sources = Dir.glob(File.join(fixtures_dir, '*.rb'))
 abort "No fixtures found in #{fixtures_dir}" if sources.empty?

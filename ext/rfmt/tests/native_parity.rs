@@ -133,6 +133,23 @@ fn native_conversion_matches_ruby_bridge() {
 }
 
 #[test]
+fn comparator_detects_a_mutated_tree() {
+    let source = fs::read_to_string(fixtures_dir().join("plain.rb")).unwrap();
+    let reference = NativeAdapter::new().parse(&source).unwrap();
+    let mut mutated = reference.clone();
+    let first = mutated.children.first_mut().expect("fixture has children");
+    first.location.end_line += 1;
+
+    let mut diffs = Vec::new();
+    compare_nodes("root", &reference, &mutated, &mut diffs);
+    assert_eq!(diffs.len(), 1, "{diffs:?}");
+    assert!(
+        diffs[0].starts_with("root.children[0].location.end_line: "),
+        "{diffs:?}"
+    );
+}
+
+#[test]
 fn native_adapter_reports_parse_errors_with_position() {
     let err = NativeAdapter::new()
         .parse("x = 1\ndef broken(")
