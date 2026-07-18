@@ -26,8 +26,6 @@ module Rfmt
   # @return [String] Formatted Ruby code
   def self.format(source)
     format_code(source)
-  rescue RfmtError
-    raise
   rescue StandardError => e
     raise wrap_native_error(e)
   end
@@ -79,6 +77,8 @@ module Rfmt
   # @return [String] AST representation
   def self.parse(source)
     parse_to_json(source)
+  rescue StandardError => e
+    raise wrap_native_error(e)
   end
 
   # Configuration management

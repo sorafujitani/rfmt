@@ -26,7 +26,7 @@ RSpec.describe Rfmt do
 
       expect do
         Rfmt.format(invalid_source)
-      end.to raise_error(Rfmt::Error)
+      end.to raise_error(Rfmt::Error, /\AFailed to parse Ruby code: Parse errors:\n1:/)
     end
 
     it 'formats Rails migration with versioned superclass' do
