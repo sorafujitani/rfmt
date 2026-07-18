@@ -77,7 +77,7 @@ For detailed performance comparisons and benchmarks, see [Performance Benchmarks
 
 ### Requirements
 
-- Ruby 3.0 or higher
+- Ruby 3.3 or higher
 - Rust 1.70 or higher (for building from source)
 
 ### From RubyGems

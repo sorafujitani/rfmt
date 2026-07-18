@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'thor'
 
 # Check for verbose flag before loading rfmt to set debug mode early
@@ -325,9 +326,22 @@ module Rfmt
     end
 
     def write_formatted_file(result, cache)
-      File.write(result[:file], result[:formatted])
+      atomic_write(result[:file], result[:formatted])
       say "✓ Formatted #{result[:file]}", :green unless options[:quiet]
       cache&.mark_formatted(result[:file])
+    end
+
+    # Temp file must live in the same directory: rename across filesystems is not atomic.
+    def atomic_write(path, content)
+      # rename would replace a symlink itself; write to its target instead
+      path = File.realpath(path) if File.symlink?(path)
+      tmp_path = "#{path}.rfmt-#{Process.pid}.tmp"
+      mode = File.stat(path).mode
+      File.write(tmp_path, content)
+      File.chmod(mode, tmp_path)
+      File.rename(tmp_path, path)
+    ensure
+      FileUtils.rm_f(tmp_path)
     end
 
     def display_summary(stats, total_files)
