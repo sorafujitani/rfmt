@@ -59,10 +59,10 @@ RSpec.describe DifferentialCheck::DiffReporter do
   end
 end
 
-RSpec.describe Rfmt, '.format_native' do
-  it 'matches .format byte-for-byte on a simple program' do
+RSpec.describe Rfmt, '.format_legacy' do
+  it 'matches the native .format byte-for-byte on a simple program' do
     source = "def foo( a,b )\n  a+b\nend\n"
 
-    expect(Rfmt.format_native(source)).to eq(Rfmt.format(source))
+    expect(Rfmt.format(source)).to eq(Rfmt.format_legacy(source))
   end
 end

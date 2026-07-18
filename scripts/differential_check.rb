@@ -4,9 +4,9 @@ require 'prism'
 require_relative '../lib/rfmt'
 require_relative 'corpus_check'
 
-# Temporary for the prism migration: proves Rfmt.format_native emits
-# byte-identical output to Rfmt.format across the corpus. Deleted in
-# phase 7 together with format_native.
+# Temporary for the prism migration: proves the native Rfmt.format emits
+# byte-identical output to the pre-switchover Rfmt.format_legacy across the
+# corpus. Deleted in phase 7 together with format_legacy.
 module DifferentialCheck
   CORPUS_GLOBS = (CorpusCheck::CORPUS_GLOBS + ['ext/rfmt/tests/fixtures/parity/*.rb']).freeze
 
@@ -107,8 +107,8 @@ module DifferentialCheck
     end
 
     def compare(path, source)
-      legacy = Rfmt.format(source)
-      native = Rfmt.format_native(source)
+      legacy = Rfmt.format_legacy(source)
+      native = Rfmt.format(source)
 
       diff = DiffReporter.unified_diff(legacy, native)
       if diff.nil?
