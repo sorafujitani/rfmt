@@ -23,7 +23,7 @@ A Ruby code formatter written in Rust
 ## What is kenshin?
 
 [RubyGems reference](https://rubygems.org/gems/kenshin)
-[DeepWiki kenshin](https://deepwiki.com/fs0414/rfmt)
+[DeepWiki](https://deepwiki.com/fs0414/rfmt)
 
 **kenshin** is a Ruby code formatter that enforces consistent style across your codebase. Key characteristics:
 

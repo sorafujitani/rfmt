@@ -81,7 +81,7 @@
           }:
           pkgs.stdenv.mkDerivation {
             pname = "kenshin";
-            version = "1.4.1";
+            version = "1.7.0";
             src = ./.;
 
             buildInputs = buildInputs;
