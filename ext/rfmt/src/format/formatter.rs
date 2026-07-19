@@ -66,7 +66,23 @@ impl Formatter {
 
         // 5. Print to string
         let mut printer = Printer::new(&self.config);
-        let result = printer.print(&final_doc);
+        let mut result = printer.print(&final_doc);
+
+        // 6. Re-append the `__END__` data section, which the AST excludes.
+        // Appended after printing (and its trailing-whitespace strip) so the
+        // data content survives byte-for-byte.
+        if let Some(data) = ast
+            .metadata
+            .get("data_start_offset")
+            .and_then(|offset| offset.parse::<usize>().ok())
+            .and_then(|offset| source.get(offset..))
+        {
+            if !result.is_empty() {
+                result.truncate(result.trim_end_matches('\n').len());
+                result.push('\n');
+            }
+            result.push_str(data);
+        }
 
         Ok(result)
     }

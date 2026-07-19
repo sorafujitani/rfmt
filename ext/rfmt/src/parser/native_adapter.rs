@@ -58,6 +58,14 @@ impl RubyParser for NativeAdapter {
         // As in the bridge/PrismAdapter pipeline, all comments live in a flat
         // list on the root node; per-node comments stay empty.
         root.comments = root_comments(&parse_result, &index);
+        // The AST has no node for the `__END__` data section; record where it
+        // starts so the formatter can re-append the source slice verbatim.
+        if let Some(data_loc) = parse_result.data_loc() {
+            root.metadata.insert(
+                "data_start_offset".to_string(),
+                data_loc.start_offset().to_string(),
+            );
+        }
         Ok(root)
     }
 }
