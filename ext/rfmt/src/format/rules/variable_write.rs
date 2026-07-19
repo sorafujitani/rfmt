@@ -12,8 +12,8 @@ use crate::error::Result;
 use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
-    format_child, format_leading_comments, format_trailing_comment, line_leading_indent,
-    mark_comments_in_range_emitted, reformat_chain_lines, strip_one_trailing_newline, FormatRule,
+    chain_doc_or_verbatim, format_child, format_leading_comments, format_trailing_comment,
+    mark_comments_in_range_emitted, FormatRule,
 };
 
 /// Rule for formatting local variable write expressions.
@@ -125,14 +125,7 @@ fn format_variable_write(
             // (`x = foo(<<~SQL)\n…\nSQL\n`) so it doesn't compound with the
             // surrounding hardline.
             if let Some(source_text) = ctx.extract_source(value) {
-                let base_indent = line_leading_indent(ctx.source(), node.location.start_offset);
-                let reformatted = reformat_chain_lines(
-                    source_text,
-                    base_indent,
-                    ctx.config().formatting.indent_width,
-                );
-                let trimmed = strip_one_trailing_newline(reformatted.trim_start());
-                docs.push(text(trimmed.to_string()));
+                docs.push(chain_doc_or_verbatim(source_text.trim_start()));
                 // The extracted text carries any interior comments verbatim
                 // (e.g. inside a `do…end` block); without marking them they
                 // get re-emitted at EOF by format_remaining_comments.
