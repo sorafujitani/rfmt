@@ -12,7 +12,7 @@ RSpec.describe Rfmt, 'trailing comment on else' do
       end
     RUBY
 
-    expect(Rfmt.format(source)).to include("else # inline on else\n")
+    expect(Rfmt.format(source)).to eq(source)
   end
 
   it 'keeps else comments inline alongside if and end comments' do
@@ -24,11 +24,15 @@ RSpec.describe Rfmt, 'trailing comment on else' do
       end # inline on end
     RUBY
 
-    formatted = Rfmt.format(source)
+    expected = <<~RUBY
+      result = if chain > 10 # inline on if
+        :big
+      else # inline on else
+        :small
+      end # inline on end
+    RUBY
 
-    expect(formatted).to include("# inline on if\n")
-    expect(formatted).to include("else # inline on else\n")
-    expect(formatted).to include("end # inline on end\n")
+    expect(Rfmt.format(source)).to eq(expected)
   end
 
   it 'keeps the comment on the else line inside unless' do
@@ -40,6 +44,6 @@ RSpec.describe Rfmt, 'trailing comment on else' do
       end
     RUBY
 
-    expect(Rfmt.format(source)).to include("else # fall through\n")
+    expect(Rfmt.format(source)).to eq(source)
   end
 end

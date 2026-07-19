@@ -337,6 +337,14 @@ fn format_normal(
                 docs.push(hardline());
                 docs.push(text("else"));
 
+                // Trailing comment on the else line (ElseNode starts at the
+                // `else` keyword)
+                let else_trailing =
+                    format_trailing_comment(ctx, consequent.location.start_line);
+                if !else_trailing.is_empty() {
+                    docs.push(else_trailing);
+                }
+
                 // Emit else body (first child of ElseNode)
                 if let Some(else_statements) = consequent.children.first() {
                     if matches!(else_statements.node_type, NodeType::StatementsNode) {
