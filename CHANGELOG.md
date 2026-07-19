@@ -13,6 +13,12 @@ Parsing now happens natively in Rust. The Ruby-side Prism parse and JSON handoff
 - Output-validation guard: formatted output is re-parsed and rejected if it fails to parse
 - Corpus check (`scripts/corpus_check.rb`): reformats every Ruby file in the repository and verifies AST equivalence with the prism gem; runs in CI alongside the parity fixtures
 
+### Fixed
+
+- The `__END__` data section is no longer dropped from formatted output; everything from `__END__` to EOF is preserved byte-for-byte
+- Method chain continuation indentation is now computed from the statement's output position instead of its input column, so misindented input converges in a single pass; heredoc bodies inside a reformatted chain keep their content byte-identical
+- A trailing comment on an `else` line stays on that line instead of moving below it
+
 ### Removed
 
 - prism gem runtime dependency; it remains a development-only dependency for the corpus check and parity fixtures
