@@ -3,6 +3,8 @@
 //! This module defines the core FormatRule trait that all formatting rules implement,
 //! along with shared helper functions for common formatting patterns.
 
+use std::collections::VecDeque;
+
 use crate::ast::{CommentType, Node};
 use crate::doc::{
     concat, hardline, indent, leading_comment, literalline, text, trailing_comment, Doc,
@@ -461,8 +463,6 @@ pub fn reformat_chain_doc(source_text: &str) -> Option<Doc> {
         return None;
     }
 
-    let heredoc_body = heredoc_body_lines(&lines);
-
     // Skip reformatting when the first line opens a new scope (a `{` brace
     // lambda, a `do` block, or a `do |params|` block). The `.method` lines
     // that follow are chain continuations *inside the block body*, not of
@@ -478,6 +478,18 @@ pub fn reformat_chain_doc(source_text: &str) -> Option<Doc> {
         return None;
     }
 
+    // Cheap pre-check before the heredoc scan; a false positive from a
+    // `.`-leading heredoc body line only costs the scan below, whose masked
+    // chain_indent search then bails.
+    if !lines[1..]
+        .iter()
+        .any(|l| is_chain_continuation(l.trim_start()))
+    {
+        return None;
+    }
+
+    let heredoc_body = heredoc_body_lines(&lines);
+
     // The original chain indent anchors the relative offsets of multi-line
     // argument lines; without any chain continuation line there is nothing
     // to reformat.
@@ -486,7 +498,7 @@ pub fn reformat_chain_doc(source_text: &str) -> Option<Doc> {
             return None;
         }
         let t = l.trim_start();
-        if t.starts_with('.') || t.starts_with("&.") {
+        if is_chain_continuation(t) {
             Some(l.len() - t.len())
         } else {
             None
@@ -500,7 +512,7 @@ pub fn reformat_chain_doc(source_text: &str) -> Option<Doc> {
         if heredoc_body[i] {
             rest.push(literalline());
             rest.push(text((*line).to_string()));
-        } else if body.starts_with('.') || body.starts_with("&.") {
+        } else if is_chain_continuation(body) {
             rest.push(hardline());
             rest.push(text(body.trim_end().to_string()));
         } else if !body.is_empty() && indent_cols >= chain_indent {
@@ -524,6 +536,17 @@ pub fn reformat_chain_doc(source_text: &str) -> Option<Doc> {
     ]))
 }
 
+/// `reformat_chain_doc` with the shared fallback: verbatim source text,
+/// stripped of one trailing newline.
+pub fn chain_doc_or_verbatim(source_text: &str) -> Doc {
+    reformat_chain_doc(source_text)
+        .unwrap_or_else(|| text(strip_one_trailing_newline(source_text).to_string()))
+}
+
+fn is_chain_continuation(trimmed: &str) -> bool {
+    trimmed.starts_with('.') || trimmed.starts_with("&.")
+}
+
 struct HeredocOpener {
     terminator: String,
     /// `<<-` / `<<~` allow the terminator line to be indented.
@@ -537,7 +560,7 @@ struct HeredocOpener {
 /// reformat emit them verbatim — the semantics-safe direction.
 fn heredoc_body_lines(lines: &[&str]) -> Vec<bool> {
     let mut body = vec![false; lines.len()];
-    let mut pending: std::collections::VecDeque<HeredocOpener> = std::collections::VecDeque::new();
+    let mut pending: VecDeque<HeredocOpener> = VecDeque::new();
     for (i, line) in lines.iter().enumerate() {
         if let Some(front) = pending.front() {
             body[i] = true;
@@ -560,7 +583,7 @@ fn heredoc_body_lines(lines: &[&str]) -> Vec<bool> {
 /// in `"` / `'` / `` ` ``) in a code line. Purely lexical: openers inside
 /// string literals or comments are false positives, tolerated because they
 /// only cause verbatim emission.
-fn scan_heredoc_openers(line: &str, pending: &mut std::collections::VecDeque<HeredocOpener>) {
+fn scan_heredoc_openers(line: &str, pending: &mut VecDeque<HeredocOpener>) {
     let bytes = line.as_bytes();
     let mut i = 0;
     while i + 2 < bytes.len() {
@@ -841,7 +864,10 @@ mod tests {
     fn test_reformat_chain_doc_argument_lines_stay_relative_to_chain() {
         let input = "u = User.all\n      .select(\n        :id,\n      )\n      .to_a";
         let doc = reformat_chain_doc(input).unwrap();
-        assert_eq!(print(doc), "u = User.all\n  .select(\n    :id,\n  )\n  .to_a\n");
+        assert_eq!(
+            print(doc),
+            "u = User.all\n  .select(\n    :id,\n  )\n  .to_a\n"
+        );
     }
 
     #[test]

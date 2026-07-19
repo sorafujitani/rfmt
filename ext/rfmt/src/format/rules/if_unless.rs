@@ -339,8 +339,7 @@ fn format_normal(
 
                 // Trailing comment on the else line (ElseNode starts at the
                 // `else` keyword)
-                let else_trailing =
-                    format_trailing_comment(ctx, consequent.location.start_line);
+                let else_trailing = format_trailing_comment(ctx, consequent.location.start_line);
                 if !else_trailing.is_empty() {
                     docs.push(else_trailing);
                 }

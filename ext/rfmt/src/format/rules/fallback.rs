@@ -5,13 +5,13 @@
 //! net for node types that haven't been implemented yet.
 
 use crate::ast::Node;
-use crate::doc::{concat, text, Doc};
+use crate::doc::{concat, Doc};
 use crate::error::Result;
 use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
-    format_leading_comments, format_trailing_comment, mark_comments_in_range_emitted,
-    reformat_chain_doc, strip_one_trailing_newline, FormatRule,
+    chain_doc_or_verbatim, format_leading_comments, format_trailing_comment,
+    mark_comments_in_range_emitted, FormatRule,
 };
 
 /// Fallback rule that extracts source text directly.
@@ -47,10 +47,7 @@ impl FormatRule for FallbackRule {
         // could swallow an intentional blank line captured by the node's
         // extent).
         if let Some(source_text) = ctx.extract_source(node) {
-            match reformat_chain_doc(source_text) {
-                Some(chain_doc) => docs.push(chain_doc),
-                None => docs.push(text(strip_one_trailing_newline(source_text).to_string())),
-            }
+            docs.push(chain_doc_or_verbatim(source_text));
 
             // Mark any comments within this node's range as emitted
             // (they are included in the source extraction)

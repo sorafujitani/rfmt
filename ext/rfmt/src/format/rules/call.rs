@@ -11,9 +11,9 @@ use crate::error::Result;
 use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
-    format_child, format_comments_before_end, format_leading_comments, format_statements,
-    format_trailing_comment, mark_comments_in_range_emitted, reformat_chain_doc,
-    strip_one_trailing_newline, FormatRule,
+    chain_doc_or_verbatim, format_child, format_comments_before_end, format_leading_comments,
+    format_statements, format_trailing_comment, mark_comments_in_range_emitted, reformat_chain_doc,
+    FormatRule,
 };
 
 /// Rule for formatting method calls.
@@ -112,10 +112,7 @@ fn format_call(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) ->
         // the full `trim_end` here would instead eat a blank separator line
         // that legitimately belongs between statements.
         if let Some(source_text) = ctx.extract_source(node) {
-            match reformat_chain_doc(source_text) {
-                Some(chain_doc) => docs.push(chain_doc),
-                None => docs.push(text(strip_one_trailing_newline(source_text).to_string())),
-            }
+            docs.push(chain_doc_or_verbatim(source_text));
         }
 
         // Mark comments in this range as emitted (they're in source extraction)
