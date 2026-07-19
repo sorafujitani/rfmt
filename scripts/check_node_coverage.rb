@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Check rfmt node type coverage against actual Ruby code
+# Check kenshin node type coverage against actual Ruby code
 #
 # This script automatically detects supported node types from Rust source,
 # then compares against node types found in scanned Ruby files.
@@ -76,11 +76,11 @@ end
 dir = ARGV[0]
 project_root = find_project_root
 
-ast_file = File.join(project_root, 'ext/rfmt/src/ast/mod.rs')
-emitter_file = File.join(project_root, 'ext/rfmt/src/emitter/mod.rs')
+ast_file = File.join(project_root, 'ext/kenshin/src/ast/mod.rs')
+emitter_file = File.join(project_root, 'ext/kenshin/src/emitter/mod.rs')
 
 unless File.exist?(ast_file) && File.exist?(emitter_file)
-  warn 'Error: Cannot find rfmt source files. Run from project root.'
+  warn 'Error: Cannot find kenshin source files. Run from project root.'
   exit 1
 end
 
@@ -90,7 +90,7 @@ structural_nodes = parse_structural_nodes(emitter_file)
 
 used_types, files_scanned = scan_directory(dir)
 
-puts '=== rfmt Node Type Coverage Report ==='
+puts '=== kenshin Node Type Coverage Report ==='
 puts
 puts "Scanned: #{dir} (#{files_scanned} files)"
 puts "Total unique node types found: #{used_types.size}"

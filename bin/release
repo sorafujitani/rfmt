@@ -5,7 +5,7 @@ require 'English'
 require 'date'
 require 'fileutils'
 
-# Release script for rfmt
+# Release script for kenshin
 # Usage: bin/release [VERSION] [--dry-run]
 #
 # Examples:
@@ -14,9 +14,9 @@ require 'fileutils'
 #   bin/release                 # Interactive mode
 
 class ReleaseScript
-  VERSION_FILE = 'lib/rfmt/version.rb'
+  VERSION_FILE = 'lib/kenshin/version.rb'
   CHANGELOG_FILE = 'CHANGELOG.md'
-  GEMSPEC_FILE = 'rfmt.gemspec'
+  GEMSPEC_FILE = 'kenshin.gemspec'
 
   def initialize(args)
     @new_version = args[0]
@@ -25,7 +25,7 @@ class ReleaseScript
   end
 
   def run
-    puts '🚀 rfmt Release Script'
+    puts '🚀 kenshin Release Script'
     puts '=' * 50
     puts
 
@@ -239,7 +239,7 @@ class ReleaseScript
     puts '     - Publish to RubyGems (if secrets configured)'
     puts
     puts '  4. Review and publish the draft release on GitHub:'
-    puts '     https://github.com/fs0414/rfmt/releases'
+    puts '     https://github.com/sorafujitani/rfmt/releases'
     puts
   end
 end

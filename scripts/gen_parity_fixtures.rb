@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 # Regenerates the JSON side of the native-conversion parity fixtures
-# (ext/rfmt/tests/fixtures/parity/*.rb -> *.json). The committed .json files
+# (ext/kenshin/tests/fixtures/parity/*.rb -> *.json). The committed .json files
 # are frozen golden trees; regenerate only when a fixture .rb changes or a
 # new one is added, never to paper over a native_parity.rs failure.
 #
@@ -16,7 +16,7 @@ require 'prism'
 require 'tmpdir'
 
 # Parity means same-version parity: the JSON side must come from the same
-# prism line as the ruby-prism crate in ext/rfmt/Cargo.toml.
+# prism line as the ruby-prism crate in ext/kenshin/Cargo.toml.
 EXPECTED_PRISM = '1.9'
 unless Prism::VERSION.start_with?("#{EXPECTED_PRISM}.")
   abort "prism gem is #{Prism::VERSION}, expected #{EXPECTED_PRISM}.x " \
@@ -24,6 +24,8 @@ unless Prism::VERSION.start_with?("#{EXPECTED_PRISM}.")
 end
 
 REPO = File.expand_path('..', __dir__)
+# Git-history paths and the Rfmt module name predate the kenshin rename; the
+# historical file defines module Rfmt itself, so no alias is involved here.
 BRIDGE_FILES = %w[lib/rfmt/prism_bridge.rb lib/rfmt/prism_node_extractor.rb].freeze
 
 def load_bridge_from_git_history
@@ -49,7 +51,7 @@ end
 
 load_bridge_from_git_history
 
-fixtures_dir = File.expand_path('../ext/rfmt/tests/fixtures/parity', __dir__)
+fixtures_dir = File.expand_path('../ext/kenshin/tests/fixtures/parity', __dir__)
 sources = Dir.glob(File.join(fixtures_dir, '*.rb'))
 abort "No fixtures found in #{fixtures_dir}" if sources.empty?
 

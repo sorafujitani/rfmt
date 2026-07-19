@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'rfmt/native_extension_loader'
+require 'kenshin/native_extension_loader'
 
-RSpec.describe Rfmt::NativeExtensionLoader do
+RSpec.describe Kenshin::NativeExtensionLoader do
   describe '.load_extension' do
     let(:loader) { described_class }
 
@@ -21,7 +21,7 @@ RSpec.describe Rfmt::NativeExtensionLoader do
       it 'tries version-specific directory first' do
         # Mock successful load from version-specific directory
         allow(loader).to receive(:require).with(anything) do |path|
-          path.include?('3.3/rfmt')
+          path.include?('3.3/kenshin')
         end
 
         expect(loader.load_extension).to be true
@@ -47,7 +47,7 @@ RSpec.describe Rfmt::NativeExtensionLoader do
       it 'tries version directory and falls back to direct path' do
         # Mock successful load from direct path
         allow(loader).to receive(:require).with(anything) do |path|
-          path.end_with?('rfmt/rfmt')
+          path.end_with?('kenshin/kenshin')
         end
 
         expect(loader.load_extension).to be true
@@ -62,7 +62,7 @@ RSpec.describe Rfmt::NativeExtensionLoader do
       it 'loads from direct path' do
         # Should try direct path first for older Ruby
         allow(loader).to receive(:require).with(anything) do |path|
-          path.end_with?('rfmt/rfmt') || path.end_with?('rfmt.bundle')
+          path.end_with?('kenshin/kenshin') || path.end_with?('kenshin.bundle')
         end
 
         expect(loader.load_extension).to be true
@@ -76,9 +76,9 @@ RSpec.describe Rfmt::NativeExtensionLoader do
 
       it 'raises a detailed LoadError' do
         expect { loader.load_extension }.to raise_error(LoadError) do |error|
-          expect(error.message).to include('Unable to load rfmt native extension')
+          expect(error.message).to include('Unable to load kenshin native extension')
           expect(error.message).to include('Tried the following paths')
-          expect(error.message).to include('https://github.com/fs0414/rfmt/issues')
+          expect(error.message).to include('https://github.com/sorafujitani/rfmt/issues')
         end
       end
     end
@@ -86,17 +86,17 @@ RSpec.describe Rfmt::NativeExtensionLoader do
     context 'with debug logging' do
       before do
         stub_const('RUBY_VERSION', '3.3.0')
-        ENV['RFMT_DEBUG'] = '1'
+        ENV['KENSHIN_DEBUG'] = '1'
         allow(loader).to receive(:warn).and_call_original
       end
 
       after do
-        ENV.delete('RFMT_DEBUG')
+        ENV.delete('KENSHIN_DEBUG')
       end
 
-      it 'outputs debug information when RFMT_DEBUG is set' do
+      it 'outputs debug information when KENSHIN_DEBUG is set' do
         allow(loader).to receive(:require).with(anything) do |path|
-          path.include?('3.3/rfmt')
+          path.include?('3.3/kenshin')
         end
 
         expect(loader).to receive(:warn).with(/Loading native extension for Ruby 3.3.0/)

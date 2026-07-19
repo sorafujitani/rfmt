@@ -43,8 +43,8 @@ VERBOSE=1 bundle exec rspec spec/snapshot_spec.rb
 2. **Generate expected output**:
    ```bash
    # Format and save expected output
-   bundle exec ruby -I lib -r rfmt -e \
-     "print Rfmt.format(File.read('input/my_feature.rb'))" \
+   bundle exec ruby -I lib -r kenshin -e \
+     "print Kenshin.format(File.read('input/my_feature.rb'))" \
      > expected/my_feature.rb
    ```
 
@@ -61,8 +61,8 @@ When the formatter behavior changes intentionally, update all expected outputs:
 # Update all expected files
 for file in input/*.rb; do
   basename=$(basename "$file")
-  bundle exec ruby -I lib -r rfmt -e \
-    "print Rfmt.format(File.read('$file'))" \
+  bundle exec ruby -I lib -r kenshin -e \
+    "print Kenshin.format(File.read('$file'))" \
     > "expected/$basename"
 done
 
@@ -127,8 +127,8 @@ When a test fails:
 SHOW_DIFF=1 bundle exec rspec spec/snapshot_spec.rb
 
 # Or manually compare
-bundle exec ruby -I lib -r rfmt -e \
-  "puts Rfmt.format(File.read('input/rails_model.rb'))" \
+bundle exec ruby -I lib -r kenshin -e \
+  "puts Kenshin.format(File.read('input/rails_model.rb'))" \
   | diff - expected/rails_model.rb
 ```
 

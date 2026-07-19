@@ -1,35 +1,35 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'rfmt'
+require 'kenshin'
 require 'tmpdir'
 require 'fileutils'
 
-RSpec.describe Rfmt::Config do
+RSpec.describe Kenshin::Config do
   describe '.init' do
     it 'creates a new configuration file' do
       Dir.mktmpdir do |dir|
-        config_path = File.join(dir, '.rfmt.yml')
-        result = Rfmt::Config.init(config_path)
+        config_path = File.join(dir, '.kenshin.yml')
+        result = Kenshin::Config.init(config_path)
 
         expect(result).to be true
         expect(File.exist?(config_path)).to be true
 
         content = File.read(config_path)
-        expect(content).to include('rfmt Configuration File')
+        expect(content).to include('kenshin Configuration File')
         expect(content).to include('line_length: 100')
       end
     end
 
     it 'refuses to overwrite existing file without force' do
       Dir.mktmpdir do |dir|
-        config_path = File.join(dir, '.rfmt.yml')
+        config_path = File.join(dir, '.kenshin.yml')
 
         # Create initial file
-        Rfmt::Config.init(config_path)
+        Kenshin::Config.init(config_path)
 
         # Try to overwrite without force
-        result = Rfmt::Config.init(config_path, force: false)
+        result = Kenshin::Config.init(config_path, force: false)
 
         expect(result).to be false
       end
@@ -37,17 +37,17 @@ RSpec.describe Rfmt::Config do
 
     it 'overwrites existing file with force: true' do
       Dir.mktmpdir do |dir|
-        config_path = File.join(dir, '.rfmt.yml')
+        config_path = File.join(dir, '.kenshin.yml')
 
         # Create initial file
         File.write(config_path, 'old content')
 
         # Overwrite with force
-        result = Rfmt::Config.init(config_path, force: true)
+        result = Kenshin::Config.init(config_path, force: true)
 
         expect(result).to be true
         content = File.read(config_path)
-        expect(content).to include('rfmt Configuration File')
+        expect(content).to include('kenshin Configuration File')
         expect(content).not_to include('old content')
       end
     end
@@ -65,7 +65,7 @@ RSpec.describe Rfmt::Config do
         YAML
         File.write(config_path, config_content)
 
-        config = Rfmt::Config.load(config_path)
+        config = Kenshin::Config.load(config_path)
 
         expect(config['version']).to eq('1.0')
         expect(config['formatting']['line_length']).to eq(80)
@@ -75,8 +75,8 @@ RSpec.describe Rfmt::Config do
 
     it 'raises error for non-existent file' do
       expect do
-        Rfmt::Config.load('/nonexistent/path/config.yml')
-      end.to raise_error(Rfmt::Error, /Configuration file not found/)
+        Kenshin::Config.load('/nonexistent/path/config.yml')
+      end.to raise_error(Kenshin::Error, /Configuration file not found/)
     end
 
     it 'raises error for invalid YAML' do
@@ -85,8 +85,8 @@ RSpec.describe Rfmt::Config do
         File.write(config_path, "invalid: yaml: content:\n  - broken")
 
         expect do
-          Rfmt::Config.load(config_path)
-        end.to raise_error(Rfmt::Error, /Invalid YAML/)
+          Kenshin::Config.load(config_path)
+        end.to raise_error(Kenshin::Error, /Invalid YAML/)
       end
     end
   end
@@ -97,14 +97,14 @@ RSpec.describe Rfmt::Config do
         # Use a temporary directory with no config file
         # We can't change directory, so this test is limited
         # Just verify the method exists and returns a boolean
-        result = Rfmt::Config.exists?
+        result = Kenshin::Config.exists?
         expect([true, false]).to include(result)
       end
     end
   end
 
   describe 'DEFAULT_CONFIG' do
-    let(:default_config) { Rfmt::Config::DEFAULT_CONFIG }
+    let(:default_config) { Kenshin::Config::DEFAULT_CONFIG }
 
     it 'is a non-empty string' do
       expect(default_config).to be_a(String)

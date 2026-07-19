@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'rfmt'
+require 'kenshin'
 
 # Save original directory to ensure we always return to it
 ORIGINAL_TEST_DIR = Dir.pwd

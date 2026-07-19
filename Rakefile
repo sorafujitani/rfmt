@@ -13,10 +13,10 @@ require 'rb_sys/extensiontask'
 
 task build: :compile
 
-GEMSPEC = Gem::Specification.load('rfmt.gemspec')
+GEMSPEC = Gem::Specification.load('kenshin.gemspec')
 
-RbSys::ExtensionTask.new('rfmt', GEMSPEC) do |ext|
-  ext.lib_dir = 'lib/rfmt'
+RbSys::ExtensionTask.new('kenshin', GEMSPEC) do |ext|
+  ext.lib_dir = 'lib/kenshin'
   ext.cross_compile = true
   ext.cross_platform = %w[
     x86_64-linux
@@ -39,43 +39,43 @@ namespace :dev do
     Rake::Task['spec'].invoke
 
     puts "\nRunning Rust tests..."
-    system('cargo test --manifest-path ext/rfmt/Cargo.toml') || abort('Rust tests failed')
+    system('cargo test --manifest-path ext/kenshin/Cargo.toml') || abort('Rust tests failed')
   end
 
   desc 'Run Rust tests only'
   task :test_rust do
-    system('cargo test --manifest-path ext/rfmt/Cargo.toml') || abort('Rust tests failed')
+    system('cargo test --manifest-path ext/kenshin/Cargo.toml') || abort('Rust tests failed')
   end
 
   desc 'Run Rust tests with output'
   task :test_rust_verbose do
-    system('cargo test --manifest-path ext/rfmt/Cargo.toml -- --nocapture') || abort('Rust tests failed')
+    system('cargo test --manifest-path ext/kenshin/Cargo.toml -- --nocapture') || abort('Rust tests failed')
   end
 
   desc 'Check Rust code with clippy'
   task :clippy do
-    system('cargo clippy --manifest-path ext/rfmt/Cargo.toml -- -D warnings') || abort('Clippy found issues')
+    system('cargo clippy --manifest-path ext/kenshin/Cargo.toml -- -D warnings') || abort('Clippy found issues')
   end
 
   desc 'Format Rust code'
   task :fmt_rust do
-    system('cargo fmt --manifest-path ext/rfmt/Cargo.toml')
+    system('cargo fmt --manifest-path ext/kenshin/Cargo.toml')
   end
 
   desc 'Check Rust formatting'
   task :fmt_rust_check do
-    system('cargo fmt --manifest-path ext/rfmt/Cargo.toml -- --check') || abort('Rust code needs formatting')
+    system('cargo fmt --manifest-path ext/kenshin/Cargo.toml -- --check') || abort('Rust code needs formatting')
   end
 
   desc 'Build Rust extension in release mode'
   task :build_release do
-    system('cargo build --manifest-path ext/rfmt/Cargo.toml --release') || abort('Release build failed')
+    system('cargo build --manifest-path ext/kenshin/Cargo.toml --release') || abort('Release build failed')
   end
 
   desc 'Clean all build artifacts'
   task :clean do
-    system('cargo clean --manifest-path ext/rfmt/Cargo.toml')
-    FileUtils.rm_rf('lib/rfmt/rfmt.bundle')
+    system('cargo clean --manifest-path ext/kenshin/Cargo.toml')
+    FileUtils.rm_rf('lib/kenshin/kenshin.bundle')
     FileUtils.rm_rf('tmp')
   end
 
@@ -91,10 +91,10 @@ namespace :dev do
     puts "\nRuby files:"
     system("find lib spec -name '*.rb' | xargs wc -l | tail -1")
     puts "\nRust files:"
-    system("find ext/rfmt/src -name '*.rs' | xargs wc -l | tail -1")
+    system("find ext/kenshin/src -name '*.rs' | xargs wc -l | tail -1")
     puts "\nTests:"
     ruby_tests = `grep -r "it\\|describe\\|context" spec --include="*.rb" | wc -l`.strip
-    rust_tests = `grep -r "#\\[test\\]" ext/rfmt/src --include="*.rs" | wc -l`.strip
+    rust_tests = `grep -r "#\\[test\\]" ext/kenshin/src --include="*.rs" | wc -l`.strip
     puts "  Ruby tests: #{ruby_tests}"
     puts "  Rust tests: #{rust_tests}"
   end
@@ -102,7 +102,7 @@ namespace :dev do
   desc 'Interactive development console'
   task :console do
     require 'irb'
-    require 'rfmt'
+    require 'kenshin'
     ARGV.clear
     IRB.start
   end

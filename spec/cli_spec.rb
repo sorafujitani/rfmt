@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'rfmt/cli'
+require 'kenshin/cli'
 
-RSpec.describe Rfmt::CLI do
+RSpec.describe Kenshin::CLI do
   let(:cli) { described_class.new }
 
   before do

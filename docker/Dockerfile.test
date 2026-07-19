@@ -1,5 +1,5 @@
-# Dockerfile for testing rfmt gem installation across Ruby versions
-# Usage: docker build --build-arg RUBY_VERSION=4.0 -f docker/Dockerfile.test -t rfmt-test:4.0 .
+# Dockerfile for testing kenshin gem installation across Ruby versions
+# Usage: docker build --build-arg RUBY_VERSION=4.0 -f docker/Dockerfile.test -t kenshin-test:4.0 .
 
 ARG RUBY_VERSION=3.4
 
@@ -18,18 +18,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-WORKDIR /rfmt
+WORKDIR /kenshin
 
 # Copy dependency files first for layer caching
-COPY rfmt.gemspec Gemfile Gemfile.lock ./
-COPY lib/rfmt/version.rb ./lib/rfmt/
+COPY kenshin.gemspec Gemfile Gemfile.lock ./
+COPY lib/kenshin/version.rb ./lib/kenshin/
 
 # Copy source code
 COPY . .
 
 # Build and install the gem
-RUN gem build rfmt.gemspec \
-    && gem install ./rfmt-*.gem --no-document
+RUN gem build kenshin.gemspec \
+    && gem install ./kenshin-*.gem --no-document
 
 # Stage 2: Runtime image (smaller, no build tools)
 FROM ruby:${RUBY_VERSION}-slim AS runtime
@@ -38,15 +38,15 @@ FROM ruby:${RUBY_VERSION}-slim AS runtime
 COPY --from=builder /usr/local/bundle /usr/local/bundle
 
 # Verify installation
-RUN ruby -e "require 'rfmt'; puts \"rfmt #{Rfmt::VERSION} loaded successfully on Ruby #{RUBY_VERSION}\""
+RUN ruby -e "require 'kenshin'; puts \"kenshin #{Kenshin::VERSION} loaded successfully on Ruby #{RUBY_VERSION}\""
 
-CMD ["ruby", "-e", "require 'rfmt'; puts \"rfmt #{Rfmt::VERSION} ready on Ruby #{RUBY_VERSION}\""]
+CMD ["ruby", "-e", "require 'kenshin'; puts \"kenshin #{Kenshin::VERSION} ready on Ruby #{RUBY_VERSION}\""]
 
 # Stage 3: Test stage (includes verification)
 FROM builder AS test
 
 # Run verification tests
-RUN ruby -e "require 'rfmt'; puts \"rfmt #{Rfmt::VERSION} loaded successfully on Ruby #{RUBY_VERSION}\""
-RUN echo 'def hello() puts "world" end' | rfmt || echo "CLI test completed"
+RUN ruby -e "require 'kenshin'; puts \"kenshin #{Kenshin::VERSION} loaded successfully on Ruby #{RUBY_VERSION}\""
+RUN echo 'def hello() puts "world" end' | kenshin || echo "CLI test completed"
 
-CMD ["ruby", "-e", "require 'rfmt'; puts \"rfmt #{Rfmt::VERSION} ready on Ruby #{RUBY_VERSION}\""]
+CMD ["ruby", "-e", "require 'kenshin'; puts \"kenshin #{Kenshin::VERSION} ready on Ruby #{RUBY_VERSION}\""]

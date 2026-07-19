@@ -1,0 +1,417 @@
+# frozen_string_literal: true
+
+require 'spec_helper'
+
+RSpec.describe Kenshin do
+  describe '.format' do
+    it 'formats simple Ruby code' do
+      source = <<~RUBY
+        class Foo
+        def bar
+        42
+        end
+        end
+      RUBY
+
+      result = Kenshin.format(source)
+
+      expect(result).to be_a(String)
+      expect(result).to include('class Foo')
+      expect(result).to include('def bar')
+      expect(result).to include('end')
+    end
+
+    it 'raises error for invalid Ruby syntax' do
+      invalid_source = 'class Foo def'
+
+      expect do
+        Kenshin.format(invalid_source)
+      end.to raise_error(Kenshin::Error, /\AFailed to parse Ruby code: Parse errors:\n1:/)
+    end
+
+    it 'formats Rails migration with versioned superclass' do
+      source = <<~RUBY
+        class AddProfileToUsers < ActiveRecord::Migration[8.1]
+          def change
+            add_column :users, :profile, :text
+          end
+        end
+      RUBY
+
+      result = Kenshin.format(source)
+
+      expect(result).to include('class AddProfileToUsers < ActiveRecord::Migration[8.1]')
+      expect(result).to include('def change')
+      expect(result).not_to include('Prism::CallNode')
+    end
+
+    it 'formats method with required keyword parameters' do
+      source = <<~RUBY
+        def initialize(frame:, form:, tag_map:)
+          @frame = frame
+          @form = form
+          @tag_map = tag_map
+        end
+      RUBY
+
+      result = Kenshin.format(source)
+
+      expect(result).to include('def initialize(frame:, form:, tag_map:)')
+      expect(result).not_to match(/frame:\s+form:\s+tag_map:/)
+      expect(result).to include('@frame = frame')
+    end
+
+    it 'formats method with optional keyword parameters' do
+      source = <<~RUBY
+        def configure(timeout: 30, retries: 3)
+          @timeout = timeout
+          @retries = retries
+        end
+      RUBY
+
+      result = Kenshin.format(source)
+
+      expect(result).to include('def configure(timeout: 30, retries: 3)')
+      expect(result).not_to match(/timeout:\s+30\s+retries:/)
+      expect(result).to include('@timeout = timeout')
+    end
+
+    it 'formats method with parameters without parentheses' do
+      source = <<~RUBY
+        def foo bar, baz
+          puts bar
+        end
+      RUBY
+
+      result = Kenshin.format(source)
+
+      expect(result).to include('def foo bar, baz')
+      expect(result).to include('puts bar')
+    end
+
+    it 'formats source metadata nodes' do
+      source = <<~RUBY
+        puts __FILE__
+        puts __LINE__
+        puts __ENCODING__
+      RUBY
+
+      result = Kenshin.format(source)
+
+      expect(result).to include('__FILE__')
+      expect(result).to include('__LINE__')
+      expect(result).to include('__ENCODING__')
+    end
+
+    it 'formats BEGIN and END blocks' do
+      source = <<~RUBY
+        BEGIN { setup }
+        END { teardown }
+      RUBY
+
+      result = Kenshin.format(source)
+
+      expect(result).to include('BEGIN { setup }')
+      expect(result).to include('END { teardown }')
+    end
+
+    it 'formats endless method with preceding comment (Issue #71)' do
+      source = <<~RUBY
+        class Test
+          # comment
+          def a = nil
+        end
+      RUBY
+
+      # Should not panic (the main fix for Issue #71)
+      result = Kenshin.format(source)
+
+      expect(result).to include('class Test')
+      expect(result).to include('# comment')
+      expect(result).to include('def a')
+      expect(result).to include('nil')
+    end
+
+    it 'formats endless method without comment' do
+      source = <<~RUBY
+        class Foo
+          def bar = 42
+        end
+      RUBY
+
+      # Should not panic
+      result = Kenshin.format(source)
+
+      expect(result).to include('def bar')
+      expect(result).to include('42')
+    end
+
+    describe 'heredoc preservation (Issue #74)' do
+      it 'preserves squiggly heredoc content and closing identifier' do
+        source = <<~RUBY
+          csv = <<~CSV
+            a,b,c
+            d,e,f
+          CSV
+          puts csv
+        RUBY
+        result = Kenshin.format(source)
+        expect(result).to include('a,b,c')
+        expect(result).to include('d,e,f')
+        expect(result).to match(/^CSV$/m)
+        expect(Prism.parse(result).errors).to be_empty
+      end
+
+      it 'preserves indented heredoc' do
+        source = <<~RUBY
+          text = <<-TEXT
+            Hello World
+          TEXT
+        RUBY
+        result = Kenshin.format(source)
+        expect(result).to include('Hello World')
+        expect(result).to include('TEXT')
+      end
+
+      it 'preserves heredoc with interpolation' do
+        source = <<~'RUBY'
+          msg = <<~MSG
+            Hello #{name}
+          MSG
+        RUBY
+        result = Kenshin.format(source)
+        expect(result).to include("Hello \#{name}")
+      end
+    end
+
+    describe 'heredoc in method call arguments (Issue #86)' do
+      it 'preserves multiple heredocs as method arguments' do
+        source = <<~RUBY
+          puts(<<~HEREDOC, <<~HEREDOC2)
+            This is a heredoc.
+          HEREDOC
+            This is another heredoc.
+          HEREDOC2
+        RUBY
+        result = Kenshin.format(source)
+
+        expect(result).to include('This is a heredoc.')
+        expect(result).to include('This is another heredoc.')
+        expect(result).to match(/^HEREDOC$/m)
+        expect(result).to match(/^HEREDOC2$/m)
+        expect(Prism.parse(result).errors).to be_empty
+      end
+
+      it 'preserves single heredoc as method argument' do
+        source = <<~RUBY
+          puts(<<~HEREDOC)
+            Single heredoc content.
+          HEREDOC
+        RUBY
+        result = Kenshin.format(source)
+
+        expect(result).to include('Single heredoc content.')
+        expect(result).to match(/^HEREDOC$/m)
+        expect(Prism.parse(result).errors).to be_empty
+      end
+
+      it 'preserves heredoc with method chain' do
+        source = <<~RUBY
+          foo.bar(<<~SQL)
+            SELECT * FROM users
+          SQL
+        RUBY
+        result = Kenshin.format(source)
+
+        expect(result).to include('SELECT * FROM users')
+        expect(result).to match(/^SQL$/m)
+        expect(Prism.parse(result).errors).to be_empty
+      end
+    end
+
+    describe 'inline then style preservation (Issue #75)' do
+      describe 'case...in with then' do
+        it 'preserves inline then style in pattern matching' do
+          source = <<~RUBY
+            case x
+              in ..0 then ['negative or zero']
+              in 1.. then ['positive']
+            end
+          RUBY
+          result = Kenshin.format(source)
+          expect(result).to include('then')
+          expect(Prism.parse(result).errors).to be_empty
+        end
+
+        it 'keeps multiline style when original has no then' do
+          source = <<~RUBY
+            case x
+            in ..0
+              ['negative']
+            end
+          RUBY
+          result = Kenshin.format(source)
+          expect(result).not_to include('then')
+        end
+      end
+
+      describe 'case...when with then' do
+        it 'preserves inline when then style' do
+          source = "case x; when 1 then 'one'; when 2 then 'two'; end\n"
+          result = Kenshin.format(source)
+          expect(result).to include('when 1 then')
+          expect(result).to include('when 2 then')
+        end
+      end
+
+      describe 'if/unless with then' do
+        it 'preserves inline if then style' do
+          source = "if true then 1 end\n"
+          result = Kenshin.format(source)
+          expect(result).to include('if true then 1 end')
+        end
+
+        it 'preserves inline unless then style' do
+          source = "unless false then 1 end\n"
+          result = Kenshin.format(source)
+          expect(result).to include('unless false then 1 end')
+        end
+      end
+    end
+
+    it 'parses and formats source with embdoc (=begin/=end) comments' do
+      source = <<~RUBY
+        =begin
+        documentation
+        =end
+
+        class Foo
+        end
+      RUBY
+
+      expect { Kenshin.format(source) }.not_to raise_error
+      result = Kenshin.format(source)
+      expect(result).to include('class Foo')
+      expect(Prism.parse(result).success?).to be true
+    end
+
+    describe 'inline comments after blocks' do
+      it 'preserves inline comments after inline brace blocks' do
+        source = "b.each { p it } # c\n"
+        expect(Kenshin.format(source)).to eq("b.each { p it } # c\n")
+      end
+
+      it 'preserves inline comments after multiline brace blocks' do
+        source = <<~RUBY
+          b.each {
+            p it
+          } # c
+        RUBY
+        expect(Kenshin.format(source)).to include('} # c')
+      end
+
+      it 'preserves inline comments with map blocks' do
+        source = "[1, 2].map { |x| x * 2 } # double\n"
+        expect(Kenshin.format(source)).to eq("[1, 2].map { |x| x * 2 } # double\n")
+      end
+
+      it 'does not duplicate inline comments on method chain with block' do
+        source = <<~RUBY
+          some_method # comment
+            .method_with_block { do_something }
+        RUBY
+
+        result = Kenshin.format(source)
+
+        # The comment should appear exactly once, not be duplicated
+        expect(result.scan('# comment').count).to eq(1)
+        expect(result).to eq(source)
+      end
+
+      it 'does not duplicate inline comments on method chain with do-end block' do
+        source = <<~RUBY
+          some_method # comment
+            .method_with_block do
+              do_something
+            end
+        RUBY
+
+        result = Kenshin.format(source)
+
+        # The comment should appear exactly once
+        expect(result.scan('# comment').count).to eq(1)
+      end
+    end
+  end
+
+  describe 'method chain indented style' do
+    it 'reformats aligned method chain to indented style' do
+      source = <<~RUBY
+        @current_user.article_likes.includes(:article)
+                                   .order(created_at: :desc)
+                                   .page(params[:page])
+      RUBY
+      expected = <<~RUBY
+        @current_user.article_likes.includes(:article)
+          .order(created_at: :desc)
+          .page(params[:page])
+      RUBY
+      expect(Kenshin.format(source)).to eq(expected)
+    end
+
+    it 'reformats safe navigation chain (&.) to indented style' do
+      source = <<~RUBY
+        user&.profile
+             &.avatar
+             &.url
+      RUBY
+      expected = <<~RUBY
+        user&.profile
+          &.avatar
+          &.url
+      RUBY
+      expect(Kenshin.format(source)).to eq(expected)
+    end
+
+    it 'preserves single-line method chain as-is' do
+      source = "foo.bar.baz\n"
+      expect(Kenshin.format(source)).to eq(source)
+    end
+
+    it 'reformats method chain in variable assignment' do
+      source = <<~RUBY
+        @article_likes = @current_user.article_likes.includes(:article)
+                                                     .order(created_at: :desc)
+                                                     .page(params[:page]).per(params[:per_page])
+      RUBY
+      expected = <<~RUBY
+        @article_likes = @current_user.article_likes.includes(:article)
+          .order(created_at: :desc)
+          .page(params[:page]).per(params[:per_page])
+      RUBY
+      expect(Kenshin.format(source)).to eq(expected)
+    end
+
+    it 'reformats method chain with block' do
+      source = <<~RUBY
+        items.select { |x| x.valid? }
+             .map { |x| x.name }
+      RUBY
+      expected = <<~RUBY
+        items.select { |x| x.valid? }
+          .map { |x| x.name }
+      RUBY
+      expect(Kenshin.format(source)).to eq(expected)
+    end
+  end
+
+  describe '.version_info' do
+    it 'returns version information' do
+      version = Kenshin.version_info
+
+      expect(version).to be_a(String)
+      expect(version).to include('Ruby:')
+      expect(version).to include('Rust:')
+    end
+  end
+end

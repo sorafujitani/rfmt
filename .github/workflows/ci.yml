@@ -44,7 +44,7 @@ jobs:
           ~/.cargo/registry/index/
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
-          ext/rfmt/target/
+          ext/kenshin/target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
     - name: Install dependencies
@@ -60,10 +60,10 @@ jobs:
       run: bundle exec ruby scripts/corpus_check.rb
 
     - name: Run Rust tests
-      run: cargo test --manifest-path ext/rfmt/Cargo.toml
+      run: cargo test --manifest-path ext/kenshin/Cargo.toml
 
     - name: Check Rust formatting
-      run: cargo fmt --manifest-path ext/rfmt/Cargo.toml -- --check
+      run: cargo fmt --manifest-path ext/kenshin/Cargo.toml -- --check
 
   lint:
     name: Lint
@@ -86,7 +86,7 @@ jobs:
       run: bundle exec rubocop
 
     - name: Run Clippy
-      run: cargo clippy --manifest-path ext/rfmt/Cargo.toml -- -D warnings
+      run: cargo clippy --manifest-path ext/kenshin/Cargo.toml -- -D warnings
 
   coverage:
     name: Code Coverage

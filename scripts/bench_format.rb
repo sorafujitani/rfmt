@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'benchmark'
-require_relative '../lib/rfmt'
+require_relative '../lib/kenshin'
 
-# In-process throughput benchmark for Rfmt.format. CLI wall-clock is dominated
+# In-process throughput benchmark for Kenshin.format. CLI wall-clock is dominated
 # by Ruby VM startup, so pipeline changes must be measured in-process.
 module BenchFormat
   ROUNDS = Integer(ENV.fetch('BENCH_ROUNDS', '5'), 10)
@@ -30,8 +30,8 @@ module BenchFormat
   end
 
   def safe_format(source)
-    Rfmt.format(source)
-  rescue Rfmt::Error
+    Kenshin.format(source)
+  rescue Kenshin::Error
     nil
   end
 end

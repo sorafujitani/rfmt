@@ -1,5 +1,5 @@
 {
-  "rubyLsp.formatter": "rfmt",
+  "rubyLsp.formatter": "kenshin",
   "editor.formatOnSave": true,
   "rubyLsp.rubyVersionManager": {
     "identifier": "none"

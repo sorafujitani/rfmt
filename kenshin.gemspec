@@ -1,0 +1,47 @@
+# frozen_string_literal: true
+
+require_relative 'lib/kenshin/version'
+
+Gem::Specification.new do |spec|
+  spec.name = 'kenshin'
+  spec.version = Kenshin::VERSION
+  spec.authors = ['fujitani sora']
+  spec.email = ['fujitanisora0414@gmail.com']
+
+  spec.summary = 'Ruby Formatter impl Rust lang.'
+  spec.description = 'Write a longer description or delete this line.'
+  spec.homepage = 'https://github.com/sorafujitani/kenshin'
+  spec.license = 'MIT'
+  spec.required_ruby_version = '>= 3.3.0'
+  spec.required_rubygems_version = '>= 3.0.0'
+
+  spec.metadata['allowed_push_host'] = 'https://rubygems.org'
+  spec.metadata['homepage_uri'] = spec.homepage
+  spec.metadata['source_code_uri'] = 'https://github.com/sorafujitani/kenshin'
+  spec.metadata['changelog_uri'] = 'https://github.com/sorafujitani/kenshin/releases'
+  spec.metadata['ruby_lsp_addon'] = 'true'
+
+  # Specify which files should be added to the gem when it is released.
+  # Explicitly list files to avoid including compiled artifacts (.bundle, .so)
+  spec.files = Dir[
+    'exe/*',
+    'lib/**/*.rb',
+    'ext/**/*.{rb,rs,toml}',
+    'Cargo.toml',
+    'Cargo.lock',
+    'README.md',
+    'LICENSE.txt',
+    'CHANGELOG.md'
+  ]
+  spec.bindir = 'exe'
+  spec.executables = %w[kenshin kenshin-lsp]
+  spec.require_paths = ['lib']
+  spec.extensions = ['ext/kenshin/extconf.rb']
+
+  spec.add_dependency 'diff-lcs', '~> 1.5'
+  spec.add_dependency 'diffy', '~> 3.4'
+  spec.add_dependency 'language_server-protocol', '~> 3.17'
+  spec.add_dependency 'parallel', '~> 1.24'
+  spec.add_dependency 'rb_sys', '~> 0.9.120'
+  spec.add_dependency 'thor', '~> 1.3'
+end

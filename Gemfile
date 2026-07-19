@@ -2,7 +2,7 @@
 
 source 'https://rubygems.org'
 
-# Specify your gem's dependencies in rfmt.gemspec
+# Specify your gem's dependencies in kenshin.gemspec
 gemspec
 
 # CLI

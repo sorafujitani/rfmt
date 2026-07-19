@@ -4,7 +4,7 @@ require 'spec_helper'
 
 # Every construct whose rule emits verbatim source must mark the swept
 # comments as emitted, or they duplicate at EOF and grow on every pass.
-RSpec.describe Rfmt, 'comment emission invariant' do
+RSpec.describe Kenshin, 'comment emission invariant' do
   CASES = {
     'variable write with do..end block' => <<~RUBY,
       comments = result.comments.map do |comment|
@@ -37,13 +37,13 @@ RSpec.describe Rfmt, 'comment emission invariant' do
   CASES.each do |name, source|
     context "with #{name}" do
       it 'emits each comment exactly once' do
-        expect(Rfmt.format(source).scan('# inner note').size).to eq(1)
+        expect(Kenshin.format(source).scan('# inner note').size).to eq(1)
       end
 
       it 'is idempotent' do
-        first = Rfmt.format(source)
+        first = Kenshin.format(source)
 
-        expect(Rfmt.format(first)).to eq(first)
+        expect(Kenshin.format(first)).to eq(first)
       end
     end
   end

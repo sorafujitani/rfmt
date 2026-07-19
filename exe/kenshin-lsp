@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+$VERBOSE = nil unless ENV['KENSHIN_VERBOSE']
+
+require 'kenshin/lsp/server'
+
+exit Kenshin::LSP::Server.new.run

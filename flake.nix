@@ -1,5 +1,5 @@
 {
-  description = "rfmt - A Ruby code formatter written in Rust";
+  description = "kenshin - A Ruby code formatter written in Rust";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -75,12 +75,12 @@
           RUBY_CC_VERSION = rubyVersion.version;
         };
 
-        mkRfmt =
+        mkKenshin =
           {
             ruby ? rubyVersion,
           }:
           pkgs.stdenv.mkDerivation {
-            pname = "rfmt";
+            pname = "kenshin";
             version = "1.4.1";
             src = ./.;
 
@@ -121,18 +121,18 @@
               mkdir -p $out/bin $out/lib/ruby/gems/${ruby.version}
               gem build *.gemspec
               gem install --local --no-document *.gem --install-dir $out/lib/ruby/gems/${ruby.version}
-              cat > $out/bin/rfmt << 'EOF'
+              cat > $out/bin/kenshin << 'EOF'
               #!${pkgs.bash}/bin/bash
               export GEM_HOME=$out/lib/ruby/gems/${ruby.version}
               export GEM_PATH=$GEM_HOME:${ruby}/lib/ruby/gems/${ruby.version}
-              exec ${ruby}/bin/ruby $out/lib/ruby/gems/${ruby.version}/bin/rfmt "$@"
+              exec ${ruby}/bin/ruby $out/lib/ruby/gems/${ruby.version}/bin/kenshin "$@"
               EOF
-              chmod +x $out/bin/rfmt
+              chmod +x $out/bin/kenshin
             '';
 
             meta = with pkgs.lib; {
               description = "A Ruby code formatter written in Rust";
-              homepage = "https://github.com/fs0414/rfmt";
+              homepage = "https://github.com/sorafujitani/rfmt";
               license = licenses.mit;
               maintainers = [ ];
               platforms = platforms.unix;
@@ -143,7 +143,7 @@
       {
         devShells.default = dev-common.lib.mkDevShell {
           inherit pkgs;
-          name = "rfmt";
+          name = "kenshin";
           buildInputs = coreBuildInputs;
           shellHook = ''
             mkdir -p .nix-gem-home .nix-cargo-home 2>/dev/null
@@ -162,7 +162,7 @@
 
         devShells.full = dev-common.lib.mkDevShell {
           inherit pkgs;
-          name = "rfmt-full";
+          name = "kenshin-full";
           inherit buildInputs;
           shellHook = ''
             mkdir -p .nix-gem-home .nix-cargo-home 2>/dev/null
@@ -174,19 +174,19 @@
         };
 
         packages = {
-          default = mkRfmt { };
-          rfmt = mkRfmt { };
-          rfmt-ruby-3_3 = mkRfmt { ruby = pkgs.ruby_3_3; };
-          rfmt-ruby-3_4 = mkRfmt { ruby = pkgs.ruby_3_4; };
+          default = mkKenshin { };
+          kenshin = mkKenshin { };
+          kenshin-ruby-3_3 = mkKenshin { ruby = pkgs.ruby_3_3; };
+          kenshin-ruby-3_4 = mkKenshin { ruby = pkgs.ruby_3_4; };
         };
 
         formatter = pkgs.nixfmt;
 
         apps = {
           setup = flake-utils.lib.mkApp {
-            drv = pkgs.writeShellScript "rfmt-setup" ''
+            drv = pkgs.writeShellScript "kenshin-setup" ''
               set -e
-              echo "Setting up rfmt development environment..."
+              echo "Setting up kenshin development environment..."
               if ! command -v nix &> /dev/null; then
                 echo "Error: Nix is not installed. Please install Nix first."
                 exit 1
@@ -203,9 +203,9 @@
           };
 
           test = flake-utils.lib.mkApp {
-            drv = pkgs.writeShellScript "rfmt-test" ''
+            drv = pkgs.writeShellScript "kenshin-test" ''
               set -e
-              echo "Running rfmt tests..."
+              echo "Running kenshin tests..."
               echo "Installing dependencies..."
               bundle install
               echo "Compiling extension..."
@@ -213,7 +213,7 @@
               echo "Running Ruby tests..."
               bundle exec rspec
               echo "Running Rust tests..."
-              cargo test --manifest-path ext/rfmt/Cargo.toml
+              cargo test --manifest-path ext/kenshin/Cargo.toml
               echo "All tests passed."
             '';
           };
@@ -221,7 +221,7 @@
 
         checks = {
           nixfmt =
-            pkgs.runCommand "rfmt-nixfmt-check"
+            pkgs.runCommand "kenshin-nixfmt-check"
               {
                 nativeBuildInputs = [ pkgs.nixfmt ];
               }
@@ -231,7 +231,7 @@
                 touch $out
               '';
           ruby-syntax =
-            pkgs.runCommand "rfmt-ruby-syntax-check"
+            pkgs.runCommand "kenshin-ruby-syntax-check"
               {
                 nativeBuildInputs = [ rubyVersion ];
               }
@@ -243,7 +243,7 @@
         }
         // pkgs.lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
           rustfmt =
-            pkgs.runCommand "rfmt-rustfmt-check"
+            pkgs.runCommand "kenshin-rustfmt-check"
               {
                 nativeBuildInputs = [
                   pkgs.rustfmt
@@ -252,7 +252,7 @@
               }
               ''
                 cd ${./.}
-                cargo fmt --manifest-path ext/rfmt/Cargo.toml -- --check
+                cargo fmt --manifest-path ext/kenshin/Cargo.toml -- --check
                 touch $out
               '';
         };

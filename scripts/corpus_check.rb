@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'prism'
-require_relative '../lib/rfmt'
+require_relative '../lib/kenshin'
 
 module CorpusCheck
   CORPUS_GLOBS = ['lib/**/*.rb', 'spec/**/*.rb', 'scripts/**/*.rb'].freeze
@@ -130,10 +130,10 @@ module CorpusCheck
     end
 
     def property_failures(_path, source, source_result)
-      # The guard in Rfmt.format raises before invalid output can reach us
+      # The guard in Kenshin.format raises before invalid output can reach us
       begin
-        formatted = Rfmt.format(source)
-      rescue Rfmt::ValidationError => e
+        formatted = Kenshin.format(source)
+      rescue Kenshin::ValidationError => e
         return ["syntactic validity: #{e.message}"]
       end
 
@@ -153,7 +153,7 @@ module CorpusCheck
     end
 
     def idempotency_failure(formatted)
-      reformatted = Rfmt.format(formatted)
+      reformatted = Kenshin.format(formatted)
       return nil if reformatted == formatted
 
       "idempotency: second format pass changed output\n#{first_diff_excerpt(formatted, reformatted)}"

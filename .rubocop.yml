@@ -4,10 +4,10 @@ AllCops:
   Exclude:
     - 'vendor/**/*'
     - 'spec/fixtures/**/*'
-    - 'ext/rfmt/tests/fixtures/**/*'
+    - 'ext/kenshin/tests/fixtures/**/*'
     - 'tmp/**/*'
     - 'pkg/**/*'
-    - 'ext/rfmt/spec/**/*'
+    - 'ext/kenshin/spec/**/*'
     - 'docspriv/**/*'
 
 Layout/LineLength:
@@ -20,7 +20,7 @@ Metrics/BlockLength:
   Max: 50
   Exclude:
     - 'spec/**/*_spec.rb'
-    - 'rfmt.gemspec'
+    - 'kenshin.gemspec'
     - 'Rakefile'
 
 # Allow constants in RSpec test files
@@ -33,7 +33,7 @@ Metrics/AbcSize:
   Max: 20
   Exclude:
     - 'spec/snapshot_spec.rb'
-    - 'lib/rfmt/cli.rb'
+    - 'lib/kenshin/cli.rb'
     - 'bin/release'
     - 'scripts/**/*'
 
@@ -41,8 +41,8 @@ Metrics/MethodLength:
   Max: 20
   Exclude:
     - 'spec/snapshot_spec.rb'
-    - 'lib/rfmt.rb'
-    - 'lib/rfmt/cli.rb'
+    - 'lib/kenshin.rb'
+    - 'lib/kenshin/cli.rb'
     - 'bin/release'
     - 'Rakefile'
     - 'scripts/**/*'
@@ -50,19 +50,19 @@ Metrics/MethodLength:
 Metrics/ClassLength:
   Max: 200
   Exclude:
-    - 'lib/rfmt/cli.rb'
+    - 'lib/kenshin/cli.rb'
     - 'bin/release'
     - 'scripts/**/*'
 
 Metrics/CyclomaticComplexity:
   Max: 10
   Exclude:
-    - 'lib/rfmt/cli.rb'
+    - 'lib/kenshin/cli.rb'
 
 Metrics/PerceivedComplexity:
   Max: 10
   Exclude:
-    - 'lib/rfmt/cli.rb'
+    - 'lib/kenshin/cli.rb'
 
 # Lint violations that are acceptable for specific cases
 Lint/DuplicateBranch:

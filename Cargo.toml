@@ -3,7 +3,7 @@
 # in the ext/ directory.
 
 [workspace]
-members = ["./ext/rfmt"]
+members = ["./ext/kenshin"]
 resolver = "2"
 
 # panic = "abort" must not be set here: magnus relies on unwinding to convert

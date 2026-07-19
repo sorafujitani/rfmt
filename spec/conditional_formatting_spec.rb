@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe Rfmt, 'Conditional Formatting' do
+RSpec.describe Kenshin, 'Conditional Formatting' do
   it 'formats if with elsif and else' do
     source = <<~RUBY
       if x > 0
@@ -24,7 +24,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
       end
     RUBY
 
-    result = Rfmt.format(source)
+    result = Kenshin.format(source)
     expect(result).to eq(expected)
   end
 
@@ -45,25 +45,25 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
       end
     RUBY
 
-    result = Rfmt.format(source)
+    result = Kenshin.format(source)
     expect(result).to eq(expected)
   end
 
   it 'preserves postfix if/unless' do
     source = 'puts "yes" if x > 0'
-    result = Rfmt.format(source)
+    result = Kenshin.format(source)
     expect(result.strip).to eq('puts "yes" if x > 0')
   end
 
   it 'preserves inline comments on postfix if' do
     source = "some_method if condition # steep:ignore\n"
-    result = Rfmt.format(source)
+    result = Kenshin.format(source)
     expect(result).to eq("some_method if condition # steep:ignore\n")
   end
 
   it 'preserves inline comments on postfix unless' do
     source = "some_method unless condition # steep:ignore\n"
-    result = Rfmt.format(source)
+    result = Kenshin.format(source)
     expect(result).to eq("some_method unless condition # steep:ignore\n")
   end
 
@@ -84,7 +84,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
       end
     RUBY
 
-    result = Rfmt.format(source)
+    result = Kenshin.format(source)
     expect(result).to eq(expected)
   end
 
@@ -113,7 +113,7 @@ RSpec.describe Rfmt, 'Conditional Formatting' do
       end
     RUBY
 
-    result = Rfmt.format(source)
+    result = Kenshin.format(source)
     expect(result).to eq(expected)
   end
 end

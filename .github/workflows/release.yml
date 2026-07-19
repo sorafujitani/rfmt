@@ -30,13 +30,13 @@ jobs:
     - name: Verify version.rb matches tag
       run: |
         TAG_VERSION="${{ steps.extract_version.outputs.tag_version }}"
-        FILE_VERSION=$(ruby -r ./lib/rfmt/version.rb -e "puts Rfmt::VERSION")
+        FILE_VERSION=$(ruby -r ./lib/kenshin/version.rb -e "puts Kenshin::VERSION")
         echo "Tag version: $TAG_VERSION"
         echo "File version: $FILE_VERSION"
         if [ "$TAG_VERSION" != "$FILE_VERSION" ]; then
           echo "Error: Version mismatch!"
           echo "Tag: v$TAG_VERSION"
-          echo "lib/rfmt/version.rb: $FILE_VERSION"
+          echo "lib/kenshin/version.rb: $FILE_VERSION"
           exit 1
         fi
 
@@ -105,7 +105,7 @@ jobs:
         bundler-cache: true
 
     - name: Build source gem
-      run: gem build rfmt.gemspec
+      run: gem build kenshin.gemspec
 
     - name: Upload gem artifact
       uses: actions/upload-artifact@v4
@@ -157,7 +157,7 @@ jobs:
           ## Installation
 
           ```bash
-          gem install rfmt -v ${{ steps.extract_version.outputs.tag_version }}
+          gem install kenshin -v ${{ steps.extract_version.outputs.tag_version }}
           ```
 
           ### Precompiled platforms

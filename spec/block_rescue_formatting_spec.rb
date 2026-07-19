@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe Rfmt, 'Block with Rescue Formatting' do
+RSpec.describe Kenshin, 'Block with Rescue Formatting' do
   describe 'do...end block with rescue' do
     it 'preserves block body and rescue clause' do
       source = <<~RUBY
@@ -12,7 +12,7 @@ RSpec.describe Rfmt, 'Block with Rescue Formatting' do
           e
         end
       RUBY
-      result = Rfmt.format(source)
+      result = Kenshin.format(source)
       expect(result).to include('x')
       expect(result).to include('rescue StandardError => e')
     end
@@ -27,7 +27,7 @@ RSpec.describe Rfmt, 'Block with Rescue Formatting' do
           handle_standard_error(e)
         end
       RUBY
-      result = Rfmt.format(source)
+      result = Kenshin.format(source)
       expect(result).to include('rescue TypeError')
       expect(result).to include('rescue StandardError')
     end
@@ -42,7 +42,7 @@ RSpec.describe Rfmt, 'Block with Rescue Formatting' do
           success
         end
       RUBY
-      result = Rfmt.format(source)
+      result = Kenshin.format(source)
       expect(result).to include('else')
       expect(result).to include('success')
     end
@@ -59,7 +59,7 @@ RSpec.describe Rfmt, 'Block with Rescue Formatting' do
           cleanup
         end
       RUBY
-      result = Rfmt.format(source)
+      result = Kenshin.format(source)
       expect(result).to include('rescue ParseError')
       expect(result).to include('else')
       expect(result).to include('ensure')
@@ -73,7 +73,7 @@ RSpec.describe Rfmt, 'Block with Rescue Formatting' do
           tx.close
         end
       RUBY
-      result = Rfmt.format(source)
+      result = Kenshin.format(source)
       expect(result).to include('ensure')
       expect(result).to include('tx.close')
     end

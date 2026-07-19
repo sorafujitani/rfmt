@@ -268,6 +268,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92ecc6618181def0457392ccd0ee51198e065e016d1d527a7ac1b6dc7c1f09d2"
 
 [[package]]
+name = "kenshin"
+version = "1.7.0"
+dependencies = [
+ "dirs",
+ "globset",
+ "log",
+ "magnus",
+ "rb-sys",
+ "ruby-prism",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -483,23 +500,6 @@ name = "regex-syntax"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a96887878f22d7bad8a3b6dc5b7440e0ada9a245242924394987b21cf2210a4c"
-
-[[package]]
-name = "rfmt"
-version = "1.7.0"
-dependencies = [
- "dirs",
- "globset",
- "log",
- "magnus",
- "rb-sys",
- "ruby-prism",
- "serde",
- "serde_json",
- "serde_yaml",
- "tempfile",
- "thiserror",
-]
 
 [[package]]
 name = "ruby-prism"

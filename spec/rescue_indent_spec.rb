@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe Rfmt, 'Rescue/Ensure Indentation' do
+RSpec.describe Kenshin, 'Rescue/Ensure Indentation' do
   def normalize(source)
     source.gsub(/[ \t]+\n/, "\n").chomp
   end
@@ -25,7 +25,7 @@ RSpec.describe Rfmt, 'Rescue/Ensure Indentation' do
           cleanup!
         end
       RUBY
-      expect(normalize(Rfmt.format(source))).to eq(expected)
+      expect(normalize(Kenshin.format(source))).to eq(expected)
     end
 
     it 'keeps rescue aligned with def when nested inside a class' do
@@ -55,7 +55,7 @@ RSpec.describe Rfmt, 'Rescue/Ensure Indentation' do
           end
         end
       RUBY
-      expect(normalize(Rfmt.format(source))).to eq(expected)
+      expect(normalize(Kenshin.format(source))).to eq(expected)
     end
 
     it 'handles chained rescue clauses' do
@@ -77,7 +77,7 @@ RSpec.describe Rfmt, 'Rescue/Ensure Indentation' do
           handle_std(e)
         end
       RUBY
-      expect(normalize(Rfmt.format(source))).to eq(expected)
+      expect(normalize(Kenshin.format(source))).to eq(expected)
     end
 
     it 'handles rescue followed by ensure' do
@@ -99,7 +99,7 @@ RSpec.describe Rfmt, 'Rescue/Ensure Indentation' do
           cleanup!
         end
       RUBY
-      expect(normalize(Rfmt.format(source))).to eq(expected)
+      expect(normalize(Kenshin.format(source))).to eq(expected)
     end
 
     it 'handles ensure-only clause' do
@@ -119,7 +119,7 @@ RSpec.describe Rfmt, 'Rescue/Ensure Indentation' do
           log!
         end
       RUBY
-      expect(normalize(Rfmt.format(source))).to eq(expected)
+      expect(normalize(Kenshin.format(source))).to eq(expected)
     end
   end
 
@@ -141,7 +141,7 @@ RSpec.describe Rfmt, 'Rescue/Ensure Indentation' do
           raise
         end
       RUBY
-      expect(normalize(Rfmt.format(source))).to eq(expected)
+      expect(normalize(Kenshin.format(source))).to eq(expected)
     end
   end
 
@@ -171,7 +171,7 @@ RSpec.describe Rfmt, 'Rescue/Ensure Indentation' do
           end
         end
       RUBY
-      expect(normalize(Rfmt.format(source))).to eq(expected)
+      expect(normalize(Kenshin.format(source))).to eq(expected)
     end
   end
 end

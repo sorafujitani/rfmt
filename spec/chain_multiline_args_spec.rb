@@ -2,10 +2,10 @@
 
 require 'spec_helper'
 
-RSpec.describe Rfmt, 'Chain reformatting with multi-line arguments' do
+RSpec.describe Kenshin, 'Chain reformatting with multi-line arguments' do
   def idempotent(source)
-    first = Rfmt.format(source)
-    second = Rfmt.format(first)
+    first = Kenshin.format(source)
+    second = Kenshin.format(first)
     expect(second).to eq(first), "non-idempotent output:\n#{first}"
     first
   end

@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe Rfmt, 'Comment duplication in do…end blocks (#112)' do
+RSpec.describe Kenshin, 'Comment duplication in do…end blocks (#112)' do
   let(:source) do
     <<~RUBY
       comments = result.comments.map do |comment|
@@ -17,7 +17,7 @@ RSpec.describe Rfmt, 'Comment duplication in do…end blocks (#112)' do
   end
 
   it 'emits each block-interior comment exactly once' do
-    formatted = Rfmt.format(source)
+    formatted = Kenshin.format(source)
 
     expect(formatted.scan('# first line of a long explanation').size).to eq(1)
     expect(formatted.scan('# second line of the explanation').size).to eq(1)
@@ -25,8 +25,8 @@ RSpec.describe Rfmt, 'Comment duplication in do…end blocks (#112)' do
   end
 
   it 'is idempotent' do
-    first = Rfmt.format(source)
-    second = Rfmt.format(first)
+    first = Kenshin.format(source)
+    second = Kenshin.format(first)
 
     expect(second).to eq(first)
   end

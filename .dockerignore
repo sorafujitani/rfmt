@@ -1,4 +1,4 @@
-# Docker ignore file for rfmt gem installation testing
+# Docker ignore file for kenshin gem installation testing
 # This file excludes unnecessary files from the Docker build context
 
 # Nix development environment cache (very large)
@@ -68,7 +68,7 @@ scripts/
 # Keep these (explicitly)
 !Gemfile
 !Gemfile.lock
-!rfmt.gemspec
+!kenshin.gemspec
 !Rakefile
 !lib/
 !ext/

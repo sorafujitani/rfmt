@@ -22,11 +22,11 @@ class SimpleFormatterBenchmark
 
   def run_all
     puts '=' * 80
-    puts 'rfmt vs RuboCop Performance Benchmark'
+    puts 'kenshin vs RuboCop Performance Benchmark'
     puts '=' * 80
     puts "Project: #{@rails_path}"
     puts "Ruby: #{RUBY_VERSION}"
-    puts "rfmt: #{rfmt_version}"
+    puts "kenshin: #{kenshin_version}"
     puts "RuboCop: #{rubocop_version}"
     puts "Runs: #{BENCHMARK_RUNS}"
     puts '=' * 80
@@ -45,11 +45,11 @@ class SimpleFormatterBenchmark
   def validate_environment!
     abort "Error: Project not found at #{@rails_path}" unless Dir.exist?(@rails_path)
 
-    # Use the current development version of rfmt
-    @rfmt_cmd = File.expand_path('exe/rfmt', "#{__dir__}/..")
+    # Use the current development version of kenshin
+    @kenshin_cmd = File.expand_path('exe/kenshin', "#{__dir__}/..")
     @rubocop_cmd = 'bundle exec rubocop'
 
-    abort "Error: rfmt not found at #{@rfmt_cmd}" unless File.exist?(@rfmt_cmd)
+    abort "Error: kenshin not found at #{@kenshin_cmd}" unless File.exist?(@kenshin_cmd)
     abort 'Error: rubocop not available' unless system("#{@rubocop_cmd} --version > /dev/null 2>&1")
 
     ruby_files = Dir.glob("#{@rails_path}/**/*.rb")
@@ -66,7 +66,7 @@ class SimpleFormatterBenchmark
   def check_files_need_formatting(files)
     count = 0
     files.each do |file|
-      result = system("#{@rfmt_cmd} check '#{file}' > /dev/null 2>&1")
+      result = system("#{@kenshin_cmd} check '#{file}' > /dev/null 2>&1")
       count += 1 unless result
     end
     count
@@ -84,7 +84,7 @@ class SimpleFormatterBenchmark
         ruby_platform: RUBY_PLATFORM
       },
       tools: {
-        rfmt_version: rfmt_version,
+        kenshin_version: kenshin_version,
         rubocop_version: rubocop_version
       },
       project: {
@@ -95,10 +95,10 @@ class SimpleFormatterBenchmark
     }
   end
 
-  def rfmt_version
-    @rfmt_version ||= begin
+  def kenshin_version
+    @kenshin_version ||= begin
       # Get version from current development build
-      version_output = `#{@rfmt_cmd} version 2>/dev/null`.strip
+      version_output = `#{@kenshin_cmd} version 2>/dev/null`.strip
       version_output.empty? ? 'development' : version_output
     end
   rescue StandardError
@@ -143,16 +143,16 @@ class SimpleFormatterBenchmark
       backup_file = "#{backup_dir}/test_file.rb"
       FileUtils.cp(test_file, backup_file)
 
-      # Benchmark rfmt
-      puts 'Testing rfmt...'
-      rfmt_times = []
+      # Benchmark kenshin
+      puts 'Testing kenshin...'
+      kenshin_times = []
       BENCHMARK_RUNS.times do |_i|
         FileUtils.cp(backup_file, test_file)
 
         time = Benchmark.realtime do
-          system("#{@rfmt_cmd} format '#{test_file}' > /dev/null 2>&1")
+          system("#{@kenshin_cmd} format '#{test_file}' > /dev/null 2>&1")
         end
-        rfmt_times << time
+        kenshin_times << time
         print '.'
       end
       puts ' done'
@@ -178,12 +178,12 @@ class SimpleFormatterBenchmark
         file: File.basename(test_file),
         size_bytes: size,
         lines: lines,
-        rfmt: calculate_stats(rfmt_times),
+        kenshin: calculate_stats(kenshin_times),
         rubocop: calculate_stats(rubocop_times),
-        ratio: average(rubocop_times) / average(rfmt_times)
+        ratio: average(rubocop_times) / average(kenshin_times)
       }
 
-      print_benchmark_result('Single File', rfmt_times, rubocop_times)
+      print_benchmark_result('Single File', kenshin_times, rubocop_times)
     ensure
       FileUtils.rm_rf(backup_dir)
     end
@@ -218,9 +218,9 @@ class SimpleFormatterBenchmark
         FileUtils.cp(file, backup_file)
       end
 
-      # Benchmark rfmt
-      puts 'Testing rfmt...'
-      rfmt_times = []
+      # Benchmark kenshin
+      puts 'Testing kenshin...'
+      kenshin_times = []
       BENCHMARK_RUNS.times do
         # Restore all files
         files.each do |file|
@@ -229,9 +229,9 @@ class SimpleFormatterBenchmark
         end
 
         time = Benchmark.realtime do
-          system("#{@rfmt_cmd} format '#{test_dir}' > /dev/null 2>&1")
+          system("#{@kenshin_cmd} format '#{test_dir}' > /dev/null 2>&1")
         end
-        rfmt_times << time
+        kenshin_times << time
         print '.'
       end
       puts ' done'
@@ -263,12 +263,12 @@ class SimpleFormatterBenchmark
       @results[:directory_benchmark] = {
         directory: File.basename(test_dir),
         file_count: files.size,
-        rfmt: calculate_stats(rfmt_times),
+        kenshin: calculate_stats(kenshin_times),
         rubocop: calculate_stats(rubocop_times),
-        ratio: average(rubocop_times) / average(rfmt_times)
+        ratio: average(rubocop_times) / average(kenshin_times)
       }
 
-      print_benchmark_result('Directory', rfmt_times, rubocop_times)
+      print_benchmark_result('Directory', kenshin_times, rubocop_times)
     ensure
       FileUtils.rm_rf(backup_dir)
     end
@@ -282,14 +282,14 @@ class SimpleFormatterBenchmark
     puts "Files: #{all_files.size}"
     puts
 
-    # rfmt check
-    puts 'Testing rfmt check...'
-    rfmt_times = []
+    # kenshin check
+    puts 'Testing kenshin check...'
+    kenshin_times = []
     BENCHMARK_RUNS.times do
       time = Benchmark.realtime do
-        system("#{@rfmt_cmd} check '#{@rails_path}' > /dev/null 2>&1")
+        system("#{@kenshin_cmd} check '#{@rails_path}' > /dev/null 2>&1")
       end
-      rfmt_times << time
+      kenshin_times << time
       print '.'
     end
     puts ' done'
@@ -308,12 +308,12 @@ class SimpleFormatterBenchmark
 
     @results[:full_project_benchmark] = {
       total_files: all_files.size,
-      rfmt: calculate_stats(rfmt_times),
+      kenshin: calculate_stats(kenshin_times),
       rubocop: calculate_stats(rubocop_times),
-      ratio: average(rubocop_times) / average(rfmt_times)
+      ratio: average(rubocop_times) / average(kenshin_times)
     }
 
-    print_benchmark_result('Full Project', rfmt_times, rubocop_times)
+    print_benchmark_result('Full Project', kenshin_times, rubocop_times)
   end
 
   def calculate_stats(times)
@@ -367,14 +367,14 @@ class SimpleFormatterBenchmark
     end
   end
 
-  def print_benchmark_result(_label, rfmt_times, rubocop_times)
-    rfmt_avg = average(rfmt_times)
+  def print_benchmark_result(_label, kenshin_times, rubocop_times)
+    kenshin_avg = average(kenshin_times)
     rubocop_avg = average(rubocop_times)
-    ratio = rubocop_avg / rfmt_avg
+    ratio = rubocop_avg / kenshin_avg
 
     puts
     puts 'Results:'
-    puts "  rfmt:    avg=#{format_time(rfmt_avg)}, median=#{format_time(median(rfmt_times))}, σ=#{format_time(std_dev(rfmt_times))}"
+    puts "  kenshin:    avg=#{format_time(kenshin_avg)}, median=#{format_time(median(kenshin_times))}, σ=#{format_time(std_dev(kenshin_times))}"
     puts "  RuboCop: avg=#{format_time(rubocop_avg)}, median=#{format_time(median(rubocop_times))}, σ=#{format_time(std_dev(rubocop_times))}"
     puts "  Ratio: #{ratio.round(2)}x"
     puts

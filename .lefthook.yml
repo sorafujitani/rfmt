@@ -1,4 +1,4 @@
-# Lefthook configuration for rfmt project
+# Lefthook configuration for kenshin project
 # See: https://github.com/evilmartians/lefthook
 
 # pre-push: Run linting checks before pushing to remote
@@ -13,12 +13,12 @@ pre-push:
 
     # Rust formatting check
     rust-fmt:
-      run: cargo fmt --manifest-path ext/rfmt/Cargo.toml -- --check
-      fail_text: "Rust formatting check failed. Run 'cargo fmt --manifest-path ext/rfmt/Cargo.toml' to fix."
+      run: cargo fmt --manifest-path ext/kenshin/Cargo.toml -- --check
+      fail_text: "Rust formatting check failed. Run 'cargo fmt --manifest-path ext/kenshin/Cargo.toml' to fix."
 
     # Rust linting with Clippy
     clippy:
-      run: cargo clippy --manifest-path ext/rfmt/Cargo.toml -- -D warnings
+      run: cargo clippy --manifest-path ext/kenshin/Cargo.toml -- -D warnings
       fail_text: "Clippy found issues. Please fix the warnings."
 
 # Skip lefthook execution in CI (GitHub Actions handles validation)

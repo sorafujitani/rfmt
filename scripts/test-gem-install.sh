@@ -28,7 +28,7 @@ fi
 
 echo ""
 echo "========================================"
-echo "  rfmt gem installation test"
+echo "  kenshin gem installation test"
 echo "========================================"
 echo ""
 log_info "Testing Ruby versions: ${VERSIONS[*]}"
@@ -44,7 +44,7 @@ for version in "${VERSIONS[@]}"; do
     log_info "Testing Ruby ${version}..."
     echo "----------------------------------------"
 
-    IMAGE_NAME="rfmt-test:ruby-${version}"
+    IMAGE_NAME="kenshin-test:ruby-${version}"
 
     if docker build \
         --build-arg RUBY_VERSION="${version}" \
@@ -58,9 +58,9 @@ for version in "${VERSIONS[@]}"; do
 
         log_info "Running verification tests..."
         docker run --rm "$IMAGE_NAME" ruby -e "
-            require 'rfmt'
-            puts \"  Version: #{Rfmt::VERSION}\"
-            puts \"  Rust version: #{Rfmt.rust_version}\"
+            require 'kenshin'
+            puts \"  Version: #{Kenshin::VERSION}\"
+            puts \"  Rust version: #{Kenshin.rust_version}\"
             puts \"  Ruby: #{RUBY_VERSION}\"
         " && log_success "Ruby ${version}: verification passed!"
     else
