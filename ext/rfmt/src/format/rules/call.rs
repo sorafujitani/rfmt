@@ -5,8 +5,6 @@
 //! - Calls with blocks: `foo.bar do ... end` or `foo.bar { ... }`
 //! - Method chains: `foo.bar.baz`
 
-use std::borrow::Cow;
-
 use crate::ast::{Node, NodeType};
 use crate::doc::{align, concat, hardline, indent, text, Doc};
 use crate::error::Result;
@@ -14,8 +12,8 @@ use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
     format_child, format_comments_before_end, format_leading_comments, format_statements,
-    format_trailing_comment, line_leading_indent, mark_comments_in_range_emitted,
-    reformat_chain_lines, strip_one_trailing_newline, FormatRule,
+    format_trailing_comment, mark_comments_in_range_emitted, reformat_chain_doc,
+    strip_one_trailing_newline, FormatRule,
 };
 
 /// Rule for formatting method calls.
@@ -114,14 +112,10 @@ fn format_call(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) ->
         // the full `trim_end` here would instead eat a blank separator line
         // that legitimately belongs between statements.
         if let Some(source_text) = ctx.extract_source(node) {
-            let base_indent = line_leading_indent(ctx.source(), node.location.start_offset);
-            let reformatted = reformat_chain_lines(
-                source_text,
-                base_indent,
-                ctx.config().formatting.indent_width,
-            );
-            let trimmed = strip_one_trailing_newline(&reformatted);
-            docs.push(text(trimmed.to_string()));
+            match reformat_chain_doc(source_text) {
+                Some(chain_doc) => docs.push(chain_doc),
+                None => docs.push(text(strip_one_trailing_newline(source_text).to_string())),
+            }
         }
 
         // Mark comments in this range as emitted (they're in source extraction)
@@ -148,15 +142,16 @@ fn format_call(node: &Node, ctx: &mut FormatContext, registry: &RuleRegistry) ->
         .source()
         .get(node.location.start_offset..call_end_offset)
     {
-        let base_indent = line_leading_indent(ctx.source(), node.location.start_offset);
-        let reformatted = reformat_chain_lines(
-            call_text.trim_end(),
-            base_indent,
-            ctx.config().formatting.indent_width,
-        );
-        let changed = matches!(reformatted, Cow::Owned(_));
-        docs.push(text(reformatted));
-        changed
+        match reformat_chain_doc(call_text.trim_end()) {
+            Some(chain_doc) => {
+                docs.push(chain_doc);
+                true
+            }
+            None => {
+                docs.push(text(call_text.trim_end().to_string()));
+                false
+            }
+        }
     } else {
         false
     };

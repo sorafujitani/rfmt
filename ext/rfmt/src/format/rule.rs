@@ -4,7 +4,9 @@
 //! along with shared helper functions for common formatting patterns.
 
 use crate::ast::{CommentType, Node};
-use crate::doc::{concat, hardline, leading_comment, literalline, text, trailing_comment, Doc};
+use crate::doc::{
+    concat, hardline, indent, leading_comment, literalline, text, trailing_comment, Doc,
+};
 use crate::error::Result;
 
 use super::context::FormatContext;
@@ -437,139 +439,165 @@ pub fn format_statements(
 
 /// Returns the number of leading space/tab characters on the line containing `offset`.
 ///
-/// The source text extracted by `FormatContext::extract_source` starts at the node's
-/// offset and does not include the whitespace that precedes the first line in the
-/// original source. `Doc::Text` is printed verbatim without re-indenting embedded
-/// newlines, so any reformatting that emits a multi-line string must include the
-/// original leading indent itself.
-pub fn line_leading_indent(source: &str, offset: usize) -> usize {
-    let offset = offset.min(source.len());
-    let line_start = source[..offset].rfind('\n').map(|p| p + 1).unwrap_or(0);
-    source.as_bytes()[line_start..offset]
-        .iter()
-        .take_while(|&&b| b == b' ' || b == b'\t')
-        .count()
-}
-
-/// Reformats multiline method chain text with indented style.
-///
-/// Converts aligned method chains to indented style:
+/// Reformats a multiline method chain into a Doc that lets the printer own
+/// line anchoring, so the output is independent of the statement's column
+/// in the INPUT source (misindented input formats the same as clean input):
 /// - First line is kept as-is (trimmed at end)
-/// - Subsequent lines starting with `.` or `&.` are re-indented to
-///   `base_indent + indent_width` spaces
+/// - Chain continuation lines (`.` / `&.`) become `hardline` + trimmed body
+///   inside `indent(...)`, rendering one indent level below wherever the
+///   statement lands in the output
+/// - Other lines at or beyond the original chain indent (multi-line
+///   arguments of a chain call) keep their offset RELATIVE to the chain
+///   lines, baked as leading spaces on top of the hardline anchor
+/// - Heredoc body lines and shallower lines are emitted verbatim after a
+///   `literalline` — for plain/dash heredocs the leading whitespace is
+///   string content, so shifting it would change program semantics
 ///
-/// `base_indent` is the column at which the first line starts in the original source
-/// (obtain via `line_leading_indent`). Because `Doc::Text` is printed verbatim without
-/// re-indenting embedded newlines, this indent must be included in the returned string.
-///
-/// Returns `Cow::Borrowed` when no transformation is needed to avoid allocation.
-///
-/// # Example
-/// ```text
-/// Input (base_indent=4, indent_width=2):
-///   "foo.bar\n                  .baz"
-/// Output:
-///   "foo.bar\n      .baz"
-/// ```
-pub fn reformat_chain_lines(
-    source_text: &str,
-    base_indent: usize,
-    indent_width: usize,
-) -> std::borrow::Cow<'_, str> {
-    use std::borrow::Cow;
-
+/// Returns `None` when no transformation applies; callers fall back to the
+/// verbatim source text.
+pub fn reformat_chain_doc(source_text: &str) -> Option<Doc> {
     let lines: Vec<&str> = source_text.lines().collect();
     if lines.len() <= 1 {
-        return Cow::Borrowed(source_text);
+        return None;
     }
+
+    let heredoc_body = heredoc_body_lines(&lines);
 
     // Skip reformatting when the first line opens a new scope (a `{` brace
     // lambda, a `do` block, or a `do |params|` block). The `.method` lines
     // that follow are chain continuations *inside the block body*, not of
-    // the outer call — re-indenting them relative to the outer
-    // `base_indent` collapses the nested chain one level to the left and
-    // breaks the visual structure of the block body.
+    // the outer call — re-indenting them relative to the outer statement
+    // collapses the nested chain one level to the left and breaks the
+    // visual structure of the block body.
     //
     // This deliberately keeps the reformat conservative: for a top-level
     // `User.active.where(...)` chain, line 1 ends with an identifier so
     // we still rewrite aligned → indented as PR #100 intended.
     let first_line = lines[0].trim_end();
     if first_line.ends_with('{') || first_line.ends_with(" do") || first_line.ends_with('|') {
-        return Cow::Borrowed(source_text);
+        return None;
     }
 
-    // Check if there are actual chain continuation lines (. or &.)
-    let has_chain = lines[1..].iter().any(|l| {
-        let t = l.trim_start();
-        t.starts_with('.') || t.starts_with("&.")
-    });
-
-    if !has_chain {
-        return Cow::Borrowed(source_text);
-    }
-
-    // Determine how much the chain is moving left. Before this pass, every
-    // `.method` line sat at some original "chain indent" (most commonly
-    // aligned under the first receiver's dot). We rewrite those lines to
-    // `base_indent + indent_width` — but that also means any multi-line
-    // *arguments* that lived inside a chain call like `.select( … )` used
-    // to be deeper than the original chain indent, and will now look
-    // orphaned off to the right if we leave them alone:
-    //
-    //     @users = User.left_joins(...)
-    //                 .select(           <- was col 17, becomes col 6
-    //                   'users.*, ' \   <- still at col 19 — orphaned
-    //                 )
-    //                 .having(...)
-    //
-    // Compute the delta between the original chain indent and the new
-    // one, and shift every non-chain continuation line that lives at
-    // (or below) the original chain indent by the same amount. Lines
-    // shallower than the original chain indent (e.g. a heredoc body
-    // whose squiggly indent is measured from the terminator) are left
-    // alone, so we don't accidentally eat through them.
-    let new_chain_indent = base_indent + indent_width;
-    let chain_indent_str = " ".repeat(new_chain_indent);
-
-    let original_chain_indent = lines[1..].iter().find_map(|l| {
+    // The original chain indent anchors the relative offsets of multi-line
+    // argument lines; without any chain continuation line there is nothing
+    // to reformat.
+    let chain_indent = lines.iter().enumerate().skip(1).find_map(|(i, l)| {
+        if heredoc_body[i] {
+            return None;
+        }
         let t = l.trim_start();
         if t.starts_with('.') || t.starts_with("&.") {
             Some(l.len() - t.len())
         } else {
             None
         }
-    });
+    })?;
 
-    let arg_shift = original_chain_indent
-        .map(|orig| orig.saturating_sub(new_chain_indent))
-        .unwrap_or(0);
-
-    let mut result = String::with_capacity(source_text.len());
-    result.push_str(lines[0].trim_end());
-
-    for line in &lines[1..] {
-        result.push('\n');
-        let trimmed = line.trim();
-        if trimmed.starts_with('.') || trimmed.starts_with("&.") {
-            result.push_str(&chain_indent_str);
-            result.push_str(trimmed);
-        } else if arg_shift > 0 && !trimmed.is_empty() {
-            let indent = line.len() - line.trim_start().len();
-            let chain_base = original_chain_indent.unwrap_or(0);
-            if indent >= chain_base {
-                let new_indent = indent - arg_shift;
-                result.push_str(&" ".repeat(new_indent));
-                result.push_str(line.trim_start());
-            } else {
-                result.push_str(line);
-            }
+    let mut rest: Vec<Doc> = Vec::with_capacity((lines.len() - 1) * 2);
+    for (i, line) in lines.iter().enumerate().skip(1) {
+        let body = line.trim_start();
+        let indent_cols = line.len() - body.len();
+        if heredoc_body[i] {
+            rest.push(literalline());
+            rest.push(text((*line).to_string()));
+        } else if body.starts_with('.') || body.starts_with("&.") {
+            rest.push(hardline());
+            rest.push(text(body.trim_end().to_string()));
+        } else if !body.is_empty() && indent_cols >= chain_indent {
+            // Multi-line arguments inside a chain call like `.select( … )`
+            // move together with the chain lines they belong to.
+            rest.push(hardline());
+            rest.push(text(format!(
+                "{}{}",
+                " ".repeat(indent_cols - chain_indent),
+                body.trim_end()
+            )));
         } else {
-            // Non-chain continuation (e.g., heredoc content): preserve as-is
-            result.push_str(line);
+            rest.push(literalline());
+            rest.push(text((*line).to_string()));
         }
     }
 
-    Cow::Owned(result)
+    Some(concat(vec![
+        text(first_line.to_string()),
+        indent(concat(rest)),
+    ]))
+}
+
+struct HeredocOpener {
+    terminator: String,
+    /// `<<-` / `<<~` allow the terminator line to be indented.
+    indented_terminator: bool,
+}
+
+/// Lexically marks lines that are heredoc bodies (including terminator
+/// lines). Openers on one line stack in source order, and each body runs
+/// until its terminator. When a terminator is ambiguous (e.g. a stray `\r`)
+/// this errs toward marking more lines as body, which only makes the
+/// reformat emit them verbatim — the semantics-safe direction.
+fn heredoc_body_lines(lines: &[&str]) -> Vec<bool> {
+    let mut body = vec![false; lines.len()];
+    let mut pending: std::collections::VecDeque<HeredocOpener> = std::collections::VecDeque::new();
+    for (i, line) in lines.iter().enumerate() {
+        if let Some(front) = pending.front() {
+            body[i] = true;
+            let candidate = if front.indented_terminator {
+                line.trim_start()
+            } else {
+                line
+            };
+            if candidate.trim_end_matches('\r') == front.terminator {
+                pending.pop_front();
+            }
+            continue;
+        }
+        scan_heredoc_openers(line, &mut pending);
+    }
+    body
+}
+
+/// Finds `<<ID` / `<<-ID` / `<<~ID` openers (identifier optionally wrapped
+/// in `"` / `'` / `` ` ``) in a code line. Purely lexical: openers inside
+/// string literals or comments are false positives, tolerated because they
+/// only cause verbatim emission.
+fn scan_heredoc_openers(line: &str, pending: &mut std::collections::VecDeque<HeredocOpener>) {
+    let bytes = line.as_bytes();
+    let mut i = 0;
+    while i + 2 < bytes.len() {
+        if bytes[i] != b'<' || bytes[i + 1] != b'<' {
+            i += 1;
+            continue;
+        }
+        let mut j = i + 2;
+        let indented = matches!(bytes.get(j), Some(b'-') | Some(b'~'));
+        if indented {
+            j += 1;
+        }
+        let quote = match bytes.get(j) {
+            Some(&q @ (b'"' | b'\'' | b'`')) => {
+                j += 1;
+                Some(q)
+            }
+            _ => None,
+        };
+        let start = j;
+        while j < bytes.len() && (bytes[j].is_ascii_alphanumeric() || bytes[j] == b'_') {
+            j += 1;
+        }
+        let valid = j > start
+            && (bytes[start].is_ascii_alphabetic() || bytes[start] == b'_')
+            && quote.is_none_or(|q| bytes.get(j) == Some(&q));
+        if !valid {
+            // Skip both `<` so `a <<< b` or `x <<= y` cannot rescan.
+            i += 2;
+            continue;
+        }
+        pending.push_back(HeredocOpener {
+            terminator: line[start..j].to_string(),
+            indented_terminator: indented,
+        });
+        i = j + usize::from(quote.is_some());
+    }
 }
 
 /// Returns true when the given 1-based `line` in `source` contains only
@@ -767,54 +795,72 @@ mod tests {
         assert!(!matches!(doc, Doc::Empty));
     }
 
-    #[test]
-    fn test_reformat_chain_lines_single_line() {
-        let input = "foo.bar.baz";
-        let result = reformat_chain_lines(input, 0, 2);
-        assert_eq!(result, "foo.bar.baz");
+    fn print(doc: Doc) -> String {
+        let config = Config::default();
+        let mut printer = crate::doc::Printer::new(&config);
+        printer.print(&doc)
     }
 
     #[test]
-    fn test_reformat_chain_lines_multiline_chain() {
+    fn test_reformat_chain_doc_single_line() {
+        assert!(reformat_chain_doc("foo.bar.baz").is_none());
+    }
+
+    #[test]
+    fn test_reformat_chain_doc_multiline_chain() {
         let input = "foo.bar\n                  .baz\n                  .qux";
-        let result = reformat_chain_lines(input, 0, 2);
-        assert_eq!(result, "foo.bar\n  .baz\n  .qux");
+        let doc = reformat_chain_doc(input).unwrap();
+        assert_eq!(print(doc), "foo.bar\n  .baz\n  .qux\n");
     }
 
     #[test]
-    fn test_reformat_chain_lines_safe_navigation() {
+    fn test_reformat_chain_doc_safe_navigation() {
         let input = "foo&.bar\n                  &.baz";
-        let result = reformat_chain_lines(input, 0, 2);
-        assert_eq!(result, "foo&.bar\n  &.baz");
+        let doc = reformat_chain_doc(input).unwrap();
+        assert_eq!(print(doc), "foo&.bar\n  &.baz\n");
     }
 
     #[test]
-    fn test_reformat_chain_lines_no_chain() {
-        let input = "foo(\n  arg1,\n  arg2\n)";
-        let result = reformat_chain_lines(input, 0, 2);
-        assert_eq!(result, input);
+    fn test_reformat_chain_doc_no_chain() {
+        assert!(reformat_chain_doc("foo(\n  arg1,\n  arg2\n)").is_none());
     }
 
     #[test]
-    fn test_reformat_chain_lines_preserves_base_indent() {
-        // Simulates a chain inside a 4-space-indented method body:
-        // the caller must include base_indent so the printed continuation
-        // lines up with `base_indent + indent_width` columns.
-        let input = "foo.bar\n                  .baz\n                  .qux";
-        let result = reformat_chain_lines(input, 4, 2);
-        assert_eq!(result, "foo.bar\n      .baz\n      .qux");
+    fn test_reformat_chain_doc_independent_of_input_column() {
+        // The doc carries no absolute indent: differently misindented
+        // inputs of the same chain print identically.
+        let aligned = "foo.bar\n                  .baz";
+        let flush = "foo.bar\n.baz";
+        let a = print(reformat_chain_doc(aligned).unwrap());
+        let b = print(reformat_chain_doc(flush).unwrap());
+        assert_eq!(a, b);
+        assert_eq!(a, "foo.bar\n  .baz\n");
     }
 
     #[test]
-    fn test_line_leading_indent_counts_spaces_and_tabs() {
-        let source = "def foo\n    bar\n\tbaz\nqux\n";
-        let bar = source.find("bar").unwrap();
-        let baz = source.find("baz").unwrap();
-        let qux = source.find("qux").unwrap();
-        assert_eq!(line_leading_indent(source, bar), 4);
-        assert_eq!(line_leading_indent(source, baz), 1);
-        assert_eq!(line_leading_indent(source, qux), 0);
-        // Out-of-range offset is clamped.
-        assert_eq!(line_leading_indent(source, usize::MAX), 0);
+    fn test_reformat_chain_doc_argument_lines_stay_relative_to_chain() {
+        let input = "u = User.all\n      .select(\n        :id,\n      )\n      .to_a";
+        let doc = reformat_chain_doc(input).unwrap();
+        assert_eq!(print(doc), "u = User.all\n  .select(\n    :id,\n  )\n  .to_a\n");
+    }
+
+    #[test]
+    fn test_reformat_chain_doc_keeps_plain_heredoc_body_verbatim() {
+        let input = "result = base\n      .where(<<SQL)\n        a = 1\nSQL\n      .order(:id)";
+        let doc = reformat_chain_doc(input).unwrap();
+        assert_eq!(
+            print(doc),
+            "result = base\n  .where(<<SQL)\n        a = 1\nSQL\n  .order(:id)\n"
+        );
+    }
+
+    #[test]
+    fn test_reformat_chain_doc_stacked_heredoc_openers() {
+        let input = "r = base\n      .merge(<<-A, <<~\"B\")\n        one\n      A\n        two\n      B\n      .to_a";
+        let doc = reformat_chain_doc(input).unwrap();
+        assert_eq!(
+            print(doc),
+            "r = base\n  .merge(<<-A, <<~\"B\")\n        one\n      A\n        two\n      B\n  .to_a\n"
+        );
     }
 }

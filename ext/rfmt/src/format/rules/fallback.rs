@@ -10,8 +10,8 @@ use crate::error::Result;
 use crate::format::context::FormatContext;
 use crate::format::registry::RuleRegistry;
 use crate::format::rule::{
-    format_leading_comments, format_trailing_comment, line_leading_indent,
-    mark_comments_in_range_emitted, reformat_chain_lines, strip_one_trailing_newline, FormatRule,
+    format_leading_comments, format_trailing_comment, mark_comments_in_range_emitted,
+    reformat_chain_doc, strip_one_trailing_newline, FormatRule,
 };
 
 /// Fallback rule that extracts source text directly.
@@ -47,14 +47,10 @@ impl FormatRule for FallbackRule {
         // could swallow an intentional blank line captured by the node's
         // extent).
         if let Some(source_text) = ctx.extract_source(node) {
-            let base_indent = line_leading_indent(ctx.source(), node.location.start_offset);
-            let reformatted = reformat_chain_lines(
-                source_text,
-                base_indent,
-                ctx.config().formatting.indent_width,
-            );
-            let trimmed = strip_one_trailing_newline(&reformatted);
-            docs.push(text(trimmed.to_string()));
+            match reformat_chain_doc(source_text) {
+                Some(chain_doc) => docs.push(chain_doc),
+                None => docs.push(text(strip_one_trailing_newline(source_text).to_string())),
+            }
 
             // Mark any comments within this node's range as emitted
             // (they are included in the source extraction)
