@@ -2,7 +2,7 @@
 
 ## Reporting Security Vulnerabilities
 
-We take the security of rfmt seriously. If you discover a security vulnerability, please report it to us privately.
+We take the security of kenshin seriously. If you discover a security vulnerability, please report it to us privately.
 
 ### How to Report
 
@@ -24,7 +24,7 @@ We take the security of rfmt seriously. If you discover a security vulnerability
 
 ### Input Validation
 
-rfmt implements comprehensive input validation to protect against malicious inputs:
+kenshin implements comprehensive input validation to protect against malicious inputs:
 
 #### File Path Validation
 - ✅ Path existence verification
@@ -40,7 +40,7 @@ rfmt implements comprehensive input validation to protect against malicious inpu
 
 ### Resource Limits
 
-rfmt enforces resource limits to prevent denial-of-service attacks:
+kenshin enforces resource limits to prevent denial-of-service attacks:
 
 #### File Processing Limits
 - **Maximum File Size**: 10MB (configurable)
@@ -51,7 +51,7 @@ rfmt enforces resource limits to prevent denial-of-service attacks:
 
 #### Security Policies
 
-rfmt provides three security policy presets:
+kenshin provides three security policy presets:
 
 ```rust
 // Default policy (balanced)
@@ -94,9 +94,9 @@ let policy = SecurityPolicy::permissive();
 
 ### For Users
 
-1. **Keep rfmt Updated**
+1. **Keep kenshin Updated**
    ```bash
-   gem update rfmt
+   gem update kenshin
    ```
 
 2. **Use Default Security Settings**
@@ -131,7 +131,7 @@ let policy = SecurityPolicy::permissive();
 
 ### Current Scope
 
-rfmt is a code formatter and does NOT:
+kenshin is a code formatter and does NOT:
 - ❌ Execute Ruby code
 - ❌ Eval user input
 - ❌ Make network requests
@@ -157,7 +157,7 @@ rfmt is a code formatter and does NOT:
 - Uses safe Rust (minimal `unsafe` code)
 
 ### Unsafe Code
-rfmt minimizes the use of `unsafe` Rust:
+kenshin minimizes the use of `unsafe` Rust:
 - ✅ FFI boundary (Magnus) - Required for Ruby integration
 - ✅ All unsafe code is documented and reviewed
 
@@ -176,12 +176,12 @@ Before each release, we verify:
 ## Contact
 
 - **Security Issues**: fujitanisora0414@gmail.com
-- **General Issues**: https://github.com/fs0414/rfmt/issues
-- **Discussions**: https://github.com/fs0414/rfmt/discussions
+- **General Issues**: https://github.com/sorafujitani/rfmt/issues
+- **Discussions**: https://github.com/sorafujitani/rfmt/discussions
 
 ## Acknowledgments
 
-We thank the security researchers and contributors who help keep rfmt secure.
+We thank the security researchers and contributors who help keep kenshin secure.
 
 ---
 

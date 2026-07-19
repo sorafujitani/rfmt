@@ -1,4 +1,4 @@
-# rfmt - Ruby Formatter
+# kenshin - Ruby Formatter
 
 ## Project Overview
 A Ruby code formatter powered by a Rust native extension.
@@ -9,7 +9,7 @@ A Ruby code formatter powered by a Rust native extension.
 bundle exec rspec
 
 # Run the formatter
-bundle exec rfmt <file>
+bundle exec kenshin <file>
 
 # Build the Rust extension
 bundle exec rake compile

@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: Documentation
-    url: https://github.com/fs0414/rfmt/blob/main/docs/user_guide.md
+    url: https://github.com/sorafujitani/rfmt/blob/main/docs/user_guide.md
     about: Check the user guide before opening an issue
   - name: Discussions
-    url: https://github.com/fs0414/rfmt/discussions
+    url: https://github.com/sorafujitani/rfmt/discussions
     about: Ask questions and discuss ideas
   - name: Contributing Guide
-    url: https://github.com/fs0414/rfmt/blob/main/CONTRIBUTING.md
-    about: Learn how to contribute to rfmt
+    url: https://github.com/sorafujitani/rfmt/blob/main/CONTRIBUTING.md
+    about: Learn how to contribute to kenshin

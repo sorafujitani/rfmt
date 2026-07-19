@@ -2,7 +2,7 @@
 
 ## In-Process Formatting Throughput (current)
 
-Parsing and formatting both run inside the Rust extension (the ruby-prism crate, with prism statically linked). In-process throughput, measured with `scripts/bench_format.rb` over rfmt's own `lib/` corpus (15 files, 5 warm rounds) on arm64 macOS, Ruby 3.4:
+Parsing and formatting both run inside the Rust extension (the ruby-prism crate, with prism statically linked). In-process throughput, measured with `scripts/bench_format.rb` over kenshin's own `lib/` corpus (15 files, 5 warm rounds) on arm64 macOS, Ruby 3.4:
 
 | Pipeline | In-process format time |
 |----------|------------------------|
@@ -15,11 +15,11 @@ Reproduce:
 bundle exec ruby scripts/bench_format.rb
 ```
 
-Cold CLI wall clock (`bundle exec rfmt --check FILE`, median of 5 runs on the same machine) is about 0.23 s with Bundler, 0.11 s without (`ruby -Ilib exe/rfmt --check FILE`). Ruby VM and Bundler startup dominate; formatting itself is a rounding error. Pipeline changes must therefore be measured in-process.
+Cold CLI wall clock (`bundle exec kenshin --check FILE`, median of 5 runs on the same machine) is about 0.23 s with Bundler, 0.11 s without (`ruby -Ilib exe/kenshin --check FILE`). Ruby VM and Bundler startup dominate; formatting itself is a rounding error. Pipeline changes must therefore be measured in-process.
 
-## Historical CLI Comparison vs RuboCop (rfmt 1.3.3)
+## Historical CLI Comparison vs RuboCop (kenshin 1.3.3)
 
-Everything below was measured before the native parsing migration, with rfmt 1.3.3. It compares cold CLI wall-clock time, which is dominated by VM startup for both tools. The benchmark scripts lived in a local `tmp/` directory and are not part of the repository, so these numbers are kept for historical context only and cannot be reproduced from a checkout.
+Everything below was measured before the native parsing migration, with kenshin 1.3.3. It compares cold CLI wall-clock time, which is dominated by VM startup for both tools. The benchmark scripts lived in a local `tmp/` directory and are not part of the repository, so these numbers are kept for historical context only and cannot be reproduced from a checkout.
 
 ## Test Environment
 
@@ -29,7 +29,7 @@ Everything below was measured before the native parsing migration, with rfmt 1.3
 - Ruby: 3.4.8
 
 ### Tools
-- rfmt: 1.3.3
+- kenshin: 1.3.3
 - RuboCop: 1.82.1
 
 ### Test Data
@@ -50,7 +50,7 @@ Test: `app/models` directory (9 files, ~1,000 lines total)
 
 | Tool | Average | Median | Std Dev | Min | Max |
 |------|---------|--------|---------|-----|-----|
-| rfmt | 122.1ms | - | 19.1ms | - | - |
+| kenshin | 122.1ms | - | 19.1ms | - | - |
 | RuboCop | 798.0ms | - | 23.1ms | - | - |
 
 **Ratio**: 6.54x
@@ -61,7 +61,7 @@ Test: `lib` directory (9 files, ~1,700 lines total)
 
 | Tool | Average | Median | Std Dev | Min | Max |
 |------|---------|--------|---------|-----|-----|
-| rfmt | 120.4ms | - | 5.1ms | - | - |
+| kenshin | 120.4ms | - | 5.1ms | - | - |
 | RuboCop | 797.0ms | - | 16.3ms | - | - |
 
 **Ratio**: 6.62x
@@ -72,7 +72,7 @@ Test: `large_project/app/models` directory (35 files, ~4,200 lines total)
 
 | Tool | Average | Median | Std Dev | Min | Max |
 |------|---------|--------|---------|-----|-----|
-| rfmt | 121.5ms | - | 9.5ms | - | - |
+| kenshin | 121.5ms | - | 9.5ms | - | - |
 | RuboCop | 798.1ms | - | 16.0ms | - | - |
 
 **Ratio**: 6.57x
@@ -81,7 +81,7 @@ Test: `large_project/app/models` directory (35 files, ~4,200 lines total)
 
 ### Execution Time Statistics
 
-rfmt:
+kenshin:
 - Standard deviation: 5-19ms
 - Average execution time: ~120ms across all test sizes
 - Variance between runs: 5.1-19.1ms
@@ -93,7 +93,7 @@ RuboCop:
 
 ### Performance by Project Size
 
-| Files | Total Lines | rfmt | RuboCop | Ratio |
+| Files | Total Lines | kenshin | RuboCop | Ratio |
 |-------|-------------|------|---------|-------|
 | 9 | ~1,000 | 122ms | 798ms | 6.54x |
 | 9 | ~1,700 | 120ms | 797ms | 6.62x |
@@ -103,7 +103,7 @@ Execution time measurements across different file counts and line counts.
 
 ## Execution Time Comparison
 
-| Context | rfmt | RuboCop | Time Difference |
+| Context | kenshin | RuboCop | Time Difference |
 |---------|------|---------|----------------|
 | Editor save operation | ~120ms | ~798ms | 678ms |
 | Pre-commit hook | ~120ms | ~798ms | 678ms |
@@ -112,7 +112,7 @@ Execution time measurements across different file counts and line counts.
 ## Performance Metrics Summary
 
 - Average speed ratio: 6.54-6.62x
-- rfmt average execution: 120-122ms
+- kenshin average execution: 120-122ms
 - RuboCop average execution: 797-798ms
 - Execution time difference: ~678ms
 

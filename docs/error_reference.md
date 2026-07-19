@@ -1,23 +1,23 @@
-# rfmt Error Reference
+# kenshin Error Reference
 
 Complete reference for all error codes and their solutions.
 
 ## Error Code Format
 
-All rfmt errors follow this format:
+All kenshin errors follow this format:
 
 ```
-[Rfmt::ErrorType] Error message
+[Kenshin::ErrorType] Error message
 Additional context and details
 
-Help: https://rfmt.dev/errors/EXXX
+Help: https://kenshin.dev/errors/EXXX
 ```
 
 ## Error Codes
 
 ### E001: ParseError
 
-**Type:** `Rfmt::ParseError`
+**Type:** `Kenshin::ParseError`
 
 **Description:** Ruby syntax error in the source code being formatted.
 
@@ -30,7 +30,7 @@ Help: https://rfmt.dev/errors/EXXX
 **Example Error:**
 
 ```
-[Rfmt::ParseError] Parse error in app/models/user.rb:15:10
+[Kenshin::ParseError] Parse error in app/models/user.rb:15:10
 Expected closing 'end' for class definition
 
 Code:
@@ -41,7 +41,7 @@ Code:
   16 | # Missing 'end' for method
   17 | end
 
-Help: https://rfmt.dev/errors/E001
+Help: https://kenshin.dev/errors/E001
 ```
 
 **Solutions:**
@@ -86,16 +86,16 @@ Help: https://rfmt.dev/errors/E001
    ```
 
 **Related Issues:**
-- [#42](https://github.com/fs0414/rfmt/issues/42): Improved error messages for parse errors
-- [#15](https://github.com/fs0414/rfmt/issues/15): Support for heredoc syntax
+- [#42](https://github.com/sorafujitani/rfmt/issues/42): Improved error messages for parse errors
+- [#15](https://github.com/sorafujitani/rfmt/issues/15): Support for heredoc syntax
 
 ---
 
 ### E002: ConfigError
 
-**Type:** `Rfmt::ConfigError`
+**Type:** `Kenshin::ConfigError`
 
-**Description:** Invalid or malformed configuration file (`.rfmt.yml`).
+**Description:** Invalid or malformed configuration file (`.kenshin.yml`).
 
 **Common Causes:**
 - Invalid YAML syntax
@@ -106,12 +106,12 @@ Help: https://rfmt.dev/errors/E001
 **Example Error:**
 
 ```
-[Rfmt::ConfigError] Configuration error: Invalid value for 'indent_width'
-File: .rfmt.yml
+[Kenshin::ConfigError] Configuration error: Invalid value for 'indent_width'
+File: .kenshin.yml
 
 Suggestion: Use a positive integer value (e.g., 2, 4)
 
-Help: https://rfmt.dev/errors/E002
+Help: https://kenshin.dev/errors/E002
 ```
 
 **Solutions:**
@@ -181,13 +181,13 @@ exclude:                  # Array of glob patterns
 ```
 
 **Related Issues:**
-- [#23](https://github.com/fs0414/rfmt/issues/23): Better error messages for config errors
+- [#23](https://github.com/sorafujitani/rfmt/issues/23): Better error messages for config errors
 
 ---
 
 ### E003: IoError
 
-**Type:** `Rfmt::IOError`
+**Type:** `Kenshin::IOError`
 
 **Description:** File system operation failed (read, write, or access).
 
@@ -201,9 +201,9 @@ exclude:                  # Array of glob patterns
 **Example Error:**
 
 ```
-[Rfmt::IOError] IO error for file app/models/user.rb: Permission denied
+[Kenshin::IOError] IO error for file app/models/user.rb: Permission denied
 
-Help: https://rfmt.dev/errors/E003
+Help: https://kenshin.dev/errors/E003
 ```
 
 **Solutions:**
@@ -233,17 +233,17 @@ Help: https://rfmt.dev/errors/E003
 
 5. **Use sudo (if appropriate):**
    ```bash
-   sudo rfmt format system_file.rb
+   sudo kenshin format system_file.rb
    ```
 
 **Related Issues:**
-- [#31](https://github.com/fs0414/rfmt/issues/31): Better error recovery for locked files
+- [#31](https://github.com/sorafujitani/rfmt/issues/31): Better error recovery for locked files
 
 ---
 
 ### E004: FormattingError
 
-**Type:** `Rfmt::FormattingError`
+**Type:** `Kenshin::FormattingError`
 
 **Description:** Error occurred during the formatting process.
 
@@ -256,11 +256,11 @@ Help: https://rfmt.dev/errors/E003
 **Example Error:**
 
 ```
-[Rfmt::FormattingError] Formatting error: Failed to emit node
+[Kenshin::FormattingError] Formatting error: Failed to emit node
 Node type: def_node
 Location: 42:15
 
-Help: https://rfmt.dev/errors/E004
+Help: https://kenshin.dev/errors/E004
 ```
 
 **Solutions:**
@@ -270,32 +270,32 @@ Help: https://rfmt.dev/errors/E004
    - Simplify nested structures
    - Format in smaller chunks
 
-2. **Update rfmt:**
+2. **Update kenshin:**
    ```bash
-   gem update rfmt
+   gem update kenshin
    ```
 
 3. **Report the issue:**
    This is likely a bug. Please report it with:
    - Your Ruby code (or minimal reproduction)
-   - rfmt version (`rfmt --version`)
+   - kenshin version (`kenshin --version`)
    - Ruby version (`ruby -v`)
    - Error message
 
 4. **Workaround with partial formatting:**
    ```bash
    # Format individual methods instead of entire file
-   rfmt format app/models/user.rb:10-50
+   kenshin format app/models/user.rb:10-50
    ```
 
 **Related Issues:**
-- [#55](https://github.com/fs0414/rfmt/issues/55): Handling of complex nested blocks
+- [#55](https://github.com/sorafujitani/rfmt/issues/55): Handling of complex nested blocks
 
 ---
 
 ### E005: RuleError
 
-**Type:** `Rfmt::RuleError`
+**Type:** `Kenshin::RuleError`
 
 **Description:** A formatting rule failed to apply.
 
@@ -307,10 +307,10 @@ Help: https://rfmt.dev/errors/E004
 **Example Error:**
 
 ```
-[Rfmt::RuleError] Rule application error: Rule 'IndentationRule' failed
+[Kenshin::RuleError] Rule application error: Rule 'IndentationRule' failed
 Cannot determine indentation level for orphaned node
 
-Help: https://rfmt.dev/errors/E005
+Help: https://kenshin.dev/errors/E005
 ```
 
 **Solutions:**
@@ -321,39 +321,39 @@ Help: https://rfmt.dev/errors/E005
 2. **Simplify the code structure:**
    Complex nested structures might confuse the formatter
 
-3. **Update rfmt:**
+3. **Update kenshin:**
    ```bash
-   gem update rfmt
+   gem update kenshin
    ```
 
 4. **Report the issue:**
    This is likely a bug in the formatting rules
 
 **Related Issues:**
-- [#67](https://github.com/fs0414/rfmt/issues/67): Rule conflict resolution
+- [#67](https://github.com/sorafujitani/rfmt/issues/67): Rule conflict resolution
 
 ---
 
 ### E006: UnsupportedFeature
 
-**Type:** `Rfmt::UnsupportedFeature`
+**Type:** `Kenshin::UnsupportedFeature`
 
-**Description:** Code uses a Ruby feature not yet supported by rfmt.
+**Description:** Code uses a Ruby feature not yet supported by kenshin.
 
 **Common Causes:**
 - Experimental Ruby syntax
-- Ruby 3.4+ features (if using older rfmt)
+- Ruby 3.4+ features (if using older kenshin)
 - Edge cases in language features
 
 **Example Error:**
 
 ```
-[Rfmt::UnsupportedFeature] Unsupported feature: Pattern matching with pinning operator
+[Kenshin::UnsupportedFeature] Unsupported feature: Pattern matching with pinning operator
 
 This feature is planned for a future release.
-Please track: https://github.com/fs0414/rfmt/issues/89
+Please track: https://github.com/sorafujitani/rfmt/issues/89
 
-Help: https://rfmt.dev/errors/E006
+Help: https://kenshin.dev/errors/E006
 ```
 
 **Solutions:**
@@ -366,12 +366,12 @@ Help: https://rfmt.dev/errors/E006
 
 3. **Skip formatting for that section:**
    ```ruby
-   # rfmt:disable
+   # kenshin:disable
    case value
    in ^expected_value
      puts "matched"
    end
-   # rfmt:enable
+   # kenshin:enable
    ```
 
 4. **Request feature:**
@@ -386,14 +386,14 @@ Help: https://rfmt.dev/errors/E006
 - Complex pattern matching edge cases
 
 **Related Issues:**
-- [#89](https://github.com/fs0414/rfmt/issues/89): Pattern matching support
-- [#102](https://github.com/fs0414/rfmt/issues/102): Numbered parameters
+- [#89](https://github.com/sorafujitani/rfmt/issues/89): Pattern matching support
+- [#102](https://github.com/sorafujitani/rfmt/issues/102): Numbered parameters
 
 ---
 
 ### E007: PrismError
 
-**Type:** `Rfmt::PrismError`
+**Type:** `Kenshin::PrismError`
 
 **Description:** Error in the embedded prism parser integration. Parsing happens inside the Rust extension via the statically linked ruby-prism crate; the prism gem is not used at runtime.
 
@@ -404,16 +404,16 @@ Help: https://rfmt.dev/errors/E006
 **Example Error:**
 
 ```
-[Rfmt::PrismError] Prism integration error: unexpected node structure
+[Kenshin::PrismError] Prism integration error: unexpected node structure
 
-Help: https://rfmt.dev/errors/E007
+Help: https://kenshin.dev/errors/E007
 ```
 
 **Solutions:**
 
-1. **Update rfmt:**
+1. **Update kenshin:**
    ```bash
-   gem update rfmt
+   gem update kenshin
    ```
 
 2. **Rebuild the extension (source installs):**
@@ -424,17 +424,17 @@ Help: https://rfmt.dev/errors/E007
 
 3. **Report the issue:**
    This is an internal error. Please report with:
-   - rfmt version
+   - kenshin version
    - Code that triggers the error
 
 **Related Issues:**
-- [#118](https://github.com/fs0414/rfmt/issues/118): Prism 1.0 compatibility
+- [#118](https://github.com/sorafujitani/rfmt/issues/118): Prism 1.0 compatibility
 
 ---
 
 ### E008: FormatError
 
-**Type:** `Rfmt::FormatError`
+**Type:** `Kenshin::FormatError`
 
 **Description:** Generic formatting error (catch-all).
 
@@ -445,9 +445,9 @@ Help: https://rfmt.dev/errors/E007
 **Example Error:**
 
 ```
-[Rfmt::FormatError] Format error: Buffer overflow during emission
+[Kenshin::FormatError] Format error: Buffer overflow during emission
 
-Help: https://rfmt.dev/errors/E008
+Help: https://kenshin.dev/errors/E008
 ```
 
 **Solutions:**
@@ -460,9 +460,9 @@ Help: https://rfmt.dev/errors/E008
    wc -l file.rb  # Very large files might cause issues
    ```
 
-3. **Update rfmt:**
+3. **Update kenshin:**
    ```bash
-   gem update rfmt
+   gem update kenshin
    ```
 
 4. **Report the issue:**
@@ -472,28 +472,28 @@ Help: https://rfmt.dev/errors/E008
 
 ### E999: InternalError
 
-**Type:** `Rfmt::InternalError`
+**Type:** `Kenshin::InternalError`
 
-**Description:** Internal bug in rfmt. This should never happen!
+**Description:** Internal bug in kenshin. This should never happen!
 
 **Common Causes:**
 - Unhandled edge case
-- Bug in rfmt code
+- Bug in kenshin code
 - Memory corruption
 - Platform-specific issue
 
 **Example Error:**
 
 ```
-[Rfmt::InternalError] Internal error: Unexpected null pointer in AST traversal
+[Kenshin::InternalError] Internal error: Unexpected null pointer in AST traversal
 
 Backtrace:
-  at /path/to/rfmt/src/emitter.rs:123
-  at /path/to/rfmt/src/formatter.rs:456
+  at /path/to/kenshin/src/emitter.rs:123
+  at /path/to/kenshin/src/formatter.rs:456
 
-Please report this as a bug at: https://github.com/fs0414/rfmt/issues
+Please report this as a bug at: https://github.com/sorafujitani/rfmt/issues
 
-Help: https://rfmt.dev/errors/E999
+Help: https://kenshin.dev/errors/E999
 ```
 
 **Solutions:**
@@ -502,7 +502,7 @@ Help: https://rfmt.dev/errors/E999
    This is a bug! Please create an issue with:
    - Full error message including backtrace
    - Code that triggers the error (or minimal reproduction)
-   - rfmt version (`rfmt --version`)
+   - kenshin version (`kenshin --version`)
    - Ruby version (`ruby -v`)
    - Platform (OS and architecture)
 
@@ -513,11 +513,11 @@ Help: https://rfmt.dev/errors/E999
 
 3. **Collect debug info:**
    ```bash
-   RUST_BACKTRACE=1 rfmt format file.rb 2> error.log
+   RUST_BACKTRACE=1 kenshin format file.rb 2> error.log
    ```
 
 **Related Issues:**
-- [#new](https://github.com/fs0414/rfmt/issues/new): Report new bug
+- [#new](https://github.com/sorafujitani/rfmt/issues/new): Report new bug
 
 ---
 
@@ -526,47 +526,47 @@ Help: https://rfmt.dev/errors/E999
 ### Enable Verbose Output
 
 ```bash
-rfmt format --verbose file.rb
+kenshin format --verbose file.rb
 ```
 
 ### Check Rust Backtrace
 
 ```bash
-RUST_BACKTRACE=1 rfmt format file.rb
+RUST_BACKTRACE=1 kenshin format file.rb
 ```
 
 ### Enable Debug Logging
 
 ```ruby
-# Set log level before requiring rfmt
-ENV['RFMT_LOG_LEVEL'] = 'debug'
-require 'rfmt'
+# Set log level before requiring kenshin
+ENV['KENSHIN_LOG_LEVEL'] = 'debug'
+require 'kenshin'
 ```
 
 ### Get Debug Information
 
 ```ruby
-require 'rfmt'
+require 'kenshin'
 
 # Print version and platform info
-puts Rfmt.rust_version
+puts Kenshin.rust_version
 ```
 
 ## Getting Help
 
 If you encounter an error not covered here:
 
-1. **Search existing issues:** https://github.com/fs0414/rfmt/issues
-2. **Check discussions:** https://github.com/fs0414/rfmt/discussions
-3. **Create a new issue:** https://github.com/fs0414/rfmt/issues/new
+1. **Search existing issues:** https://github.com/sorafujitani/rfmt/issues
+2. **Check discussions:** https://github.com/sorafujitani/rfmt/discussions
+3. **Create a new issue:** https://github.com/sorafujitani/rfmt/issues/new
 
 When reporting issues, include:
 
 - Error code and full message
-- rfmt version (`rfmt --version`)
+- kenshin version (`kenshin --version`)
 - Ruby version (`ruby -v`)
 - Code sample (minimal reproduction)
-- Configuration file (`.rfmt.yml`)
+- Configuration file (`.kenshin.yml`)
 - Platform (OS and architecture)
 
 ## Related Documentation

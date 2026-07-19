@@ -1,6 +1,6 @@
 # Development Notes
 
-rfmt開発における知見・注意事項をまとめたドキュメント。
+kenshin開発における知見・注意事項をまとめたドキュメント。
 
 ---
 
@@ -8,15 +8,15 @@ rfmt開発における知見・注意事項をまとめたドキュメント。
 
 ### 安全な確認方法
 
-rfmtは開発中のフォーマッターであり、未対応ノードがある状態でCLIを使用するとソースコードを破壊する可能性がある。
+kenshinは開発中のフォーマッターであり、未対応ノードがある状態でCLIを使用するとソースコードを破壊する可能性がある。
 
 | 方法 | 安全性 | 用途 |
 |------|--------|------|
 | `bundle exec rspec` | ✅ 安全 | 自動テスト |
-| IRB経由 `Rfmt.format(source)` | ✅ 安全 | 手動確認 |
+| IRB経由 `Kenshin.format(source)` | ✅ 安全 | 手動確認 |
 | `ruby -e` 経由 | ✅ 安全 | ワンライナー確認 |
-| `echo 'code' \| bundle exec rfmt -` | ⚠️ 注意 | 出力確認のみ |
-| `bundle exec rfmt .` | ❌ 危険 | 使用禁止（開発中） |
+| `echo 'code' \| bundle exec kenshin -` | ⚠️ 注意 | 出力確認のみ |
+| `bundle exec kenshin .` | ❌ 危険 | 使用禁止（開発中） |
 
 ### 推奨手順
 
@@ -28,7 +28,7 @@ bundle exec rake compile
 bundle exec rspec
 
 # 3. 手動確認（IRB経由）
-bundle exec irb -r./lib/rfmt -e "puts Rfmt.format(':hello')"
+bundle exec irb -r./lib/kenshin -e "puts Kenshin.format(':hello')"
 
 # 4. 変更確認
 git status
@@ -73,7 +73,7 @@ bundle exec rspec spec/node_types_spec.rb
 bundle exec rspec --format documentation
 
 # Rustテスト
-cargo test --manifest-path ext/rfmt/Cargo.toml
+cargo test --manifest-path ext/kenshin/Cargo.toml
 ```
 
 ### テスト作成時の注意

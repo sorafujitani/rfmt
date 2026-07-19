@@ -1,23 +1,23 @@
-# rfmt エラーリファレンス
+# kenshin エラーリファレンス
 
 すべてのエラーコードとその解決方法の完全なリファレンスです。
 
 ## エラーコードフォーマット
 
-すべてのrfmtエラーは以下のフォーマットに従います：
+すべてのkenshinエラーは以下のフォーマットに従います：
 
 ```
-[Rfmt::ErrorType] エラーメッセージ
+[Kenshin::ErrorType] エラーメッセージ
 追加のコンテキストと詳細
 
-ヘルプ: https://rfmt.dev/errors/EXXX
+ヘルプ: https://kenshin.dev/errors/EXXX
 ```
 
 ## エラーコード
 
 ### E001: ParseError
 
-**タイプ:** `Rfmt::ParseError`
+**タイプ:** `Kenshin::ParseError`
 
 **説明:** フォーマット対象のソースコードにRuby構文エラーがあります。
 
@@ -30,7 +30,7 @@
 **エラー例:**
 
 ```
-[Rfmt::ParseError] app/models/user.rb:15:10の構文エラー
+[Kenshin::ParseError] app/models/user.rb:15:10の構文エラー
 クラス定義の終了'end'が必要です
 
 コード:
@@ -41,7 +41,7 @@
   16 | # メソッドの'end'が不足
   17 | end
 
-ヘルプ: https://rfmt.dev/errors/E001
+ヘルプ: https://kenshin.dev/errors/E001
 ```
 
 **解決方法:**
@@ -86,16 +86,16 @@
    ```
 
 **関連Issue:**
-- [#42](https://github.com/fs0414/rfmt/issues/42): 構文エラーのエラーメッセージ改善
-- [#15](https://github.com/fs0414/rfmt/issues/15): ヒアドキュメント構文のサポート
+- [#42](https://github.com/sorafujitani/rfmt/issues/42): 構文エラーのエラーメッセージ改善
+- [#15](https://github.com/sorafujitani/rfmt/issues/15): ヒアドキュメント構文のサポート
 
 ---
 
 ### E002: ConfigError
 
-**タイプ:** `Rfmt::ConfigError`
+**タイプ:** `Kenshin::ConfigError`
 
-**説明:** 設定ファイル（`.rfmt.yml`）が無効または不正な形式です。
+**説明:** 設定ファイル（`.kenshin.yml`）が無効または不正な形式です。
 
 **よくある原因:**
 - 無効なYAML構文
@@ -106,12 +106,12 @@
 **エラー例:**
 
 ```
-[Rfmt::ConfigError] 設定エラー: 'indent_width'の値が無効です
-ファイル: .rfmt.yml
+[Kenshin::ConfigError] 設定エラー: 'indent_width'の値が無効です
+ファイル: .kenshin.yml
 
 提案: 正の整数値を使用してください（例: 2, 4）
 
-ヘルプ: https://rfmt.dev/errors/E002
+ヘルプ: https://kenshin.dev/errors/E002
 ```
 
 **解決方法:**
@@ -181,13 +181,13 @@ exclude:                  # Globパターンの配列
 ```
 
 **関連Issue:**
-- [#23](https://github.com/fs0414/rfmt/issues/23): 設定エラーのエラーメッセージ改善
+- [#23](https://github.com/sorafujitani/rfmt/issues/23): 設定エラーのエラーメッセージ改善
 
 ---
 
 ### E003: IoError
 
-**タイプ:** `Rfmt::IOError`
+**タイプ:** `Kenshin::IOError`
 
 **説明:** ファイルシステム操作が失敗しました（読み取り、書き込み、アクセス）。
 
@@ -201,9 +201,9 @@ exclude:                  # Globパターンの配列
 **エラー例:**
 
 ```
-[Rfmt::IOError] app/models/user.rbのIOエラー: 権限が拒否されました
+[Kenshin::IOError] app/models/user.rbのIOエラー: 権限が拒否されました
 
-ヘルプ: https://rfmt.dev/errors/E003
+ヘルプ: https://kenshin.dev/errors/E003
 ```
 
 **解決方法:**
@@ -233,17 +233,17 @@ exclude:                  # Globパターンの配列
 
 5. **sudoを使用（適切な場合）:**
    ```bash
-   sudo rfmt format system_file.rb
+   sudo kenshin format system_file.rb
    ```
 
 **関連Issue:**
-- [#31](https://github.com/fs0414/rfmt/issues/31): ロックされたファイルのエラー回復改善
+- [#31](https://github.com/sorafujitani/rfmt/issues/31): ロックされたファイルのエラー回復改善
 
 ---
 
 ### E004: FormattingError
 
-**タイプ:** `Rfmt::FormattingError`
+**タイプ:** `Kenshin::FormattingError`
 
 **説明:** フォーマット処理中にエラーが発生しました。
 
@@ -256,11 +256,11 @@ exclude:                  # Globパターンの配列
 **エラー例:**
 
 ```
-[Rfmt::FormattingError] フォーマットエラー: ノードの出力に失敗
+[Kenshin::FormattingError] フォーマットエラー: ノードの出力に失敗
 ノードタイプ: def_node
 位置: 42:15
 
-ヘルプ: https://rfmt.dev/errors/E004
+ヘルプ: https://kenshin.dev/errors/E004
 ```
 
 **解決方法:**
@@ -270,32 +270,32 @@ exclude:                  # Globパターンの配列
    - ネストした構造を簡略化
    - 小さなチャンクでフォーマット
 
-2. **rfmtを更新:**
+2. **kenshinを更新:**
    ```bash
-   gem update rfmt
+   gem update kenshin
    ```
 
 3. **問題を報告:**
    これはバグの可能性があります。以下の情報で報告してください：
    - Rubyコード（または最小限の再現）
-   - rfmtバージョン（`rfmt --version`）
+   - kenshinバージョン（`kenshin --version`）
    - Rubyバージョン（`ruby -v`）
    - エラーメッセージ
 
 4. **部分的なフォーマットの回避策:**
    ```bash
    # ファイル全体ではなく個別のメソッドをフォーマット
-   rfmt format app/models/user.rb:10-50
+   kenshin format app/models/user.rb:10-50
    ```
 
 **関連Issue:**
-- [#55](https://github.com/fs0414/rfmt/issues/55): 複雑なネストブロックの処理
+- [#55](https://github.com/sorafujitani/rfmt/issues/55): 複雑なネストブロックの処理
 
 ---
 
 ### E005: RuleError
 
-**タイプ:** `Rfmt::RuleError`
+**タイプ:** `Kenshin::RuleError`
 
 **説明:** フォーマットルールの適用に失敗しました。
 
@@ -307,10 +307,10 @@ exclude:                  # Globパターンの配列
 **エラー例:**
 
 ```
-[Rfmt::RuleError] ルール適用エラー: ルール'IndentationRule'が失敗しました
+[Kenshin::RuleError] ルール適用エラー: ルール'IndentationRule'が失敗しました
 孤立したノードのインデントレベルを決定できません
 
-ヘルプ: https://rfmt.dev/errors/E005
+ヘルプ: https://kenshin.dev/errors/E005
 ```
 
 **解決方法:**
@@ -321,39 +321,39 @@ exclude:                  # Globパターンの配列
 2. **コード構造を簡略化:**
    複雑なネスト構造がフォーマッターを混乱させる可能性があります
 
-3. **rfmtを更新:**
+3. **kenshinを更新:**
    ```bash
-   gem update rfmt
+   gem update kenshin
    ```
 
 4. **問題を報告:**
    これはフォーマットルールのバグの可能性があります
 
 **関連Issue:**
-- [#67](https://github.com/fs0414/rfmt/issues/67): ルール競合の解決
+- [#67](https://github.com/sorafujitani/rfmt/issues/67): ルール競合の解決
 
 ---
 
 ### E006: UnsupportedFeature
 
-**タイプ:** `Rfmt::UnsupportedFeature`
+**タイプ:** `Kenshin::UnsupportedFeature`
 
-**説明:** コードがrfmtでまだサポートされていないRuby機能を使用しています。
+**説明:** コードがkenshinでまだサポートされていないRuby機能を使用しています。
 
 **よくある原因:**
 - 実験的なRuby構文
-- Ruby 3.4+の機能（古いrfmtを使用している場合）
+- Ruby 3.4+の機能（古いkenshinを使用している場合）
 - 言語機能のエッジケース
 
 **エラー例:**
 
 ```
-[Rfmt::UnsupportedFeature] 未サポート機能: ピンニング演算子を使用したパターンマッチング
+[Kenshin::UnsupportedFeature] 未サポート機能: ピンニング演算子を使用したパターンマッチング
 
 この機能は将来のリリースで予定されています。
-追跡: https://github.com/fs0414/rfmt/issues/89
+追跡: https://github.com/sorafujitani/rfmt/issues/89
 
-ヘルプ: https://rfmt.dev/errors/E006
+ヘルプ: https://kenshin.dev/errors/E006
 ```
 
 **解決方法:**
@@ -366,12 +366,12 @@ exclude:                  # Globパターンの配列
 
 3. **そのセクションのフォーマットをスキップ:**
    ```ruby
-   # rfmt:disable
+   # kenshin:disable
    case value
    in ^expected_value
      puts "matched"
    end
-   # rfmt:enable
+   # kenshin:enable
    ```
 
 4. **機能をリクエスト:**
@@ -386,14 +386,14 @@ exclude:                  # Globパターンの配列
 - 複雑なパターンマッチングのエッジケース
 
 **関連Issue:**
-- [#89](https://github.com/fs0414/rfmt/issues/89): パターンマッチングサポート
-- [#102](https://github.com/fs0414/rfmt/issues/102): 番号付きパラメータ
+- [#89](https://github.com/sorafujitani/rfmt/issues/89): パターンマッチングサポート
+- [#102](https://github.com/sorafujitani/rfmt/issues/102): 番号付きパラメータ
 
 ---
 
 ### E007: PrismError
 
-**タイプ:** `Rfmt::PrismError`
+**タイプ:** `Kenshin::PrismError`
 
 **説明:** 組み込みprismパーサー統合のエラーです。パースは Rust 拡張の内部で静的リンクされた ruby-prism crate により行われ、prism gem は実行時には使われません。
 
@@ -404,16 +404,16 @@ exclude:                  # Globパターンの配列
 **エラー例:**
 
 ```
-[Rfmt::PrismError] Prism統合エラー: 予期しないノード構造
+[Kenshin::PrismError] Prism統合エラー: 予期しないノード構造
 
-ヘルプ: https://rfmt.dev/errors/E007
+ヘルプ: https://kenshin.dev/errors/E007
 ```
 
 **解決方法:**
 
-1. **rfmtを更新:**
+1. **kenshinを更新:**
    ```bash
-   gem update rfmt
+   gem update kenshin
    ```
 
 2. **拡張を再ビルド（ソースインストールの場合）:**
@@ -424,17 +424,17 @@ exclude:                  # Globパターンの配列
 
 3. **問題を報告:**
    これは内部エラーです。以下の情報で報告してください：
-   - rfmtバージョン
+   - kenshinバージョン
    - エラーをトリガーするコード
 
 **関連Issue:**
-- [#118](https://github.com/fs0414/rfmt/issues/118): Prism 1.0互換性
+- [#118](https://github.com/sorafujitani/rfmt/issues/118): Prism 1.0互換性
 
 ---
 
 ### E008: FormatError
 
-**タイプ:** `Rfmt::FormatError`
+**タイプ:** `Kenshin::FormatError`
 
 **説明:** 一般的なフォーマットエラー（包括的）。
 
@@ -445,9 +445,9 @@ exclude:                  # Globパターンの配列
 **エラー例:**
 
 ```
-[Rfmt::FormatError] フォーマットエラー: 出力中のバッファオーバーフロー
+[Kenshin::FormatError] フォーマットエラー: 出力中のバッファオーバーフロー
 
-ヘルプ: https://rfmt.dev/errors/E008
+ヘルプ: https://kenshin.dev/errors/E008
 ```
 
 **解決方法:**
@@ -460,9 +460,9 @@ exclude:                  # Globパターンの配列
    wc -l file.rb  # 非常に大きなファイルは問題を起こす可能性があります
    ```
 
-3. **rfmtを更新:**
+3. **kenshinを更新:**
    ```bash
-   gem update rfmt
+   gem update kenshin
    ```
 
 4. **問題を報告:**
@@ -472,28 +472,28 @@ exclude:                  # Globパターンの配列
 
 ### E999: InternalError
 
-**タイプ:** `Rfmt::InternalError`
+**タイプ:** `Kenshin::InternalError`
 
-**説明:** rfmtの内部バグです。これは決して起こらないはずです！
+**説明:** kenshinの内部バグです。これは決して起こらないはずです！
 
 **よくある原因:**
 - 未処理のエッジケース
-- rfmtコードのバグ
+- kenshinコードのバグ
 - メモリ破損
 - プラットフォーム固有の問題
 
 **エラー例:**
 
 ```
-[Rfmt::InternalError] 内部エラー: ASTトラバーサル中の予期しないnullポインタ
+[Kenshin::InternalError] 内部エラー: ASTトラバーサル中の予期しないnullポインタ
 
 バックトレース:
-  at /path/to/rfmt/src/emitter.rs:123
-  at /path/to/rfmt/src/formatter.rs:456
+  at /path/to/kenshin/src/emitter.rs:123
+  at /path/to/kenshin/src/formatter.rs:456
 
-これをバグとして報告してください: https://github.com/fs0414/rfmt/issues
+これをバグとして報告してください: https://github.com/sorafujitani/rfmt/issues
 
-ヘルプ: https://rfmt.dev/errors/E999
+ヘルプ: https://kenshin.dev/errors/E999
 ```
 
 **解決方法:**
@@ -502,7 +502,7 @@ exclude:                  # Globパターンの配列
    これはバグです！以下の情報でissueを作成してください：
    - バックトレースを含む完全なエラーメッセージ
    - エラーをトリガーするコード（または最小限の再現）
-   - rfmtバージョン（`rfmt --version`）
+   - kenshinバージョン（`kenshin --version`）
    - Rubyバージョン（`ruby -v`）
    - プラットフォーム（OSとアーキテクチャ）
 
@@ -513,11 +513,11 @@ exclude:                  # Globパターンの配列
 
 3. **デバッグ情報を収集:**
    ```bash
-   RUST_BACKTRACE=1 rfmt format file.rb 2> error.log
+   RUST_BACKTRACE=1 kenshin format file.rb 2> error.log
    ```
 
 **関連Issue:**
-- [#new](https://github.com/fs0414/rfmt/issues/new): 新しいバグを報告
+- [#new](https://github.com/sorafujitani/rfmt/issues/new): 新しいバグを報告
 
 ---
 
@@ -526,47 +526,47 @@ exclude:                  # Globパターンの配列
 ### 詳細出力を有効化
 
 ```bash
-rfmt format --verbose file.rb
+kenshin format --verbose file.rb
 ```
 
 ### Rustバックトレースを確認
 
 ```bash
-RUST_BACKTRACE=1 rfmt format file.rb
+RUST_BACKTRACE=1 kenshin format file.rb
 ```
 
 ### デバッグロギングを有効化
 
 ```ruby
-# rfmtをrequireする前にログレベルを設定
-ENV['RFMT_LOG_LEVEL'] = 'debug'
-require 'rfmt'
+# kenshinをrequireする前にログレベルを設定
+ENV['KENSHIN_LOG_LEVEL'] = 'debug'
+require 'kenshin'
 ```
 
 ### デバッグ情報を取得
 
 ```ruby
-require 'rfmt'
+require 'kenshin'
 
 # バージョンとプラットフォーム情報を出力
-puts Rfmt.rust_version
+puts Kenshin.rust_version
 ```
 
 ## ヘルプを得る
 
 ここでカバーされていないエラーに遭遇した場合：
 
-1. **既存のissueを検索:** https://github.com/fs0414/rfmt/issues
-2. **ディスカッションを確認:** https://github.com/fs0414/rfmt/discussions
-3. **新しいissueを作成:** https://github.com/fs0414/rfmt/issues/new
+1. **既存のissueを検索:** https://github.com/sorafujitani/rfmt/issues
+2. **ディスカッションを確認:** https://github.com/sorafujitani/rfmt/discussions
+3. **新しいissueを作成:** https://github.com/sorafujitani/rfmt/issues/new
 
 問題を報告する際は、以下を含めてください：
 
 - エラーコードと完全なメッセージ
-- rfmtバージョン（`rfmt --version`）
+- kenshinバージョン（`kenshin --version`）
 - Rubyバージョン（`ruby -v`）
 - コードサンプル（最小限の再現）
-- 設定ファイル（`.rfmt.yml`）
+- 設定ファイル（`.kenshin.yml`）
 - プラットフォーム（OSとアーキテクチャ）
 
 ## 関連ドキュメント

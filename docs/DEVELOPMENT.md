@@ -1,6 +1,6 @@
 # Development Guide
 
-This guide covers testing, building, and releasing rfmt.
+This guide covers testing, building, and releasing kenshin.
 
 ## Table of Contents
 
@@ -56,8 +56,8 @@ cargo --version
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/rfmt.git
-cd rfmt
+git clone https://github.com/yourusername/kenshin.git
+cd kenshin
 
 # Install Ruby dependencies
 bundle install
@@ -90,7 +90,7 @@ bundle exec rake compile
 
 ```bash
 # Build in debug mode (faster compilation, slower runtime)
-cd ext/rfmt
+cd ext/kenshin
 cargo build
 
 # Build in release mode (default for rake compile)
@@ -153,13 +153,13 @@ bundle exec rspec spec/cli_spec.rb -e "format with diff option"
 ```
 
 **CLI Test Coverage:**
-- Version command (`rfmt version`)
+- Version command (`kenshin version`)
 - Format command with various options (`--write`, `--no-write`, `--check`, `--diff`, `--verbose`)
 - Check mode with proper exit codes (0 for formatted, 1 for needs formatting)
 - Diff display in 3 formats (unified, color, side_by_side)
 - Multiple file processing
 - Error handling (syntax errors, missing files)
-- Init command (`.rfmt.yml` creation)
+- Init command (`.kenshin.yml` creation)
 - Config command (configuration display)
 
 **Example Test Cases:**
@@ -200,11 +200,11 @@ Test the YAML configuration system:
 bundle exec rspec spec/configuration_spec.rb
 
 # Run specific configuration test
-bundle exec rspec spec/configuration_spec.rb -e "discovers .rfmt.yml"
+bundle exec rspec spec/configuration_spec.rb -e "discovers .kenshin.yml"
 ```
 
 **Configuration Test Coverage:**
-- Auto-discovery of config files (`.rfmt.yml`, `.rfmt.yaml`, `rfmt.yml`, `rfmt.yaml`)
+- Auto-discovery of config files (`.kenshin.yml`, `.kenshin.yaml`, `kenshin.yml`, `kenshin.yaml`)
 - Default configuration loading
 - Custom configuration file loading
 - Configuration merging (deep merge for nested hashes)
@@ -215,8 +215,8 @@ bundle exec rspec spec/configuration_spec.rb -e "discovers .rfmt.yml"
 **Example Test Cases:**
 ```ruby
 # Test config file discovery
-it 'discovers .rfmt.yml' do
-  File.write('.rfmt.yml', "version: '1.0'")
+it 'discovers .kenshin.yml' do
+  File.write('.kenshin.yml', "version: '1.0'")
   config = described_class.discover
   expect(config).to be_a(described_class)
 end
@@ -225,7 +225,7 @@ end
 it 'validates positive line_length' do
   expect do
     described_class.new('formatting' => { 'line_length' => -1 })
-  end.to raise_error(Rfmt::Configuration::ConfigError, 'line_length must be positive')
+  end.to raise_error(Kenshin::Configuration::ConfigError, 'line_length must be positive')
 end
 
 # Test file pattern matching
@@ -241,7 +241,7 @@ end
 #### Run All Rust Tests
 
 ```bash
-cd ext/rfmt
+cd ext/kenshin
 
 # All tests
 cargo test
@@ -281,7 +281,7 @@ bundle exec ruby scripts/corpus_check.rb
 cargo install cargo-tarpaulin
 
 # Generate coverage report
-cd ext/rfmt
+cd ext/kenshin
 cargo tarpaulin --out Html --output-dir ../../coverage
 ```
 
@@ -291,7 +291,7 @@ cargo tarpaulin --out Html --output-dir ../../coverage
 
 Edit files in:
 - `lib/` - Ruby code
-- `ext/rfmt/src/` - Rust code
+- `ext/kenshin/src/` - Rust code
 - `spec/` - Tests
 
 ### 2. Build & Test
@@ -304,25 +304,25 @@ bundle exec rake compile
 bundle exec rake spec
 
 # Run Rust tests
-cd ext/rfmt && cargo test
+cd ext/kenshin && cargo test
 ```
 
 ### 3. Verify
 
 ```bash
 # Manual testing with IRB
-bundle exec irb -I lib -r rfmt
+bundle exec irb -I lib -r kenshin
 
 # In IRB:
 input = "class Foo\nend"
-puts Rfmt.format(input)
+puts Kenshin.format(input)
 ```
 
 ### 4. Format & Lint
 
 ```bash
 # Format Rust code
-cd ext/rfmt
+cd ext/kenshin
 cargo fmt
 
 # Check lints
@@ -340,7 +340,7 @@ bundle exec rake
 
 # or
 bundle exec rake spec
-cd ext/rfmt && cargo test
+cd ext/kenshin && cargo test
 ```
 
 ## Release Process
@@ -348,27 +348,27 @@ cd ext/rfmt && cargo test
 ### Pre-Release Checklist
 
 - [ ] All tests passing
-- [ ] Version updated in `lib/rfmt/version.rb`
-- [ ] Version updated in `ext/rfmt/Cargo.toml`
+- [ ] Version updated in `lib/kenshin/version.rb`
+- [ ] Version updated in `ext/kenshin/Cargo.toml`
 - [ ] CHANGELOG.md updated
 - [ ] Documentation updated
 - [ ] No uncommitted changes
 
 ### Version Update
 
-1. **Update Ruby version** (`lib/rfmt/version.rb`):
+1. **Update Ruby version** (`lib/kenshin/version.rb`):
 
 ```ruby
-module Rfmt
+module Kenshin
   VERSION = "0.2.0"  # Update this
 end
 ```
 
-2. **Update Rust version** (`ext/rfmt/Cargo.toml`):
+2. **Update Rust version** (`ext/kenshin/Cargo.toml`):
 
 ```toml
 [package]
-name = "rfmt"
+name = "kenshin"
 version = "0.2.0"  # Update this
 ```
 
@@ -389,21 +389,21 @@ version = "0.2.0"  # Update this
 
 ```bash
 # Build gem package
-gem build rfmt.gemspec
+gem build kenshin.gemspec
 
-# This creates: rfmt-0.2.0.gem
+# This creates: kenshin-0.2.0.gem
 ```
 
 ### Test Gem Locally
 
 ```bash
 # Install locally
-gem install rfmt-0.2.0.gem
+gem install kenshin-0.2.0.gem
 
 # Test it
 irb
-> require 'rfmt'
-> Rfmt.format("class Foo\nend")
+> require 'kenshin'
+> Kenshin.format("class Foo\nend")
 ```
 
 ### Publish to RubyGems
@@ -422,9 +422,9 @@ chmod 0600 ~/.gem/credentials
 
 ```bash
 # Push the gem
-gem push rfmt-0.2.0.gem
+gem push kenshin-0.2.0.gem
 
-# Verify at https://rubygems.org/gems/rfmt
+# Verify at https://rubygems.org/gems/kenshin
 ```
 
 ### Post-Release
@@ -438,11 +438,11 @@ git push origin v0.2.0
 
 2. **Create GitHub Release**:
 
-- Go to https://github.com/yourusername/rfmt/releases/new
+- Go to https://github.com/yourusername/kenshin/releases/new
 - Select tag `v0.2.0`
 - Set release title: `v0.2.0`
 - Copy CHANGELOG entry to description
-- Attach `rfmt-0.2.0.gem` file
+- Attach `kenshin-0.2.0.gem` file
 - Publish release
 
 3. **Announce**:
@@ -483,7 +483,7 @@ bundle exec rake compile
 ```bash
 # Update dependencies
 bundle install
-cd ext/rfmt && cargo update
+cd ext/kenshin && cargo update
 
 # Clean rebuild
 bundle exec rake clobber compile
@@ -504,22 +504,22 @@ rm -rf tmp/
 bundle exec rspec
 ```
 
-#### Problem: "Cannot load such file -- rfmt/rfmt"
+#### Problem: "Cannot load such file -- kenshin/kenshin"
 
 ```bash
 # Extension not built or not in correct location
 bundle exec rake compile
 
 # Check if extension exists
-ls -la lib/rfmt/rfmt.bundle  # macOS
-ls -la lib/rfmt/rfmt.so      # Linux
+ls -la lib/kenshin/kenshin.bundle  # macOS
+ls -la lib/kenshin/kenshin.so      # Linux
 ```
 
 ### Runtime Issues
 
 #### Problem: "Prism integration error"
 
-Parsing happens inside the Rust extension via the statically linked ruby-prism crate, so this error indicates a bug in rfmt itself rather than a dependency problem. The prism gem in the Gemfile is a development-only dependency used by the corpus check and parity fixtures; updating it does not affect runtime parsing. Please open an issue with the input that triggers the error.
+Parsing happens inside the Rust extension via the statically linked ruby-prism crate, so this error indicates a bug in kenshin itself rather than a dependency problem. The prism gem in the Gemfile is a development-only dependency used by the corpus check and parity fixtures; updating it does not affect runtime parsing. Please open an issue with the input that triggers the error.
 
 #### Problem: Segmentation fault
 
@@ -527,7 +527,7 @@ This usually indicates a bug in Rust code. To debug:
 
 ```bash
 # Build debug version
-cd ext/rfmt
+cd ext/kenshin
 cargo build
 
 # Run with debugging
@@ -543,7 +543,7 @@ RUST_BACKTRACE=1 bundle exec ruby your_test.rb
 bundle exec rake compile  # Uses --release by default
 
 # Verify
-file lib/rfmt/rfmt.bundle
+file lib/kenshin/kenshin.bundle
 # Should say "not stripped" for debug, "stripped" for release
 ```
 
@@ -554,7 +554,7 @@ file lib/rfmt/rfmt.bundle
 ```bash
 # Terminal 1: Watch for file changes
 while true; do
-  inotifywait -e modify ext/rfmt/src/*.rs
+  inotifywait -e modify ext/kenshin/src/*.rs
   bundle exec rake compile
 done
 
@@ -596,12 +596,12 @@ RUST_BACKTRACE=1 bundle exec rspec
 
 ```ruby
 require 'benchmark'
-require 'rfmt'
+require 'kenshin'
 
 code = File.read('large_file.rb')
 
 Benchmark.bm do |x|
-  x.report("format:") { Rfmt.format(code) }
+  x.report("format:") { Kenshin.format(code) }
 end
 ```
 
@@ -614,12 +614,12 @@ gem install memory_profiler
 # Create profile script
 cat > profile_memory.rb <<'EOF'
 require 'memory_profiler'
-require 'rfmt'
+require 'kenshin'
 
 code = File.read('large_file.rb')
 
 report = MemoryProfiler.report do
-  Rfmt.format(code)
+  Kenshin.format(code)
 end
 
 report.pretty_print
@@ -668,7 +668,7 @@ jobs:
       run: bundle exec rspec
 
     - name: Run Rust tests
-      run: cd ext/rfmt && cargo test
+      run: cd ext/kenshin && cargo test
 ```
 
 ## Additional Resources
@@ -680,5 +680,5 @@ jobs:
 
 ## Getting Help
 
-- GitHub Issues: https://github.com/yourusername/rfmt/issues
-- Discussions: https://github.com/yourusername/rfmt/discussions
+- GitHub Issues: https://github.com/yourusername/kenshin/issues
+- Discussions: https://github.com/yourusername/kenshin/discussions

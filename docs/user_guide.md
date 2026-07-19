@@ -1,4 +1,4 @@
-# rfmt User Guide
+# kenshin User Guide
 
 ## Table of Contents
 
@@ -22,13 +22,13 @@
 ### Install from RubyGems
 
 ```bash
-gem install rfmt
+gem install kenshin
 ```
 
 ### Install from Source
 
 ```bash
-git clone https://github.com/fs0414/rfmt.git
+git clone https://github.com/sorafujitani/rfmt.git
 cd rfmt
 bundle install
 bundle exec rake compile
@@ -37,7 +37,7 @@ bundle exec rake compile
 ### Verify Installation
 
 ```bash
-rfmt version
+kenshin version
 ```
 
 ## Basic Usage
@@ -45,25 +45,25 @@ rfmt version
 ### Format a Single File
 
 ```bash
-rfmt lib/my_file.rb
+kenshin lib/my_file.rb
 ```
 
 This will format the file in place. To preview changes without modifying the file:
 
 ```bash
-rfmt --check lib/my_file.rb
+kenshin --check lib/my_file.rb
 ```
 
 ### Format Multiple Files
 
 ```bash
-rfmt lib/**/*.rb
+kenshin lib/**/*.rb
 ```
 
 ### Format Entire Project
 
 ```bash
-rfmt .
+kenshin .
 ```
 
 ### Check if Files Need Formatting
@@ -71,7 +71,7 @@ rfmt .
 Use the `--check` flag to verify formatting without making changes:
 
 ```bash
-rfmt check lib/**/*.rb
+kenshin check lib/**/*.rb
 ```
 
 This is useful in CI/CD pipelines. It exits with a non-zero status if any files need formatting.
@@ -79,12 +79,12 @@ This is useful in CI/CD pipelines. It exits with a non-zero status if any files 
 ### Format from Standard Input
 
 ```bash
-echo "class Foo;def bar;42;end;end" | rfmt -
+echo "class Foo;def bar;42;end;end" | kenshin -
 ```
 
 ## Configuration
 
-Create a `.rfmt.yml` file in your project root to customize formatting behavior:
+Create a `.kenshin.yml` file in your project root to customize formatting behavior:
 
 ```yaml
 version: "1.0"
@@ -119,9 +119,9 @@ exclude:
 
 ### Configuration Precedence
 
-rfmt looks for configuration in the following order:
+kenshin looks for configuration in the following order:
 
-1. `.rfmt.yml`, `.rfmt.yaml`, `rfmt.yml`, or `rfmt.yaml` in the current directory
+1. `.kenshin.yml`, `.kenshin.yaml`, `kenshin.yml`, or `kenshin.yaml` in the current directory
 2. Same files in parent directories (walking up the tree)
 3. Same files in home directory (user-level configuration)
 4. Default configuration
@@ -183,7 +183,7 @@ These options are available for all commands:
 
 ### Commands
 
-#### `rfmt [FILES...]` (default)
+#### `kenshin [FILES...]` (default)
 
 Format Ruby files. This is the default command.
 
@@ -197,29 +197,29 @@ Format Ruby files. This is the default command.
 
 ```bash
 # Format and modify files
-rfmt lib/user.rb lib/post.rb
+kenshin lib/user.rb lib/post.rb
 
 # Check formatting (CI/CD)
-rfmt --check lib/**/*.rb
+kenshin --check lib/**/*.rb
 
 # Show diff without modifying
-rfmt --diff lib/user.rb
+kenshin --diff lib/user.rb
 ```
 
-#### `rfmt check [FILES...]`
+#### `kenshin check [FILES...]`
 
-Check if files need formatting (alias for `rfmt --check`).
+Check if files need formatting (alias for `kenshin --check`).
 
 ```bash
-rfmt check .
+kenshin check .
 ```
 
-#### `rfmt version`
+#### `kenshin version`
 
 Display version information.
 
 ```bash
-rfmt version
+kenshin version
 ```
 
 ### Exit Codes
@@ -233,7 +233,7 @@ rfmt version
 ### Basic Formatting
 
 ```ruby
-require 'rfmt'
+require 'kenshin'
 
 # Input (unformatted code)
 source = <<~RUBY
@@ -244,7 +244,7 @@ source = <<~RUBY
   end
 RUBY
 
-formatted = Rfmt.format(source)
+formatted = Kenshin.format(source)
 puts formatted
 
 # Output (formatted code):
@@ -258,7 +258,7 @@ puts formatted
 ### Format with Configuration
 
 ```ruby
-require 'rfmt'
+require 'kenshin'
 
 config = {
   formatting: {
@@ -267,30 +267,30 @@ config = {
   }
 }
 
-formatted = Rfmt.format(source, config_path: '.rfmt.yml')
+formatted = Kenshin.format(source, config_path: '.kenshin.yml')
 ```
 
 ### Error Handling
 
 ```ruby
-require 'rfmt'
+require 'kenshin'
 
 begin
-  result = Rfmt.format(invalid_source)
-rescue Rfmt::ParseError => e
+  result = Kenshin.format(invalid_source)
+rescue Kenshin::ParseError => e
   puts "Parse error: #{e.message}"
   # Error includes:
   # - Error code (e.g., E001)
   # - Line and column numbers
   # - Code snippet showing the error
-rescue Rfmt::Error => e
+rescue Kenshin::Error => e
   puts "Formatting error: #{e.message}"
 end
 ```
 
 ## Error Handling
 
-rfmt provides detailed error messages to help you fix issues quickly.
+kenshin provides detailed error messages to help you fix issues quickly.
 
 ### Error Codes
 
@@ -311,7 +311,7 @@ All errors include an error code and help URL:
 ### Error Format
 
 ```
-[Rfmt::ParseError] Parse error in example.rb:5:10
+[Kenshin::ParseError] Parse error in example.rb:5:10
 Expected closing 'end' for class definition
 
 Code:
@@ -321,7 +321,7 @@ Code:
      |          ^
    6 | end
 
-Help: https://rfmt.dev/errors/E001
+Help: https://kenshin.dev/errors/E001
 ```
 
 ### Common Errors
@@ -350,7 +350,7 @@ end
 
 #### E002: Configuration Error
 
-**Cause:** Invalid `.rfmt.yml` configuration file
+**Cause:** Invalid `.kenshin.yml` configuration file
 
 **Solution:** Check your configuration against the schema
 
@@ -366,27 +366,27 @@ formatting:
 
 #### E006: Unsupported Feature
 
-**Cause:** Code uses a Ruby feature not yet supported by rfmt
+**Cause:** Code uses a Ruby feature not yet supported by kenshin
 
-**Solution:** Check the [roadmap](https://github.com/fs0414/rfmt/blob/main/ROADMAP.md) or file an issue
+**Solution:** Check the [roadmap](https://github.com/sorafujitani/rfmt/blob/main/ROADMAP.md) or file an issue
 
 ## Troubleshooting
 
-### rfmt is slow on large files
+### kenshin is slow on large files
 
-**Solution:** rfmt is designed to be fast, but very large files (>10,000 lines) may take longer. Consider:
+**Solution:** kenshin is designed to be fast, but very large files (>10,000 lines) may take longer. Consider:
 
 1. Breaking up large files into smaller modules
 2. Using `--config` to disable expensive checks
-3. Running rfmt in parallel on multiple files
+3. Running kenshin in parallel on multiple files
 
 ### Comments are being moved
 
-**Issue:** rfmt preserves all comments but may reposition them for consistency
+**Issue:** kenshin preserves all comments but may reposition them for consistency
 
-**Solution:** This is expected behavior. rfmt maintains comment positions relative to code structure.
+**Solution:** This is expected behavior. kenshin maintains comment positions relative to code structure.
 
-### rfmt changed my code's behavior
+### kenshin changed my code's behavior
 
 **Issue:** Formatting should never change behavior
 
@@ -396,18 +396,18 @@ formatting:
 - Expected behavior
 - Actual behavior
 
-### CI/CD pipeline failing with rfmt
+### CI/CD pipeline failing with kenshin
 
 **Common causes:**
 
-1. **Different rfmt versions:** Pin the version in your Gemfile
+1. **Different kenshin versions:** Pin the version in your Gemfile
    ```ruby
-   gem 'rfmt', '~> 0.1.0'
+   gem 'kenshin', '~> 0.1.0'
    ```
 
-2. **Configuration not found:** Ensure `.rfmt.yml` is committed to git
+2. **Configuration not found:** Ensure `.kenshin.yml` is committed to git
 
-3. **Files need formatting:** Run `rfmt .` locally first
+3. **Files need formatting:** Run `kenshin .` locally first
 
 ### Getting Debug Information
 
@@ -415,21 +415,21 @@ If you encounter issues, you can enable debug logging to see detailed informatio
 
 **Using the --verbose flag:**
 ```bash
-rfmt file.rb --verbose
+kenshin file.rb --verbose
 # or
-rfmt file.rb -v
+kenshin file.rb -v
 ```
 
 **Using environment variables:**
 ```bash
 # Enable debug logging with DEBUG
-DEBUG=1 rfmt file.rb
+DEBUG=1 kenshin file.rb
 
-# Enable rfmt-specific debug logging
-RFMT_DEBUG=1 rfmt file.rb
+# Enable kenshin-specific debug logging
+KENSHIN_DEBUG=1 kenshin file.rb
 
 # Control log level directly
-RFMT_LOG=debug rfmt file.rb
+KENSHIN_LOG=debug kenshin file.rb
 ```
 
 Debug logging will show:
@@ -440,23 +440,23 @@ Debug logging will show:
 
 ## FAQ
 
-### Does rfmt preserve comments?
+### Does kenshin preserve comments?
 
-**Yes!** rfmt preserves all comments in their original positions. Line comments, block comments, and documentation comments are all maintained.
+**Yes!** kenshin preserves all comments in their original positions. Line comments, block comments, and documentation comments are all maintained.
 
 ### Is formatting idempotent?
 
-**Yes!** Running rfmt multiple times on the same file produces identical results. This is guaranteed by our test suite.
+**Yes!** Running kenshin multiple times on the same file produces identical results. This is guaranteed by our test suite.
 
 ### Can I disable specific rules?
 
-Not yet. rfmt follows a consistent style without configuration. This is by design to reduce bikeshedding. If you have a strong use case, please file an issue.
+Not yet. kenshin follows a consistent style without configuration. This is by design to reduce bikeshedding. If you have a strong use case, please file an issue.
 
-### How does rfmt compare to RuboCop?
+### How does kenshin compare to RuboCop?
 
-rfmt is a **formatter**, while RuboCop is a **linter**:
+kenshin is a **formatter**, while RuboCop is a **linter**:
 
-| Feature | rfmt | RuboCop |
+| Feature | kenshin | RuboCop |
 |---------|------|---------|
 | Format code | ✅ | ✅ (with autocorrect) |
 | Style enforcement | ✅ | ✅ |
@@ -465,11 +465,11 @@ rfmt is a **formatter**, while RuboCop is a **linter**:
 | Performance | Very fast | Moderate |
 | Configuration | Minimal | Extensive |
 
-**Recommendation:** Use both! Run rfmt for consistent formatting, and RuboCop for code quality checks.
+**Recommendation:** Use both! Run kenshin for consistent formatting, and RuboCop for code quality checks.
 
-### Does rfmt work with Rails?
+### Does kenshin work with Rails?
 
-**Yes!** rfmt works with any Ruby code, including Rails applications. It correctly handles:
+**Yes!** kenshin works with any Ruby code, including Rails applications. It correctly handles:
 
 - Models, Controllers, Views
 - Migrations
@@ -477,7 +477,7 @@ rfmt is a **formatter**, while RuboCop is a **linter**:
 - Rake tasks
 - Initializers
 
-### Can I use rfmt with pre-commit hooks?
+### Can I use kenshin with pre-commit hooks?
 
 **Yes!** Example `.pre-commit-config.yaml`:
 
@@ -485,9 +485,9 @@ rfmt is a **formatter**, while RuboCop is a **linter**:
 repos:
   - repo: local
     hooks:
-      - id: rfmt
-        name: rfmt
-        entry: bundle exec rfmt
+      - id: kenshin
+        name: kenshin
+        entry: bundle exec kenshin
         language: system
         files: \.rb$
 ```
@@ -498,14 +498,14 @@ Or with [Lefthook](https://github.com/evilmartians/lefthook):
 # lefthook.yml
 pre-commit:
   commands:
-    rfmt:
+    kenshin:
       glob: "*.rb"
-      run: bundle exec rfmt {staged_files}
+      run: bundle exec kenshin {staged_files}
 ```
 
 ### What Ruby versions are supported?
 
-rfmt supports **Ruby 3.3 and higher**. We test against:
+kenshin supports **Ruby 3.3 and higher**. We test against:
 
 - Ruby 3.3
 - Ruby 3.4
@@ -522,9 +522,9 @@ See our [Contributing Guide](../CONTRIBUTING.md) for details on:
 
 ### Where can I get help?
 
-- 📖 Documentation: https://rfmt.dev/docs
-- 🐛 Issues: https://github.com/fs0414/rfmt/issues
-- 💬 Discussions: https://github.com/fs0414/rfmt/discussions
+- 📖 Documentation: https://kenshin.dev/docs
+- 🐛 Issues: https://github.com/sorafujitani/rfmt/issues
+- 💬 Discussions: https://github.com/sorafujitani/rfmt/discussions
 - 📧 Email: fujitanisora0414@gmail.com
 
 ## Next Steps

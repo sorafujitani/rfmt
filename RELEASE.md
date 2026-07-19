@@ -1,10 +1,10 @@
 # Release Process
 
-This document describes the release process for rfmt.
+This document describes the release process for kenshin.
 
 ## Overview
 
-rfmt uses an automated release process powered by GitHub Actions. The process includes:
+kenshin uses an automated release process powered by GitHub Actions. The process includes:
 
 1. Version bumping and changelog updates
 2. Running tests
@@ -32,7 +32,7 @@ To get your RubyGems API key:
 gem signin
 
 # Create an API key
-gem signin --key rfmt
+gem signin --key kenshin
 
 # View your credentials
 cat ~/.gem/credentials
@@ -63,7 +63,7 @@ bin/release 0.2.0 --dry-run
 
 The script will:
 - ✅ Prompt for the new version (or suggest patch/minor/major)
-- ✅ Update `lib/rfmt/version.rb`
+- ✅ Update `lib/kenshin/version.rb`
 - ✅ Update `CHANGELOG.md` with release date
 - ✅ Run the test suite
 - ✅ Commit changes
@@ -130,7 +130,7 @@ GitHub Actions will automatically:
 
 ### 5. Finalize the Release
 
-1. Go to [GitHub Releases](https://github.com/fs0414/rfmt/releases)
+1. Go to [GitHub Releases](https://github.com/sorafujitani/rfmt/releases)
 2. Find the draft release
 3. Review the release notes
 4. Edit if needed (use `.github/release_template.md` as a reference)
@@ -148,7 +148,7 @@ Before releasing, ensure:
 
 ## Version Numbering
 
-rfmt follows [Semantic Versioning](https://semver.org/):
+kenshin follows [Semantic Versioning](https://semver.org/):
 
 - **MAJOR** (X.0.0): Breaking changes
 - **MINOR** (0.X.0): New features, backwards compatible
@@ -169,13 +169,13 @@ If you see "Version mismatch" error:
 ```
 Error: Version mismatch!
 Tag: v0.2.0
-lib/rfmt/version.rb: 0.1.0
+lib/kenshin/version.rb: 0.1.0
 ```
 
 Fix it by updating the version file:
 ```ruby
-# lib/rfmt/version.rb
-module Rfmt
+# lib/kenshin/version.rb
+module Kenshin
   VERSION = "0.2.0"
 end
 ```
@@ -207,7 +207,7 @@ Manual publish:
 bundle exec rake build
 
 # Push to RubyGems
-gem push pkg/rfmt-0.2.0.gem
+gem push pkg/kenshin-0.2.0.gem
 ```
 
 ## Manual Release (Emergency)
@@ -228,10 +228,10 @@ git push origin v0.2.0
 gh release create v0.2.0 \
   --title "v0.2.0" \
   --notes-file CHANGELOG.md \
-  pkg/rfmt-0.2.0.gem
+  pkg/kenshin-0.2.0.gem
 
 # 5. Push to RubyGems
-gem push pkg/rfmt-0.2.0.gem
+gem push pkg/kenshin-0.2.0.gem
 ```
 
 ## Post-Release

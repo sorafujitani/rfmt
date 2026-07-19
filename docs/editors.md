@@ -1,27 +1,27 @@
 # Editor Integration
 
-rfmt integrates with editors either as a standalone LSP server or as a formatter
+kenshin integrates with editors either as a standalone LSP server or as a formatter
 inside [Ruby LSP](https://shopify.github.io/ruby-lsp/).
 
 Use the standalone LSP when you want formatting for a single Ruby script or a
 project without a Gemfile. Use the Ruby LSP add-on when your editor already runs
-Ruby LSP and you want rfmt as one of its formatter backends.
+Ruby LSP and you want kenshin as one of its formatter backends.
 
 ## Prerequisites
 
-1. Install rfmt gem:
+1. Install kenshin gem:
    ```bash
-   gem install rfmt
+   gem install kenshin
    ```
 
-2. Configure either `rfmt-lsp` directly or Ruby LSP in your editor
+2. Configure either `kenshin-lsp` directly or Ruby LSP in your editor
 
 ## Standalone LSP
 
-The `rfmt-lsp` executable starts a stdio LSP server that provides document
+The `kenshin-lsp` executable starts a stdio LSP server that provides document
 formatting. It does not require a project Gemfile or Ruby LSP. The server reads
-`.rfmt.yml` from the workspace root, parent directories, or your home directory,
-matching the normal rfmt configuration discovery behavior.
+`.kenshin.yml` from the workspace root, parent directories, or your home directory,
+matching the normal kenshin configuration discovery behavior.
 
 > **VSCode users**: VSCode integrates through Ruby LSP rather than the
 > standalone server. See [Ruby LSP Add-on](#ruby-lsp-add-on) below.
@@ -34,18 +34,18 @@ With `nvim-lspconfig`, register a small custom server:
 local configs = require("lspconfig.configs")
 local lspconfig = require("lspconfig")
 
-if not configs.rfmt then
-  configs.rfmt = {
+if not configs.kenshin then
+  configs.kenshin = {
     default_config = {
-      cmd = { "rfmt-lsp" },
+      cmd = { "kenshin-lsp" },
       filetypes = { "ruby" },
-      root_dir = lspconfig.util.root_pattern(".rfmt.yml", ".git"),
+      root_dir = lspconfig.util.root_pattern(".kenshin.yml", ".git"),
       single_file_support = true,
     },
   }
 end
 
-lspconfig.rfmt.setup({})
+lspconfig.kenshin.setup({})
 ```
 
 ### Emacs eglot
@@ -54,7 +54,7 @@ lspconfig.rfmt.setup({})
 (require 'eglot)
 
 (add-to-list 'eglot-server-programs
-             '(ruby-mode . ("rfmt-lsp")))
+             '(ruby-mode . ("kenshin-lsp")))
 
 (add-hook 'ruby-mode-hook 'eglot-ensure)
 ```
@@ -71,9 +71,9 @@ Add to `settings.json`:
     }
   },
   "lsp": {
-    "rfmt": {
+    "kenshin": {
       "binary": {
-        "path": "rfmt-lsp"
+        "path": "kenshin-lsp"
       }
     }
   }
@@ -85,12 +85,12 @@ Add to `settings.json`:
 Add to `~/.config/helix/languages.toml`:
 
 ```toml
-[language-server.rfmt]
-command = "rfmt-lsp"
+[language-server.kenshin]
+command = "kenshin-lsp"
 
 [[language]]
 name = "ruby"
-language-servers = ["rfmt"]
+language-servers = ["kenshin"]
 auto-format = true
 ```
 
@@ -104,7 +104,7 @@ diagnostics, navigation, and other Ruby language features.
 ### Prerequisites
 
 - [Ruby LSP extension](https://marketplace.visualstudio.com/items?itemName=Shopify.ruby-lsp) installed
-- rfmt gem installed
+- kenshin gem installed
 
 ### Basic Setup
 
@@ -112,7 +112,7 @@ Add to your `settings.json` (user or workspace settings):
 
 ```json
 {
-  "rubyLsp.formatter": "rfmt"
+  "rubyLsp.formatter": "kenshin"
 }
 ```
 
@@ -122,7 +122,7 @@ To automatically format on save, add the following settings:
 
 ```json
 {
-  "rubyLsp.formatter": "rfmt",
+  "rubyLsp.formatter": "kenshin",
   "editor.formatOnSave": true,
   "[ruby]": {
     "editor.defaultFormatter": "Shopify.ruby-lsp"
@@ -144,7 +144,7 @@ For per-project configuration, add to `.vscode/settings.json`:
 
 ```json
 {
-  "rubyLsp.formatter": "rfmt",
+  "rubyLsp.formatter": "kenshin",
   "editor.formatOnSave": true,
   "[ruby]": {
     "editor.defaultFormatter": "Shopify.ruby-lsp"
@@ -159,7 +159,7 @@ For per-project configuration, add to `.vscode/settings.json`:
 ```lua
 require("lspconfig").ruby_lsp.setup({
   init_options = {
-    formatter = "rfmt"
+    formatter = "kenshin"
   }
 })
 ```
@@ -194,7 +194,7 @@ auto-format = true
 Create `.ruby-lsp/config.yml` in your project root:
 
 ```yaml
-formatter: rfmt
+formatter: kenshin
 ```
 
 ## Emacs
@@ -212,7 +212,7 @@ formatter: rfmt
 
 Configure formatter in `.ruby-lsp/config.yml`:
 ```yaml
-formatter: rfmt
+formatter: kenshin
 ```
 
 ## Zed
@@ -226,7 +226,7 @@ Add to your `settings.json` (global or `.zed/settings.json` for project-specific
   "lsp": {
     "ruby-lsp": {
       "initialization_options": {
-        "formatter": "rfmt"
+        "formatter": "kenshin"
       }
     }
   }
@@ -245,7 +245,7 @@ Add to your `settings.json` (global or `.zed/settings.json` for project-specific
   "lsp": {
     "ruby-lsp": {
       "initialization_options": {
-        "formatter": "rfmt"
+        "formatter": "kenshin"
       }
     }
   }
@@ -256,9 +256,9 @@ Add to your `settings.json` (global or `.zed/settings.json` for project-specific
 
 ### Add-on Not Detected
 
-1. Verify rfmt is installed:
+1. Verify kenshin is installed:
    ```bash
-   gem list rfmt
+   gem list kenshin
    ```
 
 2. Check Ruby LSP version (requires >= 0.17.0):
@@ -271,19 +271,19 @@ Add to your `settings.json` (global or `.zed/settings.json` for project-specific
 ### Formatting Not Working
 
 1. Check LSP logs for errors
-2. Verify `.rfmt.yml` is valid YAML
-3. Test rfmt CLI directly:
+2. Verify `.kenshin.yml` is valid YAML
+3. Test kenshin CLI directly:
    ```bash
-   rfmt format test.rb
+   kenshin format test.rb
    ```
 
 ### VSCode: Formatting Not Triggered
 
 1. Verify Ruby LSP extension is enabled
-2. Check rfmt gem is installed: `gem list rfmt`
+2. Check kenshin gem is installed: `gem list kenshin`
 3. Open VSCode Output panel and select "Ruby LSP" to check logs
 4. Run "Ruby LSP: Restart" from the Command Palette
 
 ## Configuration
 
-rfmt reads configuration from `.rfmt.yml`. See [Configuration Guide](./configuration.md) for details.
+kenshin reads configuration from `.kenshin.yml`. See [Configuration Guide](./configuration.md) for details.

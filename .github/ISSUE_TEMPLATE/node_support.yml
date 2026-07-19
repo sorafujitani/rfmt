@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Request support for a Prism node type that rfmt doesn't currently handle correctly.
+        Request support for a Prism node type that kenshin doesn't currently handle correctly.
 
   - type: input
     id: node-type
@@ -39,7 +39,7 @@ body:
     id: current-output
     attributes:
       label: Current Output
-      description: What does rfmt currently output for this syntax?
+      description: What does kenshin currently output for this syntax?
       render: ruby
       placeholder: |
         # Current (broken) output:
@@ -51,7 +51,7 @@ body:
     id: expected-output
     attributes:
       label: Expected Output
-      description: What should rfmt output?
+      description: What should kenshin output?
       render: ruby
       placeholder: |
         # Expected output:

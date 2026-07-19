@@ -1,6 +1,6 @@
-# Contributing to rfmt
+# Contributing to kenshin
 
-Thank you for your interest in contributing to rfmt! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to kenshin! This document provides guidelines and instructions for contributing to the project.
 
 ## Table of Contents
 
@@ -30,7 +30,7 @@ This project adheres to the Contributor Covenant [Code of Conduct](CODE_OF_CONDU
 
 ### Finding an Issue to Work On
 
-1. Browse the [issue tracker](https://github.com/fs0414/rfmt/issues)
+1. Browse the [issue tracker](https://github.com/sorafujitani/rfmt/issues)
 2. Look for issues labeled `good first issue` or `help wanted`
 3. Comment on the issue to let others know you're working on it
 4. For larger changes, discuss your approach in the issue before starting
@@ -41,11 +41,11 @@ This project adheres to the Contributor Covenant [Code of Conduct](CODE_OF_CONDU
 
 ```bash
 # Fork the repository on GitHub, then clone your fork
-git clone https://github.com/YOUR_USERNAME/rfmt.git
-cd rfmt
+git clone https://github.com/YOUR_USERNAME/kenshin.git
+cd kenshin
 
 # Add the upstream repository
-git remote add upstream https://github.com/fs0414/rfmt.git
+git remote add upstream https://github.com/sorafujitani/rfmt.git
 ```
 
 ### 2. Install Dependencies
@@ -70,11 +70,11 @@ bundle exec rspec
 ## Project Structure
 
 ```
-rfmt/
+kenshin/
 ├── lib/                    # Ruby code
-│   ├── rfmt.rb            # Main entry point
-│   └── rfmt/              # CLI, LSP, configuration
-├── ext/rfmt/              # Rust extension
+│   ├── kenshin.rb            # Main entry point
+│   └── kenshin/              # CLI, LSP, configuration
+├── ext/kenshin/              # Rust extension
 │   ├── src/
 │   │   ├── lib.rs         # FFI interface
 │   │   ├── error/         # Error handling
@@ -94,9 +94,9 @@ rfmt/
 ### Key Components
 
 #### Ruby Side (`lib/`)
-- **Rfmt module**: Main interface for users; parsing and formatting happen natively in Rust
+- **Kenshin module**: Main interface for users; parsing and formatting happen natively in Rust
 
-#### Rust Side (`ext/rfmt/src/`)
+#### Rust Side (`ext/kenshin/src/`)
 - **error/**: Error types and handling (E001-E999)
 - **logging/**: Structured logging system
 - **debug/**: Debug context and macros
@@ -132,7 +132,7 @@ bundle exec rspec
 bundle exec rspec spec/my_spec.rb
 
 # Run Rust tests
-cd ext/rfmt && cargo test
+cd ext/kenshin && cargo test
 ```
 
 ### 4. Commit Changes
@@ -180,7 +180,7 @@ bundle exec rspec spec/error_handling_spec.rb:10
 ### Rust Tests (Cargo)
 
 ```bash
-cd ext/rfmt
+cd ext/kenshin
 
 # Run all tests
 cargo test
@@ -203,7 +203,7 @@ require 'spec_helper'
 RSpec.describe 'My Feature' do
   it 'does something useful' do
     source = "class Foo\nend"
-    result = Rfmt.format(source)
+    result = Kenshin.format(source)
 
     expect(result).to include('class Foo')
     expect(result).to end_with("end\n")
@@ -214,7 +214,7 @@ end
 #### Rust Tests Example
 
 ```rust
-// ext/rfmt/src/my_module.rs
+// ext/kenshin/src/my_module.rs
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -285,14 +285,14 @@ pub fn format_code(source: &str) -> Result<String> {
 Format with:
 
 ```bash
-cd ext/rfmt
+cd ext/kenshin
 cargo fmt
 ```
 
 Lint with:
 
 ```bash
-cd ext/rfmt
+cd ext/kenshin
 cargo clippy
 ```
 
@@ -306,9 +306,9 @@ cargo clippy
 # @param source [String] the Ruby code to format
 # @param config [Hash] optional configuration overrides
 # @return [String] formatted Ruby code
-# @raise [Rfmt::ParseError] if source has syntax errors
+# @raise [Kenshin::ParseError] if source has syntax errors
 # @example
-#   Rfmt.format("class Foo;end")
+#   Kenshin.format("class Foo;end")
 #   #=> "class Foo\nend\n"
 def self.format(source, config: {})
   # ...
@@ -364,7 +364,7 @@ git rebase upstream/main
 bundle exec rspec
 
 # Rust tests
-cd ext/rfmt && cargo test
+cd ext/kenshin && cargo test
 
 # Format checks
 cargo fmt --check
@@ -429,7 +429,7 @@ None / Describe breaking changes
 
 Include:
 
-1. **rfmt version**: `rfmt --version`
+1. **kenshin version**: `kenshin --version`
 2. **Ruby version**: `ruby -v`
 3. **Platform**: OS and architecture
 4. **Expected behavior**: What should happen
@@ -442,7 +442,7 @@ Include:
 ```markdown
 ## Bug Report
 
-**rfmt version**: 0.1.0
+**kenshin version**: 0.1.0
 **Ruby version**: 3.3.0
 **Platform**: macOS 14.0 (arm64)
 
@@ -492,10 +492,10 @@ RUST_BACKTRACE=1 bundle exec rspec
 
 ```ruby
 require 'pry'
-require 'rfmt'
+require 'kenshin'
 
 binding.pry
-result = Rfmt.format(source)
+result = Kenshin.format(source)
 ```
 
 ### Common Tasks
@@ -514,7 +514,7 @@ bundle exec rake compile
 bundle update
 
 # Rust
-cd ext/rfmt
+cd ext/kenshin
 cargo update
 ```
 
@@ -525,20 +525,20 @@ cargo update
 bundle exec yard doc
 
 # Rust docs
-cd ext/rfmt
+cd ext/kenshin
 cargo doc --open
 ```
 
 ## Questions?
 
 - 📖 Read the [User Guide](docs/user_guide.md)
-- 💬 Ask in [Discussions](https://github.com/fs0414/rfmt/discussions)
+- 💬 Ask in [Discussions](https://github.com/sorafujitani/rfmt/discussions)
 - 📧 Email: fujitanisora0414@gmail.com
 
 ## License
 
-By contributing to rfmt, you agree that your contributions will be licensed under the MIT License.
+By contributing to kenshin, you agree that your contributions will be licensed under the MIT License.
 
 ---
 
-Thank you for contributing to rfmt! 🎉
+Thank you for contributing to kenshin! 🎉

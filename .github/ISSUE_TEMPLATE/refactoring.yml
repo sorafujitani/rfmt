@@ -28,12 +28,12 @@ body:
       label: Affected Layer
       description: Which part of the codebase is affected?
       options:
-        - Rust - Emitter (ext/rfmt/src/emitter/)
-        - Rust - AST (ext/rfmt/src/ast/)
-        - Rust - Config (ext/rfmt/src/config/)
-        - Rust - Parser (ext/rfmt/src/parser/)
-        - Rust - Error Handling (ext/rfmt/src/error/)
-        - Ruby (lib/rfmt/)
+        - Rust - Emitter (ext/kenshin/src/emitter/)
+        - Rust - AST (ext/kenshin/src/ast/)
+        - Rust - Config (ext/kenshin/src/config/)
+        - Rust - Parser (ext/kenshin/src/parser/)
+        - Rust - Error Handling (ext/kenshin/src/error/)
+        - Ruby (lib/kenshin/)
         - Ruby - CLI (exe/)
         - Multiple layers
     validations:
@@ -47,7 +47,7 @@ body:
         Describe the current implementation and its problems.
         Include file paths and line numbers if possible.
       placeholder: |
-        **File:** `ext/rfmt/src/emitter/mod.rs:85`
+        **File:** `ext/kenshin/src/emitter/mod.rs:85`
 
         **Current code:**
         ```rust
@@ -85,7 +85,7 @@ body:
       label: Files to Modify
       description: List all files that need to be changed.
       placeholder: |
-        - `ext/rfmt/src/emitter/mod.rs`
+        - `ext/kenshin/src/emitter/mod.rs`
           - Line 1: Add import
           - Line 19: Change type
           - Lines 29, 41: Update constructors

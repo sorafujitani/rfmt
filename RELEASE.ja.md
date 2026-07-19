@@ -1,6 +1,6 @@
 # リリース手順
 
-このドキュメントでは、rfmtの新しいバージョンをリリースする手順を説明します。
+このドキュメントでは、kenshinの新しいバージョンをリリースする手順を説明します。
 
 ## 自動リリース（推奨）
 
@@ -11,8 +11,8 @@ GitHub Actionsを使用した自動リリースが可能です。
 1. **バージョンの更新**
 
    以下のファイルでバージョン番号を更新します：
-   - `lib/rfmt/version.rb` - Rubyのバージョン定義
-   - `ext/rfmt/Cargo.toml` - Rustクレートのバージョン
+   - `lib/kenshin/version.rb` - Rubyのバージョン定義
+   - `ext/kenshin/Cargo.toml` - Rustクレートのバージョン
    - `Cargo.lock` - 依存関係のロック（`cargo build`で自動更新）
 
 2. **CHANGELOG.mdの更新**
@@ -33,7 +33,7 @@ GitHub Actionsを使用した自動リリースが可能です。
 
 3. **変更のコミットとプッシュ**
    ```bash
-   git add lib/rfmt/version.rb ext/rfmt/Cargo.toml Cargo.lock CHANGELOG.md
+   git add lib/kenshin/version.rb ext/kenshin/Cargo.toml Cargo.lock CHANGELOG.md
    git commit -m "Bump version to X.Y.Z"
    git push origin main
    ```
@@ -46,7 +46,7 @@ GitHub Actionsを使用した自動リリースが可能です。
    ```
 
    または、GitHubのWebインターフェースで：
-   - [Releases](https://github.com/your-username/rfmt/releases)ページに移動
+   - [Releases](https://github.com/your-username/kenshin/releases)ページに移動
    - "Draft a new release"をクリック
    - タグ：`vX.Y.Z`（新規作成）
    - リリースタイトル：`vX.Y.Z`
@@ -59,7 +59,7 @@ GitHub Actionsを使用した自動リリースが可能です。
    - Linux、macOS、Windows向けのネイティブgemをビルド
    - RubyGems.orgへの公開（credentials設定済みの場合）
 
-   進行状況は[Actions](https://github.com/your-username/rfmt/actions)タブで確認できます。
+   進行状況は[Actions](https://github.com/your-username/kenshin/actions)タブで確認できます。
 
 ## 手動リリース
 
@@ -115,10 +115,10 @@ GitHub Actionsを使用した自動リリースが可能です。
    gem signin
 
    # 各gemを公開
-   gem push pkg/rfmt-X.Y.Z-x86_64-linux.gem
-   gem push pkg/rfmt-X.Y.Z-arm64-darwin.gem
-   gem push pkg/rfmt-X.Y.Z-x86_64-darwin.gem
-   gem push pkg/rfmt-X.Y.Z-x64-mingw-ucrt.gem
+   gem push pkg/kenshin-X.Y.Z-x86_64-linux.gem
+   gem push pkg/kenshin-X.Y.Z-arm64-darwin.gem
+   gem push pkg/kenshin-X.Y.Z-x86_64-darwin.gem
+   gem push pkg/kenshin-X.Y.Z-x64-mingw-ucrt.gem
    ```
 
 5. **Gitタグの作成**
@@ -129,7 +129,7 @@ GitHub Actionsを使用した自動リリースが可能です。
 
 6. **GitHub Releaseの作成**
 
-   [Releases](https://github.com/your-username/rfmt/releases)ページから：
+   [Releases](https://github.com/your-username/kenshin/releases)ページから：
    - "Draft a new release"をクリック
    - タグ：`vX.Y.Z`（既存のタグを選択）
    - リリースタイトル：`vX.Y.Z`
@@ -141,24 +141,24 @@ GitHub Actionsを使用した自動リリースが可能です。
 
 1. **RubyGems.orgでの確認**
 
-   https://rubygems.org/gems/rfmt で新しいバージョンが表示されることを確認
+   https://rubygems.org/gems/kenshin で新しいバージョンが表示されることを確認
 
 2. **インストールテスト**
    ```bash
-   gem install rfmt
-   rfmt --version
+   gem install kenshin
+   kenshin --version
    ```
 
 3. **動作確認**
    ```bash
-   echo "def hello; puts 'world'; end" | rfmt
+   echo "def hello; puts 'world'; end" | kenshin
    ```
 
 ## トラブルシューティング
 
 ### GitHub Actionsのビルドが失敗する
 
-- [Actions](https://github.com/your-username/rfmt/actions)タブでログを確認
+- [Actions](https://github.com/your-username/kenshin/actions)タブでログを確認
 - Rust toolchainのバージョンを確認
 - 依存関係の問題がないか確認
 

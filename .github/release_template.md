@@ -20,35 +20,35 @@
 ## Installation
 
 ```bash
-gem install rfmt -v VERSION
+gem install kenshin -v VERSION
 ```
 
 Or add to your Gemfile:
 
 ```ruby
-gem 'rfmt', '~> VERSION'
+gem 'kenshin', '~> VERSION'
 ```
 
 ## Usage
 
 Format a file:
 ```bash
-rfmt path/to/file.rb
+kenshin path/to/file.rb
 ```
 
 Format multiple files:
 ```bash
-rfmt app/**/*.rb lib/**/*.rb
+kenshin app/**/*.rb lib/**/*.rb
 ```
 
 Check formatting without making changes:
 ```bash
-rfmt --check app/**/*.rb
+kenshin --check app/**/*.rb
 ```
 
 ## Full Changelog
 
-See [CHANGELOG.md](https://github.com/fs0414/rfmt/blob/vVERSION/CHANGELOG.md) for detailed changes.
+See [CHANGELOG.md](https://github.com/sorafujitani/rfmt/blob/vVERSION/CHANGELOG.md) for detailed changes.
 
 ## Contributors
 

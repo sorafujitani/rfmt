@@ -33,7 +33,7 @@ Related to #
 <!-- Describe how you tested your changes -->
 
 - [ ] All existing tests pass (`bundle exec rspec`)
-- [ ] Rust tests pass (`cd ext/rfmt && cargo test`)
+- [ ] Rust tests pass (`cd ext/kenshin && cargo test`)
 - [ ] Added new tests for new functionality
 - [ ] Manually tested with the following scenarios:
   -

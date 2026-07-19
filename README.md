@@ -1,10 +1,10 @@
-# rfmt
+# kenshin
 
 <div align="center">
 
 A Ruby code formatter written in Rust
 
-[![Gem Version](https://badge.fury.io/rb/rfmt.svg)](https://rubygems.org/gems/rfmt)
+[![Gem Version](https://badge.fury.io/rb/kenshin.svg)](https://rubygems.org/gems/kenshin)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 [Installation](#installation) •
@@ -20,12 +20,12 @@ A Ruby code formatter written in Rust
 
 ---
 
-## What is rfmt?
+## What is kenshin?
 
-[RubyGems reference](https://rubygems.org/gems/rfmt)
-[DeepWiki rfmt](https://deepwiki.com/fs0414/rfmt)
+[RubyGems reference](https://rubygems.org/gems/kenshin)
+[DeepWiki kenshin](https://deepwiki.com/fs0414/rfmt)
 
-**rfmt** is a Ruby code formatter that enforces consistent style across your codebase. Key characteristics:
+**kenshin** is a Ruby code formatter that enforces consistent style across your codebase. Key characteristics:
 
 - **Opinionated**: Minimal configuration with consistent output
 - **Idempotent**: Running multiple times produces identical results
@@ -56,13 +56,13 @@ Parsing and formatting both run natively in Rust (the [ruby-prism](https://crate
 | Before native parsing (Ruby Prism parse + JSON handoff to Rust; historical, not reproducible from this checkout) | 4.28 ms/file |
 | Now (parsing and formatting in Rust) | 0.19 ms/file |
 
-Measured with `scripts/bench_format.rb` over rfmt's own `lib/` corpus on arm64 macOS, Ruby 3.4. Reproduce with:
+Measured with `scripts/bench_format.rb` over kenshin's own `lib/` corpus on arm64 macOS, Ruby 3.4. Reproduce with:
 
 ```bash
 bundle exec ruby scripts/bench_format.rb
 ```
 
-A cold CLI invocation (`rfmt --check FILE`) takes roughly 0.1-0.25 s of wall-clock time; that is Ruby VM startup, not formatting.
+A cold CLI invocation (`kenshin --check FILE`) takes roughly 0.1-0.25 s of wall-clock time; that is Ruby VM startup, not formatting.
 
 For more detail and a historical comparison against RuboCop, see [Performance Benchmarks](docs/benchmark.md).
 
@@ -76,13 +76,13 @@ For more detail and a historical comparison against RuboCop, see [Performance Be
 ### From RubyGems
 
 ```bash
-gem install rfmt
+gem install kenshin
 ```
 
 ### In Your Gemfile
 
 ```ruby
-gem 'rfmt'
+gem 'kenshin'
 ```
 
 Then run:
@@ -94,7 +94,7 @@ bundle install
 ### From Source
 
 ```bash
-git clone https://github.com/fs0414/rfmt.git
+git clone https://github.com/sorafujitani/rfmt.git
 cd rfmt
 bundle install
 bundle exec rake compile
@@ -107,10 +107,10 @@ bundle exec rake compile
 First, create a configuration file with default settings:
 
 ```bash
-rfmt init
+kenshin init
 ```
 
-This creates a `.rfmt.yml` file with default settings:
+This creates a `.kenshin.yml` file with default settings:
 
 ```yaml
 version: "1.0"
@@ -138,10 +138,10 @@ exclude:
 
 ```bash
 # Specify custom path
-rfmt init --path config/.rfmt.yml
+kenshin init --path config/.kenshin.yml
 
 # Overwrite existing configuration
-rfmt init --force
+kenshin init --force
 ```
 
 ### Command Line
@@ -149,43 +149,43 @@ rfmt init --force
 Format a single file:
 
 ```bash
-rfmt lib/user.rb
+kenshin lib/user.rb
 ```
 
 Format multiple files:
 
 ```bash
-rfmt lib/**/*.rb
+kenshin lib/**/*.rb
 ```
 
 Format all files in your project:
 
 ```bash
-rfmt .
+kenshin .
 ```
 
 Check if files need formatting (CI/CD):
 
 ```bash
-rfmt check .
+kenshin check .
 ```
 
 Show diff without modifying files:
 
 ```bash
-rfmt lib/user.rb --diff
+kenshin lib/user.rb --diff
 ```
 
 Quiet mode (minimal output):
 
 ```bash
-rfmt --quiet lib/**/*.rb
+kenshin --quiet lib/**/*.rb
 ```
 
 Enable verbose output for debugging:
 
 ```bash
-rfmt --verbose lib/user.rb
+kenshin --verbose lib/user.rb
 ```
 
 #### Common Options
@@ -201,7 +201,7 @@ rfmt --verbose lib/user.rb
 
 **Normal mode** (default):
 ```bash
-$ rfmt app/
+$ kenshin app/
 Processing 25 file(s)...
 ✓ Formatted app/controllers/users_controller.rb
 ✓ Formatted app/models/user.rb
@@ -212,13 +212,13 @@ Processing 25 file(s)...
 
 **Quiet mode** (`--quiet` or `-q`):
 ```bash
-$ rfmt --quiet app/
+$ kenshin --quiet app/
 ✓ 3 files formatted
 ```
 
 **Verbose mode** (`--verbose` or `-v`):
 ```bash
-$ rfmt --verbose app/
+$ kenshin --verbose app/
 Processing 25 file(s)...
 Using sequential processing for 25 files
 ✓ Formatted app/controllers/users_controller.rb  
@@ -236,7 +236,7 @@ Details:
 
 ### Parallel Processing
 
-rfmt automatically chooses the optimal processing mode:
+kenshin automatically chooses the optimal processing mode:
 
 - **< 20 files**: Sequential processing (fastest for small batches)  
 - **20-49 files**: Automatic based on average file size
@@ -246,22 +246,22 @@ You can override this behavior:
 
 ```bash
 # Force parallel processing
-rfmt --parallel app/
+kenshin --parallel app/
 
 # Force sequential processing  
-rfmt --no-parallel app/
+kenshin --no-parallel app/
 ```
 
 ### Cache Management
 
-rfmt uses caching to improve performance on large codebases:
+kenshin uses caching to improve performance on large codebases:
 
 ```bash
 # Clear cache if needed
-rfmt cache clear
+kenshin cache clear
 
 # View cache statistics  
-rfmt cache stats
+kenshin cache stats
 ```
 
 ### Ruby API
@@ -269,7 +269,7 @@ rfmt cache stats
 **Input (unformatted code):**
 
 ```ruby
-require 'rfmt'
+require 'kenshin'
 
 source = <<~RUBY
   class User
@@ -279,7 +279,7 @@ source = <<~RUBY
   end
 RUBY
 
-formatted = Rfmt.format(source)
+formatted = Kenshin.format(source)
 puts formatted
 ```
 
@@ -297,31 +297,31 @@ end
 
 #### Configuration File Discovery
 
-rfmt automatically searches for configuration files in this order:
+kenshin automatically searches for configuration files in this order:
 
-1. Current directory (`.rfmt.yml`, `.rfmt.yaml`, `rfmt.yml`, or `rfmt.yaml`)
+1. Current directory (`.kenshin.yml`, `.kenshin.yaml`, `kenshin.yml`, or `kenshin.yaml`)
 2. Parent directories (up to root)
-3. User home directory (`.rfmt.yml`, `.rfmt.yaml`, `rfmt.yml`, or `rfmt.yaml`)
+3. User home directory (`.kenshin.yml`, `.kenshin.yaml`, `kenshin.yml`, or `kenshin.yaml`)
 4. Default settings (if no file found)
 
 #### Ruby API for Configuration
 
 ```ruby
-require 'rfmt'
+require 'kenshin'
 
 # Generate configuration file
-Rfmt::Config.init('.rfmt.yml', force: false)
+Kenshin::Config.init('.kenshin.yml', force: false)
 
 # Find configuration file
-config_path = Rfmt::Config.find
-# => "/Users/username/project/.rfmt.yml"
+config_path = Kenshin::Config.find
+# => "/Users/username/project/.kenshin.yml"
 
 # Check if configuration exists
-Rfmt::Config.exists?
+Kenshin::Config.exists?
 # => true
 
 # Load configuration
-config = Rfmt::Config.load
+config = Kenshin::Config.load
 # => {"version"=>"1.0", "formatting"=>{"line_length"=>100, ...}, ...}
 ```
 
@@ -354,22 +354,22 @@ end
 
 ## Editor Integration
 
-rfmt can integrate with editors in two ways:
+kenshin can integrate with editors in two ways:
 
-- Standalone LSP: run `rfmt-lsp` directly from your editor. This works well for single
+- Standalone LSP: run `kenshin-lsp` directly from your editor. This works well for single
   Ruby scripts or projects without a Gemfile.
-- Ruby LSP add-on: use rfmt as the formatter inside
+- Ruby LSP add-on: use kenshin as the formatter inside
   [Ruby LSP](https://shopify.github.io/ruby-lsp/).
 
 For detailed setup instructions, see [Editor Integration Guide](docs/editors.md).
 
 ### Standalone LSP
 
-After installing rfmt, configure your editor's Ruby language server command to `rfmt-lsp`.
+After installing kenshin, configure your editor's Ruby language server command to `kenshin-lsp`.
 
 ```bash
-gem install rfmt
-rfmt-lsp
+gem install kenshin
+kenshin-lsp
 ```
 
 Example Neovim configuration (with `nvim-lspconfig`):
@@ -378,18 +378,18 @@ Example Neovim configuration (with `nvim-lspconfig`):
 local configs = require("lspconfig.configs")
 local lspconfig = require("lspconfig")
 
-if not configs.rfmt then
-  configs.rfmt = {
+if not configs.kenshin then
+  configs.kenshin = {
     default_config = {
-      cmd = { "rfmt-lsp" },
+      cmd = { "kenshin-lsp" },
       filetypes = { "ruby" },
-      root_dir = lspconfig.util.root_pattern(".rfmt.yml", ".git"),
+      root_dir = lspconfig.util.root_pattern(".kenshin.yml", ".git"),
       single_file_support = true,
     },
   }
 end
 
-lspconfig.rfmt.setup({})
+lspconfig.kenshin.setup({})
 ```
 
 Helix, Emacs, and Zed configurations are covered in the
@@ -402,7 +402,7 @@ Helix, Emacs, and Zed configurations are covered in the
 
 ```json
 {
-  "rubyLsp.formatter": "rfmt",
+  "rubyLsp.formatter": "kenshin",
   "editor.formatOnSave": true,
   "[ruby]": {
     "editor.defaultFormatter": "Shopify.ruby-lsp"
@@ -415,7 +415,7 @@ Helix, Emacs, and Zed configurations are covered in the
 ```lua
 require("lspconfig").ruby_lsp.setup({
   init_options = {
-    formatter = "rfmt"
+    formatter = "kenshin"
   }
 })
 ```
@@ -458,7 +458,7 @@ LEFTHOOK_EXCLUDE=rubocop git push
 bundle exec rspec
 
 # Rust tests
-cargo test --manifest-path ext/rfmt/Cargo.toml
+cargo test --manifest-path ext/kenshin/Cargo.toml
 
 # All tests
 bundle exec rake dev:test_all
@@ -478,16 +478,16 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## Comparison with Other Tools
 
-### rfmt vs RuboCop
+### kenshin vs RuboCop
 
-| Feature | rfmt | RuboCop |
+| Feature | kenshin | RuboCop |
 |---------|------|---------|
 | **Primary Purpose** | Code formatting | Linting + formatting |
 | **Configuration** | Minimal | Extensive |
 | **Code Quality Checks** | No | Yes |
 | **Bug Detection** | No | Yes |
 
-**Note**: rfmt focuses on code formatting, while RuboCop provides additional code quality analysis. They can be used together.
+**Note**: kenshin focuses on code formatting, while RuboCop provides additional code quality analysis. They can be used together.
 
 ## License
 
@@ -495,12 +495,12 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 ## Code of Conduct
 
-Everyone interacting in the rfmt project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](CODE_OF_CONDUCT.md).
+Everyone interacting in the kenshin project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](CODE_OF_CONDUCT.md).
 
 ## Support
 
 - 📖 [Documentation](docs/)
-- 🐛 [Issues](https://github.com/fs0414/rfmt/issues)
+- 🐛 [Issues](https://github.com/sorafujitani/rfmt/issues)
 - 📧 Email: fujitanisora0414@gmail.com
 
 ## Acknowledgments

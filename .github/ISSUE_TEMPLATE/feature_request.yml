@@ -1,5 +1,5 @@
 name: Feature Request
-description: Suggest a new feature or enhancement for rfmt
+description: Suggest a new feature or enhancement for kenshin
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
@@ -24,7 +24,7 @@ body:
     attributes:
       label: Proposed Solution
       description: A clear description of what you want to happen.
-      placeholder: "I would like rfmt to..."
+      placeholder: "I would like kenshin to..."
     validations:
       required: true
 
@@ -60,7 +60,7 @@ body:
       options:
         - Nice to have
         - Would help my workflow
-        - Blocking my adoption of rfmt
+        - Blocking my adoption of kenshin
     validations:
       required: true
 

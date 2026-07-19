@@ -1,5 +1,5 @@
-# rfmt Security Checklist
-# This file documents security measures implemented in rfmt
+# kenshin Security Checklist
+# This file documents security measures implemented in kenshin
 
 version: "1.0"
 last_updated: "2025-01"
@@ -10,7 +10,7 @@ security_measures:
     items:
       - name: "File path validation"
         status: implemented
-        location: "ext/rfmt/src/policy/validation.rs"
+        location: "ext/kenshin/src/policy/validation.rs"
         details:
           - "Path existence verification"
           - "File type verification (not directory)"
@@ -19,7 +19,7 @@ security_measures:
 
       - name: "File extension validation"
         status: implemented
-        location: "ext/rfmt/src/policy/validation.rs"
+        location: "ext/kenshin/src/policy/validation.rs"
         details:
           - "Ruby file extensions (.rb, .rake, .ru)"
           - "Known Ruby files (Gemfile, Rakefile, etc.)"
@@ -27,7 +27,7 @@ security_measures:
 
       - name: "Symbolic link detection"
         status: implemented
-        location: "ext/rfmt/src/policy/validation.rs"
+        location: "ext/kenshin/src/policy/validation.rs"
         details:
           - "Detect symbolic links"
           - "Configurable allow/deny policy"
@@ -35,7 +35,7 @@ security_measures:
 
       - name: "Source code size validation"
         status: implemented
-        location: "ext/rfmt/src/policy/validation.rs"
+        location: "ext/kenshin/src/policy/validation.rs"
         details:
           - "Maximum size limit (default: 10MB)"
           - "Prevents resource exhaustion"
@@ -43,7 +43,7 @@ security_measures:
 
       - name: "Encoding validation"
         status: implemented
-        location: "ext/rfmt/src/policy/validation.rs"
+        location: "ext/kenshin/src/policy/validation.rs"
         details:
           - "UTF-8 encoding verification"
           - "Null byte detection"
@@ -51,7 +51,7 @@ security_measures:
 
       - name: "Configuration validation"
         status: implemented
-        location: "ext/rfmt/src/config/mod.rs"
+        location: "ext/kenshin/src/config/mod.rs"
         details:
           - "Line length bounds (40-500)"
           - "Indent width bounds (1-8)"
@@ -63,7 +63,7 @@ security_measures:
     items:
       - name: "File size limit"
         status: implemented
-        location: "ext/rfmt/src/policy/limits.rs"
+        location: "ext/kenshin/src/policy/limits.rs"
         default: "10MB"
         configurable: true
         details:
@@ -73,7 +73,7 @@ security_measures:
 
       - name: "Memory usage monitoring"
         status: implemented
-        location: "ext/rfmt/src/policy/limits.rs"
+        location: "ext/kenshin/src/policy/limits.rs"
         default: "100MB"
         platform: "Linux (via /proc/self/status)"
         details:
@@ -83,7 +83,7 @@ security_measures:
 
       - name: "Processing timeout"
         status: implemented
-        location: "ext/rfmt/src/policy/limits.rs"
+        location: "ext/kenshin/src/policy/limits.rs"
         default: "30 seconds"
         details:
           - "Per-operation timeout"
@@ -92,7 +92,7 @@ security_measures:
 
       - name: "Recursion depth limit"
         status: implemented
-        location: "ext/rfmt/src/policy/limits.rs"
+        location: "ext/kenshin/src/policy/limits.rs"
         default: "1000"
         details:
           - "AST traversal depth limit"
@@ -101,7 +101,7 @@ security_measures:
 
       - name: "Thread limit"
         status: implemented
-        location: "ext/rfmt/src/policy/mod.rs"
+        location: "ext/kenshin/src/policy/mod.rs"
         default: "min(num_cpus, 4)"
         details:
           - "Parallel processing limit"
@@ -113,7 +113,7 @@ security_measures:
     items:
       - name: "Sensitive information sanitization"
         status: implemented
-        location: "ext/rfmt/src/policy/validation.rs"
+        location: "ext/kenshin/src/policy/validation.rs"
         details:
           - "Home directory path replacement (~)"
           - "Current directory replacement (.)"
@@ -121,7 +121,7 @@ security_measures:
 
       - name: "Error message formatting"
         status: implemented
-        location: "ext/rfmt/src/error/mod.rs"
+        location: "ext/kenshin/src/error/mod.rs"
         details:
           - "User-friendly messages"
           - "Error codes (E001-E999)"
@@ -130,7 +130,7 @@ security_measures:
 
       - name: "Panic handling"
         status: implemented
-        location: "ext/rfmt/src/lib.rs"
+        location: "ext/kenshin/src/lib.rs"
         details:
           - "No panics propagated to Ruby"
           - "All errors converted to Magnus errors"
@@ -138,7 +138,7 @@ security_measures:
 
       - name: "Backtrace capture"
         status: implemented
-        location: "ext/rfmt/src/error/mod.rs"
+        location: "ext/kenshin/src/error/mod.rs"
         details:
           - "Only for internal errors"
           - "Sanitized before display"
@@ -262,7 +262,7 @@ threat_model:
 
   threats_not_mitigated:
     - name: "Malicious Ruby Code Execution"
-      reason: "rfmt does not execute Ruby code, only formats it"
+      reason: "kenshin does not execute Ruby code, only formats it"
       recommendation: "Use separate security tools for code execution safety"
 
     - name: "Supply Chain Attacks"
@@ -272,15 +272,15 @@ threat_model:
 testing:
   security_tests:
     - name: "Input validation tests"
-      location: "ext/rfmt/src/policy/validation.rs"
+      location: "ext/kenshin/src/policy/validation.rs"
       coverage: "Comprehensive"
 
     - name: "Resource limit tests"
-      location: "ext/rfmt/src/policy/limits.rs"
+      location: "ext/kenshin/src/policy/limits.rs"
       coverage: "Comprehensive"
 
     - name: "Error handling tests"
-      location: "ext/rfmt/src/error/*.rs"
+      location: "ext/kenshin/src/error/*.rs"
       coverage: "Comprehensive"
 
     - name: "Integration tests"
