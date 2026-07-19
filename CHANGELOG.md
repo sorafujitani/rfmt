@@ -1,9 +1,16 @@
 ## [Unreleased]
 
+The project has been renamed from rfmt to kenshin. The gem, the executables (`kenshin`, `kenshin-lsp`), the Ruby module (`Kenshin`), and the Rust crate all carry the new name. The final rfmt gem release will point here as its successor.
+
 Parsing now happens natively in Rust. The Ruby-side Prism parse and JSON handoff have been replaced by the ruby-prism crate with prism statically linked into the extension; Ruby remains the CLI/LSP shell.
 
 ### Changed
 
+- Renamed rfmt to kenshin. Migration: install the `kenshin` gem, replace `rfmt`/`rfmt-lsp` invocations with `kenshin`/`kenshin-lsp`, and use `require "kenshin"` / the `Kenshin` module
+- The `Rfmt` constant is retained as an alias of `Kenshin` for one minor release
+- Old config filenames (`.rfmt.yml`, `rfmt.yml`, and the `.yaml` variants) are still discovered, after the new `kenshin` names, for one minor release
+- Debug environment variables are now `KENSHIN_DEBUG`, `KENSHIN_LOG`, and `KENSHIN_VERBOSE`
+- The cache directory moved to `~/.cache/kenshin`; the old cache is simply abandoned (it is an mtime cache)
 - Native parsing via the ruby-prism crate: in-process formatting is about 22x faster: 0.19 ms/file measured with `scripts/bench_format.rb`, against a historical pre-migration baseline of 4.28 ms/file
 - `--config` is now honored when formatting
 - File writes are atomic (write to a temp file, then rename)
