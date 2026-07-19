@@ -103,6 +103,27 @@ RSpec.describe Kenshin::Config do
     end
   end
 
+  describe '.find' do
+    it 'finds a legacy .rfmt.yml during the transition window' do
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, '.rfmt.yml'), "version: '1.0'\n")
+        Dir.chdir(dir) do
+          expect(File.basename(Kenshin::Config.find)).to eq('.rfmt.yml')
+        end
+      end
+    end
+
+    it 'prefers a kenshin config over a legacy rfmt config' do
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, 'rfmt.yml'), "version: '1.0'\n")
+        File.write(File.join(dir, 'kenshin.yml'), "version: '1.0'\n")
+        Dir.chdir(dir) do
+          expect(File.basename(Kenshin::Config.find)).to eq('kenshin.yml')
+        end
+      end
+    end
+  end
+
   describe 'DEFAULT_CONFIG' do
     let(:default_config) { Kenshin::Config::DEFAULT_CONFIG }
 

@@ -101,12 +101,18 @@ pub enum TrailingComma {
     Multiline,
 }
 
-/// Search order within each directory: kenshin.yml, kenshin.yaml, .kenshin.yml, .kenshin.yaml
-const CONFIG_FILE_NAMES: [&str; 4] = [
+/// Search order within each directory: kenshin.yml, kenshin.yaml, .kenshin.yml, .kenshin.yaml.
+/// The rfmt names are accepted after them during the rename transition window
+/// (planned removal one minor release after 1.7).
+const CONFIG_FILE_NAMES: [&str; 8] = [
     "kenshin.yml",
     "kenshin.yaml",
     ".kenshin.yml",
     ".kenshin.yaml",
+    "rfmt.yml",
+    "rfmt.yaml",
+    ".rfmt.yml",
+    ".rfmt.yaml",
 ];
 
 /// Discovery result cached per process so repeated format calls (CLI batch,
@@ -656,6 +662,35 @@ formatting:
                 .formatting
                 .indent_width,
             5
+        );
+    }
+
+    #[test]
+    fn test_discovery_accepts_legacy_rfmt_name() {
+        let _lock = CACHE_TEST_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+
+        write_indent_config(&dir.path().join(".rfmt.yml"), 6);
+        assert_eq!(
+            Config::discover_cached_from(dir.path())
+                .formatting
+                .indent_width,
+            6
+        );
+    }
+
+    #[test]
+    fn test_discovery_prefers_kenshin_name_over_legacy() {
+        let _lock = CACHE_TEST_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+
+        write_indent_config(&dir.path().join("rfmt.yml"), 3);
+        write_indent_config(&dir.path().join("kenshin.yml"), 4);
+        assert_eq!(
+            Config::discover_cached_from(dir.path())
+                .formatting
+                .indent_width,
+            4
         );
     }
 

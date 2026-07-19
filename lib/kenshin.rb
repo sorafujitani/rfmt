@@ -135,14 +135,19 @@ module Kenshin
       true
     end
 
+    # Same search order as the Rust side (config/mod.rs CONFIG_FILE_NAMES):
+    # kenshin names first, rfmt names accepted during the rename transition
+    # window (planned removal one minor release after 1.7).
+    CONFIG_FILE_NAMES = ['kenshin.yml', 'kenshin.yaml', '.kenshin.yml', '.kenshin.yaml',
+                         'rfmt.yml', 'rfmt.yaml', '.rfmt.yml', '.rfmt.yaml'].freeze
+
     # Find configuration file in current or parent directories
     # @return [String, nil] Path to config file or nil if not found
     def self.find
       current_dir = Dir.pwd
 
       loop do
-        # Same search order as the Rust side (config/mod.rs CONFIG_FILE_NAMES)
-        ['kenshin.yml', 'kenshin.yaml', '.kenshin.yml', '.kenshin.yaml'].each do |filename|
+        CONFIG_FILE_NAMES.each do |filename|
           config_path = File.join(current_dir, filename)
           return config_path if File.exist?(config_path)
         end
@@ -160,7 +165,7 @@ module Kenshin
         nil
       end
       if home_dir
-        ['kenshin.yml', 'kenshin.yaml', '.kenshin.yml', '.kenshin.yaml'].each do |filename|
+        CONFIG_FILE_NAMES.each do |filename|
           config_path = File.join(home_dir, filename)
           return config_path if File.exist?(config_path)
         end

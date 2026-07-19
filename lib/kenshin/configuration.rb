@@ -14,7 +14,10 @@ module Kenshin
       'exclude' => ['vendor/**/*', 'tmp/**/*', 'node_modules/**/*']
     }.freeze
 
-    CONFIG_FILES = ['kenshin.yml', 'kenshin.yaml', '.kenshin.yml', '.kenshin.yaml'].freeze
+    # kenshin names first; the rfmt names stay accepted during the rename
+    # transition window (planned removal one minor release after 1.7).
+    CONFIG_FILES = ['kenshin.yml', 'kenshin.yaml', '.kenshin.yml', '.kenshin.yaml',
+                    'rfmt.yml', 'rfmt.yaml', '.rfmt.yml', '.rfmt.yaml'].freeze
 
     attr_reader :config
 
