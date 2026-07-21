@@ -149,6 +149,10 @@ module CorpusCheck
         failures << "comment preservation: #{source_result.comments.size} comments in source, " \
                     "#{formatted_result.comments.size} in output"
       end
+      # The __END__ data section is outside the AST, so no other property sees its loss
+      if source_result.data_loc&.slice != formatted_result.data_loc&.slice
+        failures << 'data section preservation: __END__ content changed or dropped'
+      end
       failures.compact
     end
 
