@@ -72,7 +72,7 @@ fn parse_to_json(ruby: &Ruby, source: String) -> Result<String, Error> {
 }
 
 fn rust_version() -> String {
-    "0.2.0 (Rust)".to_string()
+    format!("{} (Rust)", env!("CARGO_PKG_VERSION"))
 }
 
 #[magnus::init]
