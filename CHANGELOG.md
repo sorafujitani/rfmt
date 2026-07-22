@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [2.0.0.beta1] - 2026-07-22
+
 Parsing now happens natively in Rust. The Ruby-side Prism parse and JSON handoff have been replaced by the ruby-prism crate with prism statically linked into the extension; Ruby remains the CLI/LSP shell.
 
 ### Changed

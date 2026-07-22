@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rfmt (1.7.0)
+    rfmt (2.0.0.beta1)
       diff-lcs (~> 1.5)
       diffy (~> 3.4)
       language_server-protocol (~> 3.17)
